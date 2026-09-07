@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface SeatInfo {
@@ -10,7 +10,7 @@ interface SeatInfo {
     label: string | null;
     violation: boolean;
     assignment_id: number | null;
-    student: { school_number: string; full_name: string; branch: string | null } | null;
+    student: { school_number: string; full_name: string; branch: string | null; photo_url: string | null } | null;
 }
 
 interface RoomData {
@@ -54,6 +54,9 @@ const salonModal = ref(false);
 const confirmState = ref<{ message: string; retry: () => void } | null>(null);
 const dragPayload = ref<{ assignmentId: number } | null>(null);
 const busy = ref(false);
+
+const showPhotos = ref(localStorage.getItem('kelebek-show-photos') !== '0');
+watch(showPhotos, (value) => localStorage.setItem('kelebek-show-photos', value ? '1' : '0'));
 
 function seatMap(room: RoomData): Map<string, SeatInfo> {
     const map = new Map<string, SeatInfo>();
@@ -238,6 +241,12 @@ function isSelected(seat: SeatInfo): boolean {
                     <span v-else class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
                         Taslak
                     </span>
+                    <label
+                        class="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700"
+                    >
+                        <input v-model="showPhotos" type="checkbox" class="rounded border-gray-300" />
+                        Fotoğraflar
+                    </label>
                     <button
                         type="button"
                         class="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
@@ -339,7 +348,7 @@ function isSelected(seat: SeatInfo): boolean {
                             <td v-for="col in columnNumbers(room)" :key="col" class="p-1">
                                 <div
                                     v-if="seatMap(room).get(`${row}-${col}`)"
-                                    class="min-h-12 w-28 rounded-md px-2 py-1 text-xs"
+                                    class="min-h-12 rounded-md px-2 py-1 text-xs"
                                     :class="[
                                         seatMap(room).get(`${row}-${col}`)!.violation
                                             ? 'bg-red-100 text-red-900'
@@ -350,6 +359,7 @@ function isSelected(seat: SeatInfo): boolean {
                                         isSelected(seatMap(room).get(`${row}-${col}`)!)
                                             ? 'ring-2 ring-indigo-600'
                                             : '',
+                                        showPhotos ? 'w-36' : 'w-28',
                                     ]"
                                     :draggable="editMode && !!seatMap(room).get(`${row}-${col}`)!.student"
                                     @click="onSeatClick(seatMap(room).get(`${row}-${col}`)!)"
@@ -363,6 +373,23 @@ function isSelected(seat: SeatInfo): boolean {
                                 >
                                     <div class="font-semibold">
                                         {{ seatLabel(seatMap(room).get(`${row}-${col}`)!) }}
+                                    </div>
+                                    <div
+                                        v-if="showPhotos && seatMap(room).get(`${row}-${col}`)!.student"
+                                        class="mb-1"
+                                    >
+                                        <img
+                                            v-if="seatMap(room).get(`${row}-${col}`)!.student!.photo_url"
+                                            :src="seatMap(room).get(`${row}-${col}`)!.student!.photo_url!"
+                                            alt=""
+                                            class="h-16 w-full rounded object-cover"
+                                        />
+                                        <div
+                                            v-else
+                                            class="flex h-16 w-full items-center justify-center rounded bg-gray-100 text-gray-400"
+                                        >
+                                            Foto yok
+                                        </div>
                                     </div>
                                     <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
                                         <div class="truncate">
