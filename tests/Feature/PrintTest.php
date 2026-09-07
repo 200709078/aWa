@@ -57,6 +57,9 @@ class PrintTest extends TestCase
         foreach ($urls as $url) {
             $this->actingAs($user)->get($url)->assertOk();
         }
+
+        $response = $this->actingAs($user)->get("/distribution/plans/{$plan->id}/print/seating?photo=0");
+        $response->assertInertia(fn ($page) => $page->where('showPhotos', false));
     }
 
     public function test_ozet_icerigi_dogru(): void
