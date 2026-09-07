@@ -156,37 +156,14 @@ class DistributionController extends Controller
 
     private function roomGridData(SeatingPlan $plan, array $violating): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name']);
-
-        $assignedBySeat = $plan->assignments->keyBy(fn ($a) => $a->seat_id);
-        $roomIds = $assignedBySeat->map(fn ($a) => $a->seat->room_id)->unique()->values()->all();
-
-        return Room::whereIn('id', $roomIds)
-            ->with(['seats' => fn ($query) => $query->where('is_active', true)->orderBy('row')->orderBy('column')])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Room $room) => [
-                'room' => ['id' => $room->id, 'name' => $room->name],
-                'maxRow' => $room->seats->max('row') ?? 0,
-                'maxColumn' => $room->seats->max('column') ?? 0,
-                'seats' => $room->seats->map(fn ($seat) => [
-                    'id' => $seat->id,
-                    'row' => $seat->row,
-                    'column' => $seat->column,
-                    'label' => $seat->label,
-                    'violation' => in_array($seat->id, $violating, true),
-                    'assignment_id' => $assignedBySeat[$seat->id]->id ?? null,
-                    'student' => isset($assignedBySeat[$seat->id]) ? [
-                        'school_number' => $assignedBySeat[$seat->id]->student->school_number,
-                        'full_name' => $assignedBySeat[$seat->id]->student->full_name,
-                        'branch' => $assignedBySeat[$seat->id]->student->branch?->name,
-                        'photo_url' => $assignedBySeat[$seat->id]->student->photo_path
-                            ? asset('storage/'.$assignedBySeat[$seat->id]->student->photo_path)
-                            : null,
-                    ] : null,
-                ])->all(),
-            ])->all();
+        return collect($this->service->seatingGrid($plan))
+            ->map(fn ($room) => [
+                ...$room,
+                'seats' => collect($room['seats'])
+                    ->map(fn ($seat) => [...$seat, 'violation' => in_array($seat['id'], $violating, true)])
+                    ->all(),
+            ])
+            ->all();
     }
 
     private function preSummary(ExamWeek $examWeek): array

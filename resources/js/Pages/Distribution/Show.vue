@@ -336,6 +336,45 @@ function isSelected(seat: SeatInfo): boolean {
             <p v-if="summaryState.violations > 0" class="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
                 {{ summaryState.violations }} koltukta aynı şube yan yana geldi (kırmızı).
             </p>
+
+            <div class="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+                <span class="py-1 text-sm font-medium text-gray-700">Çıktılar:</span>
+                <a
+                    :href="`/distribution/plans/${plan.id}/print/seating?photo=1`"
+                    target="_blank"
+                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                    Salon Planları (Fotoğraflı)
+                </a>
+                <a
+                    :href="`/distribution/plans/${plan.id}/print/seating?photo=0`"
+                    target="_blank"
+                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                    Salon Planları (Fotoğrafsız)
+                </a>
+                <a
+                    :href="`/distribution/plans/${plan.id}/print/branches`"
+                    target="_blank"
+                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                    Şube Listeleri
+                </a>
+                <a
+                    :href="`/distribution/plans/${plan.id}/print/rooms`"
+                    target="_blank"
+                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                    Salon Listeleri
+                </a>
+                <a
+                    :href="`/distribution/plans/${plan.id}/print/summary`"
+                    target="_blank"
+                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                    Dağılım Özeti
+                </a>
+            </div>
         </div>
 
         <div v-for="room in rooms" :key="room.room.id" class="mt-6 rounded-lg bg-white p-6 shadow-sm">
