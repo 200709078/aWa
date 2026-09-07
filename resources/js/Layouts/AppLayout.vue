@@ -15,11 +15,11 @@ const currentUrl = computed(() => usePage().url);
 
 const nav = [
     { label: 'Panel', href: '/' },
+    { label: 'Akademik Yıllar', href: '/academic-years' },
+    { label: 'Sınav Haftaları', href: '/exam-weeks' },
     { label: 'Öğrenciler', href: '/students' },
     { label: 'Şubeler', href: '/branches' },
-    { label: 'Akademik Yıllar', href: '/academic-years' },
     { label: 'Salonlar', href: '/rooms' },
-    { label: 'Sınav Haftaları', href: '/exam-weeks' },
     { label: 'Dağıtım', href: '/distribution' },
     { label: 'Çıktılar', href: '/reports' },
     { label: 'Ayarlar', href: '/settings' },
