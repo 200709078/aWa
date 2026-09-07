@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
+use App\Http\Controllers\StudentPhotoController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -25,6 +26,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/students/import', [StudentImportController::class, 'show'])->name('students.import');
     Route::post('/students/import/preview', [StudentImportController::class, 'preview'])->name('students.import.preview');
     Route::post('/students/import/confirm', [StudentImportController::class, 'confirm'])->name('students.import.confirm');
+
+    Route::get('/students/photos', [StudentPhotoController::class, 'show'])->name('students.photos');
+    Route::post('/students/photos', [StudentPhotoController::class, 'store'])->name('students.photos.store');
 
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
     Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');

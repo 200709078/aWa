@@ -113,12 +113,20 @@ function toggle(url: string) {
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h1 class="text-2xl font-bold text-gray-900">Öğrenciler</h1>
-                <Link
-                    href="/students/import"
-                    class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-                >
-                    Excel'den Aktar
-                </Link>
+                <div class="flex gap-2">
+                    <Link
+                        href="/students/photos"
+                        class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                    >
+                        Toplu Fotoğraf
+                    </Link>
+                    <Link
+                        href="/students/import"
+                        class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                    >
+                        Excelden İçe Aktar
+                    </Link>
+                </div>
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
