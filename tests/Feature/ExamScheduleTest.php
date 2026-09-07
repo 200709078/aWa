@@ -31,7 +31,7 @@ class ExamScheduleTest extends TestCase
         $response = $this->actingAs($user)->get("/exam-weeks/{$week->id}");
         $response->assertInertia(fn ($page) => $page
             ->where('exams.0.name', 'Matematik')
-            ->where('exams.0.start_time', '09:00:00')
+            ->where('exams.0.start_time', '09:00')
         );
 
         $exam = Exam::first();
