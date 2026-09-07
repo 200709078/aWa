@@ -1,0 +1,108 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AcademicYear;
+use App\Models\Branch;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class BranchController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $years = AcademicYear::orderByDesc('name')->get(['id', 'name', 'is_active']);
+
+        $selectedYearId = $request->integer('academic_year_id')
+            ?: $years->firstWhere('is_active', true)?->id
+            ?? $years->first()?->id;
+
+        $branches = $selectedYearId
+            ? Branch::withCount('students')
+                ->where('academic_year_id', $selectedYearId)
+                ->orderBy('name')
+                ->get()
+            : [];
+
+        return Inertia::render('Branches/Index', [
+            'years' => $years,
+            'selectedYearId' => $selectedYearId,
+            'branches' => $branches,
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        try {
+            Branch::create($this->validated($request));
+        } catch (QueryException $e) {
+            return back()->withErrors(['name' => 'Bu akademik yılda bu şube zaten kayıtlı.'])->withInput();
+        }
+
+        return back()->with('success', 'Şube eklendi.');
+    }
+
+    public function update(Request $request, Branch $branch): RedirectResponse
+    {
+        try {
+            $branch->update($this->validated($request, $branch));
+        } catch (QueryException $e) {
+            return back()->withErrors(['name' => 'Bu akademik yılda bu şube zaten kayıtlı.'])->withInput();
+        }
+
+        return back()->with('success', 'Şube güncellendi.');
+    }
+
+    public function activate(Branch $branch): RedirectResponse
+    {
+        $branch->update(['is_active' => true]);
+
+        return back()->with('success', $branch->name.' aktif edildi.');
+    }
+
+    public function deactivate(Branch $branch): RedirectResponse
+    {
+        $branch->update(['is_active' => false]);
+
+        return back()->with('success', $branch->name.' pasife alındı.');
+    }
+
+    /**
+     * @return array{academic_year_id: int, name: string, grade_level: int, section: string, is_active: bool}
+     */
+    private function validated(Request $request, ?Branch $branch = null): array
+    {
+        $yearId = $request->input('academic_year_id', $branch?->academic_year_id);
+
+        $data = $request->validate([
+            'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
+            'name' => [
+                'required', 'string', 'max:10',
+                Rule::unique('branches')->where(fn ($query) => $query->where('academic_year_id', $yearId))->ignore($branch?->id),
+            ],
+            'grade_level' => ['required', 'integer', 'min:1', 'max:12'],
+            'section' => ['required', 'string', 'max:10'],
+            'is_active' => ['sometimes', 'boolean'],
+        ], [
+            'academic_year_id.required' => 'Akademik yıl seçin.',
+            'academic_year_id.exists' => 'Seçilen akademik yıl bulunamadı.',
+            'name.required' => 'Şube adı gerekli. (örn. 9A)',
+            'name.unique' => 'Bu akademik yılda bu şube zaten kayıtlı.',
+            'grade_level.required' => 'Sınıf seviyesi gerekli.',
+            'grade_level.integer' => 'Sınıf seviyesi sayı olmalı.',
+            'grade_level.min' => 'Sınıf seviyesi 1-12 arasında olmalı.',
+            'grade_level.max' => 'Sınıf seviyesi 1-12 arasında olmalı.',
+            'section.required' => 'Şube harfi/bölümü gerekli. (örn. A)',
+        ]);
+
+        $data['name'] = mb_strtoupper(trim($data['name']));
+        $data['section'] = mb_strtoupper(trim($data['section']));
+        $data['is_active'] = $request->boolean('is_active', $branch?->is_active ?? true);
+
+        return $data;
+    }
+}
