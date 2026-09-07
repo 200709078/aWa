@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, useForm } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface Week {
@@ -25,8 +25,17 @@ interface RoomOption {
     active_seats_count: number;
 }
 
+interface Exam {
+    id: number;
+    name: string;
+    exam_date: string | null;
+    start_time: string | null;
+    description: string | null;
+}
+
 const props = defineProps<{
     week: Week;
+    exams: Exam[];
     branches: BranchOption[];
     rooms: RoomOption[];
     selectedBranchIds: number[];
@@ -43,6 +52,26 @@ function saveBranches() {
 
 function saveRooms() {
     roomForm.put(`/exam-weeks/${props.week.id}/rooms`);
+}
+
+const examForm = useForm({ name: '', exam_date: '', start_time: '', description: '' });
+
+function submitExam() {
+    examForm.post(`/exam-weeks/${props.week.id}/exams`, {
+        onSuccess: () => examForm.reset(),
+    });
+}
+
+function deleteExam(id: number) {
+    router.delete(`/exams/${id}`);
+}
+
+function formatDate(value: string | null): string {
+    return value ? value.slice(0, 10).split('-').reverse().join('.') : '—';
+}
+
+function formatTime(value: string | null): string {
+    return value ? value.slice(0, 5) : '';
 }
 </script>
 
@@ -148,6 +177,73 @@ function saveRooms() {
                 >
                     Salonları Kaydet
                 </button>
+            </form>
+        </div>
+
+        <div class="mt-6 rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="font-semibold text-gray-900">Sınavlar <span class="text-sm font-normal text-gray-400">(opsiyonel, duyuru amaçlı — dağıtıma etkisi yok)</span></h2>
+
+            <ul v-if="exams.length > 0" class="mt-3 divide-y divide-gray-200">
+                <li v-for="exam in exams" :key="exam.id" class="flex items-center justify-between gap-3 py-2">
+                    <div class="text-sm">
+                        <span class="font-medium text-gray-900">{{ exam.name }}</span>
+                        <span class="ml-2 text-gray-500">{{ formatDate(exam.exam_date) }}{{ formatTime(exam.start_time) ? ` · ${formatTime(exam.start_time)}` : '' }}</span>
+                        <p v-if="exam.description" class="text-gray-500">{{ exam.description }}</p>
+                    </div>
+                    <button
+                        type="button"
+                        class="rounded-md border border-gray-300 px-3 py-1 text-sm text-red-600 hover:bg-red-50"
+                        @click="deleteExam(exam.id)"
+                    >
+                        Sil
+                    </button>
+                </li>
+            </ul>
+            <p v-else class="mt-2 text-sm text-gray-400">Henüz sınav eklenmedi.</p>
+
+            <form class="mt-4 grid gap-3 border-t pt-4 md:grid-cols-5" @submit.prevent="submitExam">
+                <div class="md:col-span-2">
+                    <label for="exam-name" class="block text-sm font-medium text-gray-700">Sınav adı</label>
+                    <input
+                        id="exam-name"
+                        v-model="examForm.name"
+                        type="text"
+                        required
+                        maxlength="100"
+                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="examForm.errors.name" class="mt-1 text-sm text-red-600">{{ examForm.errors.name }}</p>
+                </div>
+                <div>
+                    <label for="exam-date" class="block text-sm font-medium text-gray-700">Tarih</label>
+                    <input
+                        id="exam-date"
+                        v-model="examForm.exam_date"
+                        type="date"
+                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label for="exam-time" class="block text-sm font-medium text-gray-700">Saat</label>
+                    <input
+                        id="exam-time"
+                        v-model="examForm.start_time"
+                        type="time"
+                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="examForm.errors.start_time" class="mt-1 text-sm text-red-600">
+                        {{ examForm.errors.start_time }}
+                    </p>
+                </div>
+                <div class="flex items-end">
+                    <button
+                        type="submit"
+                        :disabled="examForm.processing"
+                        class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                        Ekle
+                    </button>
+                </div>
             </form>
         </div>
     </AppLayout>

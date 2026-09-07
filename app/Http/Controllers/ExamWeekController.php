@@ -71,6 +71,7 @@ class ExamWeekController extends Controller
                 'ends_at' => $examWeek->ends_at?->format('Y-m-d'),
                 'is_active' => $examWeek->is_active,
             ],
+            'exams' => $examWeek->exams()->orderBy('exam_date')->orderBy('start_time')->get(['id', 'name', 'exam_date', 'start_time', 'description']),
             'branches' => $branches,
             'rooms' => $rooms,
             'selectedBranchIds' => $examWeek->branches->pluck('id'),
