@@ -4,6 +4,7 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentImportController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -20,6 +21,10 @@ Route::middleware('auth')->group(function () {
     Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
     Route::post('/students/{student}/activate', [StudentController::class, 'activate'])->name('students.activate');
     Route::post('/students/{student}/deactivate', [StudentController::class, 'deactivate'])->name('students.deactivate');
+
+    Route::get('/students/import', [StudentImportController::class, 'show'])->name('students.import');
+    Route::post('/students/import/preview', [StudentImportController::class, 'preview'])->name('students.import.preview');
+    Route::post('/students/import/confirm', [StudentImportController::class, 'confirm'])->name('students.import.confirm');
 
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
     Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');

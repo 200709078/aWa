@@ -51,7 +51,7 @@ function logout() {
 
     <div class="min-h-screen bg-gray-50">
         <header class="bg-white shadow-sm">
-            <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+            <div class="flex items-center justify-between px-2 py-3">
                 <div class="flex items-center gap-3">
                     <button
                         type="button"
@@ -83,7 +83,7 @@ function logout() {
             </nav>
         </header>
 
-        <div class="mx-auto flex max-w-7xl gap-6 px-4 py-6">
+        <div class="flex gap-6 px-2 py-6">
             <aside class="hidden w-56 shrink-0 md:block">
                 <nav class="space-y-1 rounded-lg bg-white p-3 shadow-sm">
                     <Link v-for="item in nav" :key="item.href" :href="item.href" :class="linkClass(item.href)">
