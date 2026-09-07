@@ -173,7 +173,7 @@ function toggle(url: string) {
         </div>
 
         <div v-if="editing" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
-            <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
+            <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
                 <h2 class="text-lg font-semibold text-gray-900">Salonu düzenle</h2>
                 <form class="mt-4 space-y-4" @submit.prevent="submitEdit">
                     <div>

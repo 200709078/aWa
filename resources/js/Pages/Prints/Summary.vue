@@ -52,26 +52,26 @@ defineProps<{
         </p>
 
         <h2 class="mt-6 text-lg font-semibold">Salon × şube dağılımı</h2>
-        <table class="mt-2 border-collapse text-sm">
+        <table class="mt-2 border-collapse text-xs">
             <thead>
                 <tr class="border-b-2 border-gray-800">
-                    <th class="px-3 py-1 text-left">Salon</th>
-                    <th class="px-3 py-1 text-right">Kapasite</th>
-                    <th v-for="branch in branches" :key="branch" class="px-3 py-1 text-right">{{ branch }}</th>
-                    <th class="px-3 py-1 text-right font-semibold">Toplam</th>
+                    <th class="px-1 py-1 text-left">Salon</th>
+                    <th class="px-1 py-1 text-right">Kapasite</th>
+                    <th v-for="branch in branches" :key="branch" class="px-1 py-1 text-right">{{ branch }}</th>
+                    <th class="px-1 py-1 text-right font-semibold">Toplam</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="row in matrix" :key="row.room" class="border-b border-gray-200">
-                    <td class="px-3 py-1 font-medium">{{ row.room }}</td>
-                    <td class="px-3 py-1 text-right text-gray-500">{{ row.capacity }}</td>
-                    <td v-for="(cell, i) in row.cells" :key="i" class="px-3 py-1 text-right">{{ cell }}</td>
-                    <td class="px-3 py-1 text-right font-semibold">{{ row.total }}</td>
+                    <td class="px-1 py-1 font-medium">{{ row.room }}</td>
+                    <td class="px-1 py-1 text-right text-gray-500">{{ row.capacity }}</td>
+                    <td v-for="(cell, i) in row.cells" :key="i" class="px-1 py-1 text-right">{{ cell }}</td>
+                    <td class="px-1 py-1 text-right font-semibold">{{ row.total }}</td>
                 </tr>
                 <tr class="border-t-2 border-gray-800 font-semibold">
-                    <td class="px-3 py-1">Toplam</td>
-                    <td v-for="(total, i) in branchTotals" :key="i" class="px-3 py-1 text-right">{{ total }}</td>
-                    <td class="px-3 py-1 text-right">{{ summary.total_students }}</td>
+                    <td class="px-1 py-1">Toplam</td>
+                    <td v-for="(total, i) in branchTotals" :key="i" class="px-1 py-1 text-right">{{ total }}</td>
+                    <td class="px-1 py-1 text-right">{{ summary.total_students }}</td>
                 </tr>
             </tbody>
         </table>

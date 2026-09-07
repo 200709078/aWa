@@ -76,15 +76,15 @@ function columnNumbers(room: RoomData): number[] {
             class="mt-6"
         >
             <h2 class="text-lg font-semibold">{{ room.room.name }}</h2>
-            <table class="mt-2 border-collapse">
+            <table class="mt-2 w-full table-fixed border-collapse">
                 <tbody>
                     <tr v-for="row in rowNumbers(room)" :key="row">
-                        <td class="pr-2 text-right text-xs font-semibold text-gray-400">{{ row }}</td>
+                        <td class="w-6 pr-2 text-right text-xs font-semibold text-gray-400">{{ row }}</td>
                         <td v-for="col in columnNumbers(room)" :key="col" class="border border-gray-300 p-1">
                             <div
                                 v-if="seatMap(room).get(`${row}-${col}`)"
                                 class="leading-tight"
-                                :class="photos ? 'w-24 text-[11px]' : 'w-20 text-[10px]'"
+                                :class="photos ? 'text-[11px]' : 'text-[10px]'"
                             >
                                 <img
                                     v-if="photos && seatMap(room).get(`${row}-${col}`)!.student?.photo_url"
