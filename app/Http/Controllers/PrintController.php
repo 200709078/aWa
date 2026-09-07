@@ -109,7 +109,12 @@ class PrintController extends Controller
 
         $matrix = [];
         foreach ($rooms as $room) {
-            $row = ['room' => $room->name, 'cells' => [], 'total' => 0];
+            $row = [
+                'room' => $room->name,
+                'capacity' => \App\Models\Seat::where('room_id', $room->id)->where('is_active', true)->count(),
+                'cells' => [],
+                'total' => 0,
+            ];
             foreach ($branches as $branch) {
                 $n = $assignments->filter(fn ($a) => $a->seat->room_id === $room->id && $a->student->branch_id === $branch->id)->count();
                 $row['cells'][] = $n;
