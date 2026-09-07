@@ -8,6 +8,7 @@ use App\Models\SeatingPlan;
 use App\Models\Student;
 use App\Services\DistributionException;
 use App\Services\SeatingDistributionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -66,35 +67,6 @@ class DistributionController extends Controller
         $plan->load(['examWeek:id,name', 'creator:id,name']);
 
         $summary = $this->service->summary($plan);
-        $plan->loadMissing(['assignments.student.branch:id,name']);
-
-        $assignedBySeat = $plan->assignments->keyBy(fn ($a) => $a->seat_id);
-
-        $rooms = Room::whereIn('id', collect($summary['used_rooms'])->pluck('id'))
-            ->with(['seats' => fn ($query) => $query->where('is_active', true)->orderBy('row')->orderBy('column')])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-
-        $violating = $summary['violating_seat_ids'];
-
-        $roomsData = $rooms->map(fn (Room $room) => [
-            'room' => ['id' => $room->id, 'name' => $room->name],
-            'maxRow' => $room->seats->max('row') ?? 0,
-            'maxColumn' => $room->seats->max('column') ?? 0,
-            'seats' => $room->seats->map(fn ($seat) => [
-                'id' => $seat->id,
-                'row' => $seat->row,
-                'column' => $seat->column,
-                'label' => $seat->label,
-                'violation' => in_array($seat->id, $violating, true),
-                'student' => isset($assignedBySeat[$seat->id]) ? [
-                    'school_number' => $assignedBySeat[$seat->id]->student->school_number,
-                    'full_name' => $assignedBySeat[$seat->id]->student->full_name,
-                    'branch' => $assignedBySeat[$seat->id]->student->branch?->name,
-                ] : null,
-            ])->all(),
-        ])->all();
 
         return Inertia::render('Distribution/Show', [
             'plan' => [
@@ -108,12 +80,11 @@ class DistributionController extends Controller
             ],
             'week' => ['id' => $plan->examWeek->id, 'name' => $plan->examWeek->name],
             'summary' => $summary,
-            'roomsData' => $roomsData,
+            'roomsData' => $this->roomGridData($plan, $summary['violating_seat_ids']),
         ]);
     }
 
-    public function finalize(SeatingPlan $plan): RedirectResponse
-    {
+    public function finalize(SeatingPlan $plan): RedirectResponse    {
         $plan->update(['status' => 'final']);
 
         return back()->with('success', 'Plan final olarak işaretlendi.');
@@ -124,6 +95,95 @@ class DistributionController extends Controller
         $plan->update(['status' => 'draft']);
 
         return back()->with('success', 'Plan taslağa alındı.');
+    }
+
+    public function move(SeatingPlan $plan): JsonResponse
+    {
+        $data = request()->validate([
+            'assignment_id' => ['required', 'integer'],
+            'seat_id' => ['required', 'integer'],
+            'force' => ['sometimes', 'boolean'],
+        ]);
+
+        try {
+            $result = $this->service->moveAssignment(
+                $plan,
+                (int) $data['assignment_id'],
+                (int) $data['seat_id'],
+                (bool) ($data['force'] ?? false)
+            );
+        } catch (DistributionException $e) {
+            return response()->json(['applied' => false, 'needs_confirm' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json($this->withGrid($plan, $result));
+    }
+
+    public function swap(SeatingPlan $plan): JsonResponse
+    {
+        $data = request()->validate([
+            'assignment_id' => ['required', 'integer'],
+            'other_assignment_id' => ['required', 'integer'],
+            'force' => ['sometimes', 'boolean'],
+        ]);
+
+        try {
+            $result = $this->service->swapAssignments(
+                $plan,
+                (int) $data['assignment_id'],
+                (int) $data['other_assignment_id'],
+                (bool) ($data['force'] ?? false)
+            );
+        } catch (DistributionException $e) {
+            return response()->json(['applied' => false, 'needs_confirm' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json($this->withGrid($plan, $result));
+    }
+
+    private function withGrid(SeatingPlan $plan, array $result): array
+    {
+        if (! $result['applied']) {
+            return $result;
+        }
+
+        $fresh = $plan->fresh();
+        $result['summary'] = $this->service->summary($fresh);
+        $result['roomsData'] = $this->roomGridData($fresh, $result['violating_seat_ids']);
+
+        return $result;
+    }
+
+    private function roomGridData(SeatingPlan $plan, array $violating): array
+    {
+        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name']);
+
+        $assignedBySeat = $plan->assignments->keyBy(fn ($a) => $a->seat_id);
+        $roomIds = $assignedBySeat->map(fn ($a) => $a->seat->room_id)->unique()->values()->all();
+
+        return Room::whereIn('id', $roomIds)
+            ->with(['seats' => fn ($query) => $query->where('is_active', true)->orderBy('row')->orderBy('column')])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Room $room) => [
+                'room' => ['id' => $room->id, 'name' => $room->name],
+                'maxRow' => $room->seats->max('row') ?? 0,
+                'maxColumn' => $room->seats->max('column') ?? 0,
+                'seats' => $room->seats->map(fn ($seat) => [
+                    'id' => $seat->id,
+                    'row' => $seat->row,
+                    'column' => $seat->column,
+                    'label' => $seat->label,
+                    'violation' => in_array($seat->id, $violating, true),
+                    'assignment_id' => $assignedBySeat[$seat->id]->id ?? null,
+                    'student' => isset($assignedBySeat[$seat->id]) ? [
+                        'school_number' => $assignedBySeat[$seat->id]->student->school_number,
+                        'full_name' => $assignedBySeat[$seat->id]->student->full_name,
+                        'branch' => $assignedBySeat[$seat->id]->student->branch?->name,
+                    ] : null,
+                ])->all(),
+            ])->all();
     }
 
     private function preSummary(ExamWeek $examWeek): array

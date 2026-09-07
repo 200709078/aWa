@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface SeatInfo {
@@ -9,6 +9,7 @@ interface SeatInfo {
     column: number;
     label: string | null;
     violation: boolean;
+    assignment_id: number | null;
     student: { school_number: string; full_name: string; branch: string | null } | null;
 }
 
@@ -17,6 +18,15 @@ interface RoomData {
     maxRow: number;
     maxColumn: number;
     seats: SeatInfo[];
+}
+
+interface Summary {
+    total_students: number;
+    used_rooms: { id: number; name: string }[];
+    unused_rooms: { id: number; name: string }[];
+    used_seats: number;
+    empty_seats: number;
+    violations: number;
 }
 
 const props = defineProps<{
@@ -30,16 +40,20 @@ const props = defineProps<{
         creator: string | null;
     };
     week: { id: number; name: string };
-    summary: {
-        total_students: number;
-        used_rooms: { id: number; name: string }[];
-        unused_rooms: { id: number; name: string }[];
-        used_seats: number;
-        empty_seats: number;
-        violations: number;
-    };
+    summary: Summary;
     roomsData: RoomData[];
 }>();
+
+const rooms = ref<RoomData[]>(props.roomsData);
+const summaryState = ref<Summary>(props.summary);
+
+const editMode = ref(false);
+const selected = ref<{ assignmentId: number; seatId: number } | null>(null);
+const notice = ref<{ type: 'ok' | 'error'; text: string } | null>(null);
+const salonModal = ref(false);
+const confirmState = ref<{ message: string; retry: () => void } | null>(null);
+const dragPayload = ref<{ assignmentId: number } | null>(null);
+const busy = ref(false);
 
 function seatMap(room: RoomData): Map<string, SeatInfo> {
     const map = new Map<string, SeatInfo>();
@@ -70,6 +84,136 @@ function finalize() {
 function reopen() {
     router.post(`/distribution/plans/${props.plan.id}/reopen`);
 }
+
+function toggleEdit() {
+    editMode.value = !editMode.value;
+    selected.value = null;
+    salonModal.value = false;
+    confirmState.value = null;
+}
+
+function xsrfToken(): string {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+async function postJson(url: string, body: object): Promise<any> {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-XSRF-TOKEN': xsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        throw new Error(data.message || 'İşlem başarısız.');
+    }
+    return data;
+}
+
+function applyUpdate(data: any) {
+    rooms.value = data.roomsData;
+    summaryState.value = data.summary;
+    selected.value = null;
+    salonModal.value = false;
+    confirmState.value = null;
+    notice.value = { type: 'ok', text: data.message || 'Kaydedildi.' };
+}
+
+function handleResponse(data: any, retry: () => void) {
+    if (data.needs_confirm) {
+        confirmState.value = { message: data.message, retry };
+        return;
+    }
+    if (data.applied) {
+        applyUpdate(data);
+    }
+}
+
+async function doMove(seatId: number, force = false) {
+    if (!selected.value || busy.value) return;
+    const payload = { assignment_id: selected.value.assignmentId, seat_id: seatId, force };
+    busy.value = true;
+    try {
+        const data = await postJson(`/distribution/plans/${props.plan.id}/move`, payload);
+        handleResponse(data, () => doMove(seatId, true));
+    } catch (e: any) {
+        notice.value = { type: 'error', text: e.message };
+    } finally {
+        busy.value = false;
+    }
+}
+
+async function doSwap(otherAssignmentId: number, force = false) {
+    if (!selected.value || busy.value) return;
+    const payload = {
+        assignment_id: selected.value.assignmentId,
+        other_assignment_id: otherAssignmentId,
+        force,
+    };
+    busy.value = true;
+    try {
+        const data = await postJson(`/distribution/plans/${props.plan.id}/swap`, payload);
+        handleResponse(data, () => doSwap(otherAssignmentId, true));
+    } catch (e: any) {
+        notice.value = { type: 'error', text: e.message };
+    } finally {
+        busy.value = false;
+    }
+}
+
+function onSeatClick(seat: SeatInfo) {
+    if (!editMode.value || busy.value) return;
+    notice.value = null;
+    if (!seat.student) {
+        if (selected.value) {
+            doMove(seat.id);
+        }
+        return;
+    }
+    if (!selected.value) {
+        selected.value = { assignmentId: seat.assignment_id!, seatId: seat.id };
+        return;
+    }
+    if (selected.value.seatId === seat.id) {
+        selected.value = null;
+        return;
+    }
+    doSwap(seat.assignment_id!);
+}
+
+function onDrop(seat: SeatInfo) {
+    if (!editMode.value || busy.value || !dragPayload.value) return;
+    notice.value = null;
+    const draggedId = dragPayload.value.assignmentId;
+    dragPayload.value = null;
+    if (!seat.student) {
+        selected.value = { assignmentId: draggedId, seatId: -1 };
+        doMove(seat.id);
+        return;
+    }
+    if (seat.assignment_id === draggedId) return;
+    selected.value = { assignmentId: draggedId, seatId: -1 };
+    doSwap(seat.assignment_id!);
+}
+
+const otherRooms = computed(() => {
+    if (!selected.value) return [];
+    return rooms.value
+        .map((room) => ({
+            room,
+            emptySeats: room.seats.filter((s) => !s.student),
+        }))
+        .filter((r) => r.emptySeats.length > 0);
+});
+
+function isSelected(seat: SeatInfo): boolean {
+    return selected.value !== null && selected.value.seatId === seat.id;
+}
 </script>
 
 <template>
@@ -84,7 +228,7 @@ function reopen() {
                         <span v-if="plan.created_at"> · {{ plan.created_at }}</span>
                     </p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                     <span
                         v-if="plan.status === 'final'"
                         class="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800"
@@ -94,6 +238,22 @@ function reopen() {
                     <span v-else class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
                         Taslak
                     </span>
+                    <button
+                        type="button"
+                        class="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
+                        @click="toggleEdit"
+                    >
+                        {{ editMode ? 'Düzenlemeyi Kapat' : 'Elle Düzenle' }}
+                    </button>
+                    <button
+                        v-if="editMode"
+                        type="button"
+                        :disabled="!selected"
+                        class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        @click="salonModal = true"
+                    >
+                        Salon Değiştir
+                    </button>
                     <button
                         v-if="plan.status !== 'final'"
                         type="button"
@@ -119,51 +279,57 @@ function reopen() {
                 </div>
             </div>
 
+            <p v-if="editMode" class="mt-3 rounded-md bg-indigo-50 px-4 py-2 text-sm text-indigo-800">
+                Düzenleme açık: önce bir öğrenci seçin, sonra boş koltuğa tıklayarak taşıyın veya başka öğrenciye
+                tıklayarak takas edin. Sürükle-bırak da kullanabilirsiniz.
+            </p>
+
+            <div v-if="notice" class="mt-3 rounded-md px-4 py-2 text-sm"
+                :class="notice.type === 'ok' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'">
+                {{ notice.text }}
+            </div>
+
             <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-6">
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
-                    <div class="text-xl font-bold">{{ summary.total_students }}</div>
+                    <div class="text-xl font-bold">{{ summaryState.total_students }}</div>
                     <div class="text-xs text-gray-500">Öğrenci</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
-                    <div class="text-xl font-bold">{{ summary.used_rooms.length }}</div>
+                    <div class="text-xl font-bold">{{ summaryState.used_rooms.length }}</div>
                     <div class="text-xs text-gray-500">Kullanılan salon</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
-                    <div class="text-xl font-bold">{{ summary.unused_rooms.length }}</div>
+                    <div class="text-xl font-bold">{{ summaryState.unused_rooms.length }}</div>
                     <div class="text-xs text-gray-500">Boş bırakılan</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
-                    <div class="text-xl font-bold">{{ summary.used_seats }}</div>
+                    <div class="text-xl font-bold">{{ summaryState.used_seats }}</div>
                     <div class="text-xs text-gray-500">Dolu koltuk</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
-                    <div class="text-xl font-bold">{{ summary.empty_seats }}</div>
+                    <div class="text-xl font-bold">{{ summaryState.empty_seats }}</div>
                     <div class="text-xs text-gray-500">Boş koltuk</div>
                 </div>
                 <div
                     class="rounded-md px-3 py-2 text-center"
-                    :class="summary.violations > 0 ? 'bg-red-50' : 'bg-green-50'"
+                    :class="summaryState.violations > 0 ? 'bg-red-50' : 'bg-green-50'"
                 >
                     <div
                         class="text-xl font-bold"
-                        :class="summary.violations > 0 ? 'text-red-700' : 'text-green-700'"
+                        :class="summaryState.violations > 0 ? 'text-red-700' : 'text-green-700'"
                     >
-                        {{ summary.violations }}
+                        {{ summaryState.violations }}
                     </div>
                     <div class="text-xs text-gray-500">Yatay ihlal</div>
                 </div>
             </div>
 
-            <p v-if="summary.violations > 0" class="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
-                {{ summary.violations }} koltukta aynı şube yan yana geldi (kırmızı). Elle düzeltme adımında
-                düzenleyebilirsiniz.
-            </p>
-            <p v-if="summary.unused_rooms.length > 0" class="mt-2 text-sm text-gray-500">
-                Kullanılmayan: {{ summary.unused_rooms.map((r) => r.name).join(', ') }}
+            <p v-if="summaryState.violations > 0" class="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
+                {{ summaryState.violations }} koltukta aynı şube yan yana geldi (kırmızı).
             </p>
         </div>
 
-        <div v-for="room in roomsData" :key="room.room.id" class="mt-6 rounded-lg bg-white p-6 shadow-sm">
+        <div v-for="room in rooms" :key="room.room.id" class="mt-6 rounded-lg bg-white p-6 shadow-sm">
             <h2 class="font-semibold text-gray-900">{{ room.room.name }}</h2>
             <div class="mt-3 overflow-x-auto">
                 <table class="border-collapse">
@@ -174,13 +340,26 @@ function reopen() {
                                 <div
                                     v-if="seatMap(room).get(`${row}-${col}`)"
                                     class="min-h-12 w-28 rounded-md px-2 py-1 text-xs"
-                                    :class="
+                                    :class="[
                                         seatMap(room).get(`${row}-${col}`)!.violation
                                             ? 'bg-red-100 text-red-900'
                                             : seatMap(room).get(`${row}-${col}`)!.student
                                               ? 'bg-indigo-50 text-gray-900'
-                                              : 'bg-gray-50 text-gray-400'
+                                              : 'bg-gray-50 text-gray-400',
+                                        editMode ? 'cursor-pointer' : '',
+                                        isSelected(seatMap(room).get(`${row}-${col}`)!)
+                                            ? 'ring-2 ring-indigo-600'
+                                            : '',
+                                    ]"
+                                    :draggable="editMode && !!seatMap(room).get(`${row}-${col}`)!.student"
+                                    @click="onSeatClick(seatMap(room).get(`${row}-${col}`)!)"
+                                    @dragstart="
+                                        dragPayload = seatMap(room).get(`${row}-${col}`)!.student
+                                            ? { assignmentId: seatMap(room).get(`${row}-${col}`)!.assignment_id! }
+                                            : null
                                     "
+                                    @dragover.prevent
+                                    @drop="onDrop(seatMap(room).get(`${row}-${col}`)!)"
                                 >
                                     <div class="font-semibold">
                                         {{ seatLabel(seatMap(room).get(`${row}-${col}`)!) }}
@@ -202,6 +381,59 @@ function reopen() {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div v-if="salonModal" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
+            <div class="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow">
+                <h2 class="text-lg font-semibold text-gray-900">Salon Değiştir</h2>
+                <p class="mt-1 text-sm text-gray-500">Hedef salonda boş bir koltuk seçin.</p>
+                <div v-for="entry in otherRooms" :key="entry.room.room.id" class="mt-4">
+                    <h3 class="text-sm font-semibold text-gray-700">{{ entry.room.room.name }}</h3>
+                    <div class="mt-1 flex flex-wrap gap-2">
+                        <button
+                            v-for="seat in entry.emptySeats"
+                            :key="seat.id"
+                            type="button"
+                            class="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-indigo-50"
+                            @click="doMove(seat.id)"
+                        >
+                            {{ seatLabel(seat) }}
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button
+                        type="button"
+                        class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        @click="salonModal = false"
+                    >
+                        Vazgeç
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="confirmState" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
+                <h2 class="text-lg font-semibold text-gray-900">Kural ihlali uyarısı</h2>
+                <p class="mt-2 text-sm text-gray-600">{{ confirmState.message }}</p>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        @click="confirmState = null"
+                    >
+                        Vazgeç
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                        @click="confirmState!.retry()"
+                    >
+                        Yine de uygula
+                    </button>
+                </div>
             </div>
         </div>
     </AppLayout>

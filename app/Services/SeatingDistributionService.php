@@ -9,6 +9,7 @@ use App\Models\SeatingPlan;
 use App\Models\Seat;
 use App\Models\Student;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class DistributionException extends \RuntimeException {}
 
@@ -170,10 +171,187 @@ class SeatingDistributionService
     {
         $plan->loadMissing(['assignments.seat', 'assignments.student']);
 
-        $byRow = [];
+        return $this->computeViolations($this->placements($plan));
+    }
+
+    /**
+     * Öğrenciyi boş koltuğa taşı (aynı salon veya salonlar arası).
+     *
+     * @return array{applied: bool, needs_confirm: bool, message: string, violations: int, violating_seat_ids: array}
+     */
+    public function moveAssignment(SeatingPlan $plan, int $assignmentId, int $toSeatId, bool $force = false): array
+    {
+        $plan->loadMissing(['assignments.seat', 'assignments.student', 'examWeek.rooms']);
+
+        $assignment = $plan->assignments->firstWhere('id', $assignmentId);
+        if (! $assignment) {
+            throw new DistributionException('Atama bu plana ait değil.');
+        }
+
+        if ($assignment->seat_id === $toSeatId) {
+            throw new DistributionException('Kaynak ve hedef koltuk aynı.');
+        }
+
+        $seat = Seat::find($toSeatId);
+        if (! $seat || ! $seat->is_active) {
+            throw new DistributionException('Hedef koltuk aktif değil.');
+        }
+
+        $allowedRoomIds = $plan->examWeek->rooms->pluck('id')->all();
+        if (! in_array($seat->room_id, $allowedRoomIds, true)) {
+            throw new DistributionException('Hedef salon bu sınav haftasında izinli değil.');
+        }
+
+        if ($plan->assignments->contains(fn ($a) => $a->seat_id === $toSeatId)) {
+            throw new DistributionException('Hedef koltuk dolu. Takas için diğer öğrenciyi seçin.');
+        }
+
+        $before = $this->computeViolations($this->placements($plan))['seat_ids'];
+
+        $placements = $this->placements($plan);
+        $entry = $placements[$assignment->seat_id];
+        unset($placements[$assignment->seat_id]);
+        $entry['room_id'] = $seat->room_id;
+        $entry['row'] = $seat->row;
+        $entry['col'] = $seat->column;
+        $placements[$toSeatId] = $entry;
+
+        $after = $this->computeViolations($placements);
+        $new = array_values(array_diff($after['seat_ids'], $before));
+
+        if ($new !== [] && ! $force) {
+            return [
+                'applied' => false,
+                'needs_confirm' => true,
+                'message' => 'Bu taşıma aynı şubeden öğrencilerin yan yana gelmesine neden olacak.',
+                'violations' => $after['count'],
+                'violating_seat_ids' => $after['seat_ids'],
+            ];
+        }
+
+        $assignment->update(['seat_id' => $toSeatId]);
+        $this->refreshRoomCount($plan);
+
+        $fresh = $this->countPlanViolations($plan->fresh());
+
+        return [
+            'applied' => true,
+            'needs_confirm' => false,
+            'message' => 'Taşıma kaydedildi.',
+            'violations' => $fresh['count'],
+            'violating_seat_ids' => $fresh['seat_ids'],
+        ];
+    }
+
+    /**
+     * İki öğrencinin koltuğunu takas et (aynı salon veya salonlar arası).
+     *
+     * @return array{applied: bool, needs_confirm: bool, message: string, violations: int, violating_seat_ids: array}
+     */
+    public function swapAssignments(SeatingPlan $plan, int $assignmentId, int $otherAssignmentId, bool $force = false): array
+    {
+        $plan->loadMissing(['assignments.seat', 'assignments.student']);
+
+        $first = $plan->assignments->firstWhere('id', $assignmentId);
+        $second = $plan->assignments->firstWhere('id', $otherAssignmentId);
+
+        if (! $first || ! $second) {
+            throw new DistributionException('Atamalardan biri bu plana ait değil.');
+        }
+
+        if ($first->id === $second->id || $first->seat_id === $second->seat_id) {
+            throw new DistributionException('Takas için iki farklı öğrenci seçin.');
+        }
+
+        $before = $this->computeViolations($this->placements($plan))['seat_ids'];
+
+        $placements = $this->placements($plan);
+        $tmpBranch = $placements[$first->seat_id]['branch'];
+        $placements[$first->seat_id]['branch'] = $placements[$second->seat_id]['branch'];
+        $placements[$second->seat_id]['branch'] = $tmpBranch;
+
+        $after = $this->computeViolations($placements);
+        $new = array_values(array_diff($after['seat_ids'], $before));
+
+        if ($new !== [] && ! $force) {
+            return [
+                'applied' => false,
+                'needs_confirm' => true,
+                'message' => 'Bu takas aynı şubeden öğrencilerin yan yana gelmesine neden olacak.',
+                'violations' => $after['count'],
+                'violating_seat_ids' => $after['seat_ids'],
+            ];
+        }
+
+        $firstSeat = (int) $first->seat_id;
+        $secondSeat = (int) $second->seat_id;
+        $firstId = (int) $first->id;
+        $secondId = (int) $second->id;
+        $firstStudent = (int) $first->student_id;
+        $secondStudent = (int) $second->student_id;
+
+        // Ara adımda unique çakışmaması için geçici koltuk üzerinden takas.
+        DB::transaction(function () use ($plan, $firstId, $secondId, $firstSeat, $secondSeat, $firstStudent, $secondStudent) {
+            $tempSeatId = Seat::where('is_active', true)
+                ->whereNotIn('id', SeatingAssignment::where('seating_plan_id', $plan->id)->pluck('seat_id'))
+                ->value('id');
+
+            if ($tempSeatId) {
+                SeatingAssignment::whereKey($firstId)->update(['seat_id' => $tempSeatId, 'updated_at' => now()]);
+                SeatingAssignment::whereKey($secondId)->update(['seat_id' => $firstSeat, 'updated_at' => now()]);
+                SeatingAssignment::whereKey($firstId)->update(['seat_id' => $secondSeat, 'updated_at' => now()]);
+
+                return;
+            }
+
+            // Plan tüm aktif koltukları kullanıyor: silip yeniden oluştur.
+            SeatingAssignment::whereKey([$firstId, $secondId])->delete();
+            $now = now();
+            SeatingAssignment::insert([
+                ['seating_plan_id' => $plan->id, 'student_id' => $firstStudent, 'seat_id' => $secondSeat, 'created_at' => $now, 'updated_at' => $now],
+                ['seating_plan_id' => $plan->id, 'student_id' => $secondStudent, 'seat_id' => $firstSeat, 'created_at' => $now, 'updated_at' => $now],
+            ]);
+        });
+
+        $fresh = $this->countPlanViolations($plan->fresh());
+
+        return [
+            'applied' => true,
+            'needs_confirm' => false,
+            'message' => 'Takas kaydedildi.',
+            'violations' => $fresh['count'],
+            'violating_seat_ids' => $fresh['seat_ids'],
+        ];
+    }
+
+    /**
+     * @return array<int, array{room_id: int, row: int, col: int, branch: int, seat_id: int}>
+     */
+    private function placements(SeatingPlan $plan): array
+    {
+        $out = [];
         foreach ($plan->assignments as $assignment) {
-            $seat = $assignment->seat;
-            $byRow[$seat->room_id.':'.$seat->row][] = ['col' => $seat->column, 'branch' => $assignment->student->branch_id, 'seat_id' => $seat->id];
+            $out[$assignment->seat_id] = [
+                'room_id' => $assignment->seat->room_id,
+                'row' => $assignment->seat->row,
+                'col' => $assignment->seat->column,
+                'branch' => $assignment->student->branch_id,
+                'seat_id' => $assignment->seat_id,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  array<int, array{room_id: int, row: int, col: int, branch: int, seat_id: int}>  $placements
+     * @return array{count: int, seat_ids: array}
+     */
+    private function computeViolations(array $placements): array
+    {
+        $byRow = [];
+        foreach ($placements as $p) {
+            $byRow[$p['room_id'].':'.$p['row']][] = $p;
         }
 
         $count = 0;
@@ -190,6 +368,17 @@ class SeatingDistributionService
         }
 
         return ['count' => $count, 'seat_ids' => array_values(array_unique($seatIds))];
+    }
+
+    private function refreshRoomCount(SeatingPlan $plan): void
+    {
+        $roomIds = SeatingAssignment::where('seating_plan_id', $plan->id)
+            ->with('seat:id,room_id')
+            ->get()
+            ->map(fn (SeatingAssignment $a) => $a->seat->room_id)
+            ->unique();
+
+        $plan->update(['used_room_count' => $roomIds->count()]);
     }
 
     /**
