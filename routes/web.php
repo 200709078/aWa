@@ -3,6 +3,7 @@
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\ExamWeekController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\StudentController;
@@ -52,7 +53,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/rooms/{room}/seats', [SeatController::class, 'store'])->name('seats.store');
     Route::post('/rooms/{room}/seats/bulk', [SeatController::class, 'bulk'])->name('seats.bulk');
     Route::post('/seats/{seat}/toggle', [SeatController::class, 'toggle'])->name('seats.toggle');
-    Route::get('/exam-weeks', fn () => Inertia::render('ExamWeeks/Index'));
+    Route::get('/exam-weeks', [ExamWeekController::class, 'index'])->name('exam-weeks.index');
+    Route::post('/exam-weeks', [ExamWeekController::class, 'store'])->name('exam-weeks.store');
+    Route::get('/exam-weeks/{examWeek}', [ExamWeekController::class, 'show'])->name('exam-weeks.show');
+    Route::put('/exam-weeks/{examWeek}', [ExamWeekController::class, 'update'])->name('exam-weeks.update');
+    Route::post('/exam-weeks/{examWeek}/activate', [ExamWeekController::class, 'activate'])->name('exam-weeks.activate');
+    Route::post('/exam-weeks/{examWeek}/deactivate', [ExamWeekController::class, 'deactivate'])->name('exam-weeks.deactivate');
+    Route::put('/exam-weeks/{examWeek}/branches', [ExamWeekController::class, 'syncBranches'])->name('exam-weeks.branches');
+    Route::put('/exam-weeks/{examWeek}/rooms', [ExamWeekController::class, 'syncRooms'])->name('exam-weeks.rooms');
     Route::get('/distribution', fn () => Inertia::render('Distribution/Index'));
     Route::get('/reports', fn () => Inertia::render('Reports/Index'));
     Route::get('/settings', fn () => Inertia::render('Settings/Index'));
