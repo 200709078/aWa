@@ -3,6 +3,8 @@
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\SeatController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\StudentPhotoController;
@@ -41,7 +43,15 @@ Route::middleware('auth')->group(function () {
     Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
     Route::post('/branches/{branch}/activate', [BranchController::class, 'activate'])->name('branches.activate');
     Route::post('/branches/{branch}/deactivate', [BranchController::class, 'deactivate'])->name('branches.deactivate');
-    Route::get('/rooms', fn () => Inertia::render('Rooms/Index'));
+    Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
+    Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
+    Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
+    Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
+    Route::post('/rooms/{room}/activate', [RoomController::class, 'activate'])->name('rooms.activate');
+    Route::post('/rooms/{room}/deactivate', [RoomController::class, 'deactivate'])->name('rooms.deactivate');
+    Route::post('/rooms/{room}/seats', [SeatController::class, 'store'])->name('seats.store');
+    Route::post('/rooms/{room}/seats/bulk', [SeatController::class, 'bulk'])->name('seats.bulk');
+    Route::post('/seats/{seat}/toggle', [SeatController::class, 'toggle'])->name('seats.toggle');
     Route::get('/exam-weeks', fn () => Inertia::render('ExamWeeks/Index'));
     Route::get('/distribution', fn () => Inertia::render('Distribution/Index'));
     Route::get('/reports', fn () => Inertia::render('Reports/Index'));
