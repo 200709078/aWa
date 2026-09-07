@@ -4,6 +4,7 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DistributionController;
+use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamWeekController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RoomController;
@@ -63,6 +64,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/exam-weeks/{examWeek}/deactivate', [ExamWeekController::class, 'deactivate'])->name('exam-weeks.deactivate');
     Route::put('/exam-weeks/{examWeek}/branches', [ExamWeekController::class, 'syncBranches'])->name('exam-weeks.branches');
     Route::put('/exam-weeks/{examWeek}/rooms', [ExamWeekController::class, 'syncRooms'])->name('exam-weeks.rooms');
+    Route::post('/exam-weeks/{examWeek}/exams', [ExamController::class, 'store'])->name('exams.store');
+    Route::delete('/exams/{exam}', [ExamController::class, 'destroy'])->name('exams.destroy');
     Route::get('/distribution', [DistributionController::class, 'index'])->name('distribution.index');
     Route::post('/distribution', [DistributionController::class, 'store'])->name('distribution.store');
     Route::get('/distribution/plans/{plan}', [DistributionController::class, 'show'])->name('distribution.plans.show');
