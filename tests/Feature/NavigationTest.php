@@ -12,7 +12,7 @@ class NavigationTest extends TestCase
 
     public function test_tum_yonetim_sayfalari_korumali_ve_erisilebilir(): void
     {
-        $routes = ['/', '/students', '/branches', '/academic-years', '/rooms', '/exam-weeks', '/distribution', '/reports', '/settings'];
+        $routes = ['/', '/students', '/students/import', '/branches', '/academic-years', '/rooms', '/exam-weeks', '/distribution', '/reports', '/settings'];
 
         foreach ($routes as $route) {
             $this->get($route)->assertRedirect('/login');

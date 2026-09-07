@@ -111,7 +111,15 @@ function toggle(url: string) {
 <template>
     <AppLayout title="Öğrenciler">
         <div class="rounded-lg bg-white p-6 shadow-sm">
-            <h1 class="text-2xl font-bold text-gray-900">Öğrenciler</h1>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h1 class="text-2xl font-bold text-gray-900">Öğrenciler</h1>
+                <Link
+                    href="/students/import"
+                    class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                >
+                    Excel'den Aktar
+                </Link>
+            </div>
 
             <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div>
