@@ -17,12 +17,18 @@ const nav = [
     { label: 'Panel', href: '/' },
     { label: 'Öğrenciler', href: '/students' },
     { label: 'Şubeler', href: '/branches' },
+    { label: 'Akademik Yıllar', href: '/academic-years' },
     { label: 'Salonlar', href: '/rooms' },
     { label: 'Sınav Haftaları', href: '/exam-weeks' },
     { label: 'Dağıtım', href: '/distribution' },
     { label: 'Çıktılar', href: '/reports' },
     { label: 'Ayarlar', href: '/settings' },
 ];
+
+const flashSuccess = computed(() => {
+    const props = usePage().props as unknown as { flash: { success: string | null } };
+    return props.flash.success;
+});
 
 function isActive(href: string): boolean {
     return href === '/' ? currentUrl.value === '/' : currentUrl.value.startsWith(href);
@@ -87,6 +93,9 @@ function logout() {
             </aside>
 
             <main class="min-w-0 flex-1">
+                <p v-if="flashSuccess" class="mb-4 rounded-md bg-green-50 px-4 py-2 text-sm text-green-800">
+                    {{ flashSuccess }}
+                </p>
                 <slot />
             </main>
         </div>

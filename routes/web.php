@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BranchController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -12,7 +14,18 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/', fn () => Inertia::render('Home'));
     Route::get('/students', fn () => Inertia::render('Students/Index'));
-    Route::get('/branches', fn () => Inertia::render('Branches/Index'));
+
+    Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
+    Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');
+    Route::put('/academic-years/{academicYear}', [AcademicYearController::class, 'update'])->name('academic-years.update');
+    Route::post('/academic-years/{academicYear}/activate', [AcademicYearController::class, 'activate'])->name('academic-years.activate');
+    Route::post('/academic-years/{academicYear}/deactivate', [AcademicYearController::class, 'deactivate'])->name('academic-years.deactivate');
+
+    Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
+    Route::post('/branches', [BranchController::class, 'store'])->name('branches.store');
+    Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
+    Route::post('/branches/{branch}/activate', [BranchController::class, 'activate'])->name('branches.activate');
+    Route::post('/branches/{branch}/deactivate', [BranchController::class, 'deactivate'])->name('branches.deactivate');
     Route::get('/rooms', fn () => Inertia::render('Rooms/Index'));
     Route::get('/exam-weeks', fn () => Inertia::render('ExamWeeks/Index'));
     Route::get('/distribution', fn () => Inertia::render('Distribution/Index'));
