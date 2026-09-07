@@ -7,6 +7,7 @@ use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamWeekController;
 use App\Http\Controllers\PrintController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\StudentController;
@@ -77,7 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/distribution/plans/{plan}/print/branches', [PrintController::class, 'branches'])->name('distribution.print.branches');
     Route::get('/distribution/plans/{plan}/print/rooms', [PrintController::class, 'rooms'])->name('distribution.print.rooms');
     Route::get('/distribution/plans/{plan}/print/summary', [PrintController::class, 'summary'])->name('distribution.print.summary');
-    Route::get('/reports', fn () => Inertia::render('Reports/Index'));
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/settings', fn () => Inertia::render('Settings/Index'));
 
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
