@@ -115,7 +115,7 @@ function formatTime(value: string | null): string {
 
         <div class="mt-6 grid gap-6 lg:grid-cols-2">
             <form class="rounded-lg bg-white p-6 shadow-sm" @submit.prevent="saveBranches">
-                <h2 class="font-semibold text-gray-900">Dağıtıma dahil şubeler</h2>
+                <h2 class="font-semibold text-gray-900">Dağıtıma Dahil Şubeler</h2>
                 <div class="mt-2 flex gap-3 text-sm">
                     <button
                         type="button"
@@ -163,7 +163,7 @@ function formatTime(value: string | null): string {
             </form>
 
             <form class="rounded-lg bg-white p-6 shadow-sm" @submit.prevent="saveRooms">
-                <h2 class="font-semibold text-gray-900">Kullanılmasına izin verilen salonlar</h2>
+                <h2 class="font-semibold text-gray-900">Kullanılmasına İzin Verilen Salonlar</h2>
                 <div class="mt-2 flex gap-3 text-sm">
                     <button
                         type="button"
