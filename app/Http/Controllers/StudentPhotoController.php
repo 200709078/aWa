@@ -16,7 +16,7 @@ use ZipArchive;
 
 class StudentPhotoController extends Controller
 {
-    private const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+    private const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp'];
 
     private const MAX_WIDTH = 800;
 
@@ -42,13 +42,13 @@ class StudentPhotoController extends Controller
         $data = request()->validate([
             'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
             'photos' => ['nullable', 'array', 'max:'.self::MAX_FILES],
-            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp,bmp', 'max:10240'],
             'zip_file' => ['nullable', 'file', 'mimes:zip', 'max:51200'],
         ], [
             'academic_year_id.required' => 'Akademik yıl seçin.',
             'photos.array' => 'Fotoğraflar geçersiz.',
             'photos.*.image' => 'Yalnızca resim dosyası yükleyin.',
-            'photos.*.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp.',
+            'photos.*.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp, bmp.',
             'photos.*.max' => 'Her dosya en fazla 10 MB olabilir.',
             'zip_file.mimes' => 'Yalnızca .zip dosyası yükleyin.',
             'zip_file.max' => 'ZIP dosyası en fazla 50 MB olabilir.',
@@ -123,13 +123,19 @@ class StudentPhotoController extends Controller
 
             try {
                 $student = $students[$number];
-                $absolute = Storage::disk('public')->path("students/{$student->id}.jpg");
-                $manager->decode($candidate['source'])
-                    ->scaleDown(self::MAX_WIDTH, self::MAX_HEIGHT)
-                    ->encode(new JpegEncoder(quality: self::QUALITY))
-                    ->save($absolute);
-                $student->update(['photo_path' => "students/{$student->id}.jpg"]);
-                $matched++;
+                [$image, $temps] = $this->loadImage($manager, $candidate);
+                try {
+                    $absolute = Storage::disk('public')->path("students/{$student->id}.jpg");
+                    $image->scaleDown(self::MAX_WIDTH, self::MAX_HEIGHT)
+                        ->encode(new JpegEncoder(quality: self::QUALITY))
+                        ->save($absolute);
+                    $student->update(['photo_path' => "students/{$student->id}.jpg"]);
+                    $matched++;
+                } finally {
+                    foreach ($temps as $temp) {
+                        @unlink($temp);
+                    }
+                }
             } catch (Throwable $e) {
                 $failed[] = ['filename' => $candidate['filename'], 'message' => 'Dosya işlenemedi.'];
             }
@@ -157,8 +163,58 @@ class StudentPhotoController extends Controller
         ]);
     }
 
-    private function normalizeNumber(?string $value): string
+    /**
+     * Kaynağı işlenebilir görüntüye çevirir. BMP içerikler (uzantısı ne olursa olsun)
+     * önce JPEG'e dönüştürülür. Dönen geçici dosyaların silinmesi çağırana aittir.
+     *
+     * @param  array{filename: string, source: mixed}  $candidate
+     * @return array{0: \Intervention\Image\Interfaces\ImageInterface, 1: array<int, string>}
+     */
+    private function loadImage(ImageManager $manager, array $candidate): array
     {
+        $temps = [];
+        $source = $candidate['source'];
+
+        if (is_string($source) && is_file($source)) {
+            $path = $source;
+        } else {
+            $path = tempnam(sys_get_temp_dir(), 'foto').'.bin';
+            file_put_contents($path, (string) $source);
+            $temps[] = $path;
+        }
+
+        if ($this->isBmp($path)) {
+            $gd = @imagecreatefrombmp($path);
+            if ($gd === false) {
+                throw new \RuntimeException('Dosya okunamadı.');
+            }
+            $jpg = tempnam(sys_get_temp_dir(), 'foto').'.jpg';
+            imagejpeg($gd, $jpg, 92);
+            imagedestroy($gd);
+            $path = $jpg;
+            $temps[] = $path;
+        }
+
+        try {
+            return [$manager->decode($path), $temps];
+        } catch (Throwable $e) {
+            foreach ($temps as $temp) {
+                @unlink($temp);
+            }
+            throw $e;
+        }
+    }
+
+    private function isBmp(string $path): bool
+    {
+        if (@file_get_contents($path, false, null, 0, 2) === 'BM') {
+            return true;
+        }
+
+        return finfo_file(finfo_open(FILEINFO_MIME_TYPE), $path) === 'image/bmp';
+    }
+
+    private function normalizeNumber(?string $value): string    {
         $text = trim((string) $value);
 
         if ($text !== '' && is_numeric($text)) {
