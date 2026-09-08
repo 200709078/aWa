@@ -68,4 +68,17 @@ class RoomTest extends TestCase
             ->assertRedirect();
         $this->assertEquals(3, Seat::where('room_id', $room->id)->count());
     }
+
+    public function test_koltuk_silme(): void
+    {
+        $user = User::factory()->create();
+        $room = Room::create(['name' => 'Salon 1']);
+        $seat = Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 1]);
+        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 2]);
+
+        $this->actingAs($user)->delete("/seats/{$seat->id}")->assertRedirect();
+
+        $this->assertDatabaseMissing('seats', ['id' => $seat->id]);
+        $this->assertEquals(1, Seat::where('room_id', $room->id)->count());
+    }
 }

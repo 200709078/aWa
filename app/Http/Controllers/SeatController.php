@@ -62,4 +62,11 @@ class SeatController extends Controller
 
         return back()->with('success', $seat->is_active ? 'Koltuk aktif edildi.' : 'Koltuk pasife alındı.');
     }
+
+    public function destroy(Seat $seat): RedirectResponse
+    {
+        $seat->delete();
+
+        return back()->with('success', 'Koltuk silindi.');
+    }
 }
