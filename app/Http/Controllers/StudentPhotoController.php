@@ -37,7 +37,7 @@ class StudentPhotoController extends Controller
         ]);
     }
 
-    public function store(): Response|RedirectResponse
+    public function store(): Response|RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $data = request()->validate([
             'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
@@ -148,7 +148,7 @@ class StudentPhotoController extends Controller
 
         $year = AcademicYear::find($yearId);
 
-        return Inertia::render('Students/PhotosResult', [
+        $payload = [
             'year' => $year?->only('id', 'name'),
             'summary' => [
                 'eslesen' => $matched,
@@ -160,7 +160,14 @@ class StudentPhotoController extends Controller
             'failed' => $failed,
             'withoutPhoto' => $withoutPhoto->take(100)->values(),
             'withoutPhotoTruncated' => $withoutPhoto->count() > 100,
-        ]);
+        ];
+
+        // Partili (batch) yüklemede frontend fetch ile JSON bekler.
+        if (request()->wantsJson() || request()->expectsJson() || request()->header('X-Batch-Upload')) {
+            return response()->json($payload);
+        }
+
+        return Inertia::render('Students/PhotosResult', $payload);
     }
 
     /**

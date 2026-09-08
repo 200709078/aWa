@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import StudentAvatar from '../../Components/StudentAvatar.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface Year {
@@ -269,8 +270,13 @@ function toggle(url: string) {
                         <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ student.full_name }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ student.branch.name }}</td>
                         <td class="whitespace-nowrap px-4 py-3">
-                            <span v-if="student.photo_path" class="text-sm text-green-700">Foto var</span>
-                            <span v-else class="text-sm text-gray-400">Foto yok</span>
+                            <StudentAvatar
+                                :photo-url="student.photo_path ? `/storage/${student.photo_path}` : null"
+                                :full-name="student.full_name"
+                                img-class="block h-auto w-10 rounded object-contain"
+                                placeholder-class="w-10"
+                                circle-class="w-8 text-xs"
+                            />
                         </td>
                         <td class="whitespace-nowrap px-4 py-3">
                             <span

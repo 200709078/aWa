@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import StudentAvatar from '../../Components/StudentAvatar.vue';
 import PrintLayout from '../../Layouts/PrintLayout.vue';
 
 interface SeatInfo {
@@ -83,29 +84,25 @@ function columnNumbers(room: RoomData): number[] {
                         <td v-for="col in columnNumbers(room)" :key="col" class="border border-gray-300 p-1">
                             <div
                                 v-if="seatMap(room).get(`${row}-${col}`)"
-                                class="leading-tight"
+                                class="text-center leading-tight"
                                 :class="photos ? 'text-[11px]' : 'text-[10px]'"
                             >
-                                <img
-                                    v-if="photos && seatMap(room).get(`${row}-${col}`)!.student?.photo_url"
-                                    :src="seatMap(room).get(`${row}-${col}`)!.student!.photo_url!"
-                                    alt=""
-                                    class="mb-1 h-10 w-full object-cover"
+                                <StudentAvatar
+                                    v-if="photos && seatMap(room).get(`${row}-${col}`)!.student"
+                                    :photo-url="seatMap(room).get(`${row}-${col}`)!.student!.photo_url"
+                                    :full-name="seatMap(room).get(`${row}-${col}`)!.student!.full_name"
+                                    img-class="mb-1 block h-auto w-full object-contain"
+                                    placeholder-class="mb-1 w-full"
+                                    circle-class="w-14 text-lg"
                                 />
-                                <div
-                                    v-else-if="photos && seatMap(room).get(`${row}-${col}`)!.student"
-                                    class="mb-1 text-gray-400"
-                                >
-                                    Foto yok
-                                </div>
                                 <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
-                                    <div class="font-semibold">
+                                    <div class="text-center font-semibold">
                                         <span v-if="showNumber"
                                             >{{ seatMap(room).get(`${row}-${col}`)!.student!.school_number }}
                                         </span>
                                         {{ seatMap(room).get(`${row}-${col}`)!.student!.full_name }}
                                     </div>
-                                    <div v-if="showBranch" class="text-gray-500">
+                                    <div v-if="showBranch" class="text-center text-gray-500">
                                         {{ seatMap(room).get(`${row}-${col}`)!.student!.branch }}
                                     </div>
                                 </template>
