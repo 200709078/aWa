@@ -35,6 +35,8 @@ class ExamWeekTest extends TestCase
     {
         $user = User::factory()->create();
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
+        $branch = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
+        $room = Room::create(['name' => 'Salon 1']);
 
         $this->actingAs($user)->post('/exam-weeks', [
             'academic_year_id' => $year->id,
@@ -43,9 +45,12 @@ class ExamWeekTest extends TestCase
             'ends_at' => '2026-11-05',
         ])->assertRedirect();
 
+        $week = ExamWeek::first();
         $this->assertDatabaseHas('exam_weeks', ['name' => '1. Dönem']);
 
-        $week = ExamWeek::first();
+        // Yeni haftada tüm şubeler dahil, tüm salonlar izinli başlar.
+        $this->assertTrue($week->branches()->where('branches.id', $branch->id)->exists());
+        $this->assertTrue($week->rooms()->where('rooms.id', $room->id)->exists());
 
         $this->actingAs($user)->put("/exam-weeks/{$week->id}", [
             'academic_year_id' => $year->id,
