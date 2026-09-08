@@ -92,7 +92,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                         min="1"
                         max="50"
                         placeholder="5"
-                        class="mt-1 block w-28 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-28 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="bulkForm.errors.rows" class="mt-1 text-sm text-red-600">{{ bulkForm.errors.rows }}</p>
                 </div>
@@ -106,7 +106,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                         min="1"
                         max="50"
                         placeholder="6"
-                        class="mt-1 block w-28 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-28 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="bulkForm.errors.columns" class="mt-1 text-sm text-red-600">{{ bulkForm.errors.columns }}</p>
                 </div>

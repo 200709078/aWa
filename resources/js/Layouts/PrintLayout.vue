@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 
-defineProps<{ title: string; backHref: string }>();
+const props = defineProps<{ title: string; backHref: string }>();
 
 function printPage() {
     window.print();
+}
+
+function closePage() {
+    window.close();
+    setTimeout(() => {
+        if (!window.closed) window.location.href = props.backHref;
+    }, 300);
 }
 </script>
 
@@ -13,12 +20,13 @@ function printPage() {
 
     <div class="bg-white p-6 print:p-0">
         <div class="no-print mb-4 flex flex-wrap items-center gap-2">
-            <Link
-                :href="backHref"
+            <button
+                type="button"
                 class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="closePage"
             >
-                Geri
-            </Link>
+                Kapat
+            </button>
             <button
                 type="button"
                 class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"

@@ -69,7 +69,7 @@ function planName(plan: Plan): string {
                     <select
                         id="dist-week"
                         v-model="selectedWeek"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @change="changeWeek"
                     >
                         <option v-for="week in weeks" :key="week.id" :value="week.id">
