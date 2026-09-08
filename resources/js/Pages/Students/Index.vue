@@ -162,7 +162,7 @@ function toggle(url: string) {
                     <select
                         id="filter-year"
                         v-model="filterYear"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @change="applyFilters(true)"
                     >
                         <option v-for="year in years" :key="year.id" :value="year.id">
@@ -175,7 +175,7 @@ function toggle(url: string) {
                     <select
                         id="filter-branch"
                         v-model="filterBranch"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @change="applyFilters()"
                     >
                         <option :value="null">Tümü</option>
