@@ -83,7 +83,7 @@ function logout() {
         </header>
 
         <div class="flex gap-6 px-2 py-6">
-            <aside class="hidden w-56 shrink-0 md:block print:hidden">
+            <aside class="sticky top-6 hidden w-56 shrink-0 self-start md:block print:hidden">
                 <nav class="space-y-1 rounded-lg bg-white p-3 shadow-sm">
                     <Link v-for="item in nav" :key="item.href" :href="item.href" :class="linkClass(item.href)">
                         {{ item.label }}
