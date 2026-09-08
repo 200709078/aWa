@@ -119,7 +119,7 @@ function toggle(url: string) {
                         id="filter-search"
                         v-model="filterSearch"
                         type="text"
-                        placeholder="Numara veya ad ara (örn. 145 veya Ali)"
+                        placeholder="Numara veya ad ara"
                         aria-label="Öğrenci ara"
                         class="block h-9 w-64 rounded-md border-gray-300 px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @keydown.enter.prevent="applyFilters()"
