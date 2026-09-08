@@ -251,7 +251,7 @@ function toggle(url: string) {
             </p>
         </div>
 
-        <div v-if="editing" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
+        <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
                 <form class="space-y-4" @submit.prevent="submitEdit">
                     <div class="flex items-center justify-between gap-2">
