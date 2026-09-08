@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { router, useForm, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, ref, watch } from 'vue';
+import { router, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface Year {
@@ -38,39 +38,10 @@ function toggle(url: string) {
     router.post(url);
 }
 
-const flashSuccess = computed(() => {
-    const props = usePage().props as unknown as { flash: { success: string | null } };
-    return props.flash.success;
-});
-
-const toastMessage = ref('');
-const toastVisible = ref(false);
-let toastTimer: ReturnType<typeof setTimeout> | null = null;
-
-function showToast(message: string) {
-    toastMessage.value = message;
-    toastVisible.value = true;
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (toastVisible.value = false), 3000);
-}
-
-watch(flashSuccess, (value) => {
-    if (value) showToast(value);
-});
-
-onMounted(() => {
-    if (flashSuccess.value) showToast(flashSuccess.value);
-});
 </script>
 
 <template>
-    <AppLayout title="Akademik Yıllar" :hide-flash="true">
-        <div
-            v-if="toastVisible"
-            class="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md bg-gray-900 px-4 py-2 text-sm text-white shadow-lg"
-        >
-            {{ toastMessage }}
-        </div>
+    <AppLayout title="Akademik Yıllar">
         <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">Akademik Yıllar</h1>
         </div>
