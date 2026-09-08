@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import StudentAvatar from '../../Components/StudentAvatar.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface SeatInfo {
@@ -387,7 +388,7 @@ function isSelected(seat: SeatInfo): boolean {
                             <td v-for="col in columnNumbers(room)" :key="col" class="p-1">
                                 <div
                                     v-if="seatMap(room).get(`${row}-${col}`)"
-                                    class="min-h-12 rounded-md px-2 py-1 text-xs"
+                                    class="min-h-12 rounded-md px-2 py-1 text-center text-xs"
                                     :class="[
                                         seatMap(room).get(`${row}-${col}`)!.violation
                                             ? 'bg-red-100 text-red-900'
@@ -417,25 +418,20 @@ function isSelected(seat: SeatInfo): boolean {
                                         v-if="showPhotos && seatMap(room).get(`${row}-${col}`)!.student"
                                         class="mb-1"
                                     >
-                                        <img
-                                            v-if="seatMap(room).get(`${row}-${col}`)!.student!.photo_url"
-                                            :src="seatMap(room).get(`${row}-${col}`)!.student!.photo_url!"
-                                            alt=""
-                                            class="h-16 w-full rounded object-cover"
+                                        <StudentAvatar
+                                            :photo-url="seatMap(room).get(`${row}-${col}`)!.student!.photo_url"
+                                            :full-name="seatMap(room).get(`${row}-${col}`)!.student!.full_name"
+                                            img-class="block h-auto w-full rounded object-contain"
+                                            placeholder-class="w-full"
+                                            circle-class="w-24 text-2xl"
                                         />
-                                        <div
-                                            v-else
-                                            class="flex h-16 w-full items-center justify-center rounded bg-gray-100 text-gray-400"
-                                        >
-                                            Foto yok
-                                        </div>
                                     </div>
                                     <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
-                                        <div class="truncate">
+                                        <div class="truncate text-center">
                                             {{ seatMap(room).get(`${row}-${col}`)!.student!.school_number }}
                                             {{ seatMap(room).get(`${row}-${col}`)!.student!.full_name }}
                                         </div>
-                                        <div class="text-gray-500">
+                                        <div class="text-center text-gray-500">
                                             {{ seatMap(room).get(`${row}-${col}`)!.student!.branch }}
                                         </div>
                                     </template>
