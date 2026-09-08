@@ -187,7 +187,7 @@ function dateRange(week: Week): string {
                     <select
                         id="week-year"
                         v-model="createForm.academic_year_id"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         <option :value="null">Seçin</option>
                         <option v-for="year in years" :key="year.id" :value="year.id">
@@ -207,7 +207,7 @@ function dateRange(week: Week): string {
                         required
                         maxlength="100"
                         placeholder="1. Dönem Sınavları"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
                 </div>
@@ -217,7 +217,7 @@ function dateRange(week: Week): string {
                         id="week-start"
                         v-model="createForm.starts_at"
                         type="date"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                 </div>
                 <div>
@@ -226,7 +226,7 @@ function dateRange(week: Week): string {
                         id="week-end"
                         v-model="createForm.ends_at"
                         type="date"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.ends_at" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.ends_at }}
@@ -280,7 +280,7 @@ function dateRange(week: Week): string {
                         <select
                             id="edit-week-year"
                             v-model="editForm.academic_year_id"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         >
                             <option v-for="year in years" :key="year.id" :value="year.id">{{ year.name }}</option>
                         </select>
@@ -293,7 +293,7 @@ function dateRange(week: Week): string {
                             type="text"
                             required
                             maxlength="100"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
                         <p v-if="editForm.errors.name" class="mt-1 text-sm text-red-600">{{ editForm.errors.name }}</p>
                     </div>
@@ -304,7 +304,7 @@ function dateRange(week: Week): string {
                             v-model="editForm.description"
                             type="text"
                             maxlength="500"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
                     </div>
                     <div class="grid grid-cols-2 gap-3">
@@ -314,7 +314,7 @@ function dateRange(week: Week): string {
                                 id="edit-week-start"
                                 v-model="editForm.starts_at"
                                 type="date"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
                         <div>
@@ -323,7 +323,7 @@ function dateRange(week: Week): string {
                                 id="edit-week-end"
                                 v-model="editForm.ends_at"
                                 type="date"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                             <p v-if="editForm.errors.ends_at" class="mt-1 text-sm text-red-600">
                                 {{ editForm.errors.ends_at }}

@@ -101,7 +101,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                     <select
                         id="map-number"
                         v-model.number="form.mapping.school_number"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm"
                     >
                         <option v-for="col in columns" :key="col.index" :value="col.index">
                             {{ col.letter }}: {{ col.header || '(boş başlık)' }}
@@ -113,7 +113,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                     <select
                         id="map-name"
                         v-model.number="form.mapping.full_name"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm"
                     >
                         <option v-for="col in columns" :key="col.index" :value="col.index">
                             {{ col.letter }}: {{ col.header || '(boş başlık)' }}
@@ -125,7 +125,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                     <select
                         id="map-branch"
                         v-model.number="form.mapping.branch"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm"
                     >
                         <option v-for="col in columns" :key="col.index" :value="col.index">
                             {{ col.letter }}: {{ col.header || '(boş başlık)' }}

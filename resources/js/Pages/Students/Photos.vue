@@ -242,7 +242,7 @@ async function submit() {
                     <select
                         id="photo-year"
                         v-model="academicYearId"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         <option :value="null">Seçin</option>
                         <option v-for="year in years" :key="year.id" :value="year.id">

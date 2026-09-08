@@ -250,7 +250,7 @@ function formatTime(value: string | null): string {
                         type="text"
                         required
                         maxlength="100"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="examForm.errors.name" class="mt-1 text-sm text-red-600">{{ examForm.errors.name }}</p>
                 </div>
@@ -260,7 +260,7 @@ function formatTime(value: string | null): string {
                         id="exam-date"
                         v-model="examForm.exam_date"
                         type="date"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                 </div>
                 <div>
@@ -269,7 +269,7 @@ function formatTime(value: string | null): string {
                         id="exam-time"
                         v-model="examForm.start_time"
                         type="time"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="examForm.errors.start_time" class="mt-1 text-sm text-red-600">
                         {{ examForm.errors.start_time }}

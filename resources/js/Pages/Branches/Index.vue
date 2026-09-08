@@ -88,7 +88,7 @@ function toggle(url: string) {
                     <select
                         id="year-filter"
                         v-model="filterYear"
-                        class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="h-9 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @change="applyFilter"
                     >
                         <option v-for="year in years" :key="year.id" :value="year.id">
@@ -199,7 +199,7 @@ function toggle(url: string) {
                         required
                         maxlength="10"
                         placeholder="9A"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
                 </div>
@@ -213,7 +213,7 @@ function toggle(url: string) {
                         min="1"
                         max="12"
                         placeholder="9"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.grade_level" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.grade_level }}
@@ -228,7 +228,7 @@ function toggle(url: string) {
                         required
                         maxlength="10"
                         placeholder="A"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.section" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.section }}
@@ -282,7 +282,7 @@ function toggle(url: string) {
                         <select
                             id="edit-branch-year"
                             v-model="editForm.academic_year_id"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         >
                             <option v-for="year in years" :key="year.id" :value="year.id">{{ year.name }}</option>
                         </select>
@@ -295,7 +295,7 @@ function toggle(url: string) {
                             type="text"
                             required
                             maxlength="10"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
                         <p v-if="editForm.errors.name" class="mt-1 text-sm text-red-600">{{ editForm.errors.name }}</p>
                     </div>
@@ -309,7 +309,7 @@ function toggle(url: string) {
                                 required
                                 min="1"
                                 max="12"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                             <p v-if="editForm.errors.grade_level" class="mt-1 text-sm text-red-600">
                                 {{ editForm.errors.grade_level }}
@@ -323,7 +323,7 @@ function toggle(url: string) {
                                 type="text"
                                 required
                                 maxlength="10"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                             <p v-if="editForm.errors.section" class="mt-1 text-sm text-red-600">
                                 {{ editForm.errors.section }}

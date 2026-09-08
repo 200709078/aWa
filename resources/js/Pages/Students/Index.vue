@@ -303,7 +303,7 @@ function toggle(url: string) {
                     <select
                         id="student-branch"
                         v-model="createForm.branch_id"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         <option v-for="branch in branches" :key="branch.id" :value="branch.id">
                             {{ branch.name }}
@@ -321,7 +321,7 @@ function toggle(url: string) {
                         type="text"
                         required
                         maxlength="20"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.school_number" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.school_number }}
@@ -335,7 +335,7 @@ function toggle(url: string) {
                         type="text"
                         required
                         maxlength="100"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.full_name" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.full_name }}
@@ -386,7 +386,7 @@ function toggle(url: string) {
                         <select
                             id="edit-student-branch"
                             v-model="editForm.branch_id"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         >
                             <option v-for="branch in branches" :key="branch.id" :value="branch.id">
                                 {{ branch.name }}
@@ -401,7 +401,7 @@ function toggle(url: string) {
                             type="text"
                             required
                             maxlength="20"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
                         <p v-if="editForm.errors.school_number" class="mt-1 text-sm text-red-600">
                             {{ editForm.errors.school_number }}
@@ -415,7 +415,7 @@ function toggle(url: string) {
                             type="text"
                             required
                             maxlength="100"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
                         <p v-if="editForm.errors.full_name" class="mt-1 text-sm text-red-600">
                             {{ editForm.errors.full_name }}
