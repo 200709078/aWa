@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface Year {
@@ -17,6 +18,14 @@ const form = useForm({
     academic_year_id: null as number | null,
     photos: [] as File[],
     zip_file: null as File | null,
+});
+
+const allErrors = computed(() => {
+    const errors = form.errors as Record<string, string | undefined>;
+    return Object.entries(errors)
+        .filter(([, message]) => !!message)
+        .map(([, message]) => message as string)
+        .slice(0, 10);
 });
 
 function submit() {
@@ -69,6 +78,9 @@ function submit() {
                         @change="(e) => (form.photos = Array.from((e.target as HTMLInputElement).files ?? []))"
                     />
                     <p v-if="form.errors.photos" class="mt-1 text-sm text-red-600">{{ form.errors.photos }}</p>
+                    <p v-if="form.photos.length > 0" class="mt-1 text-sm text-gray-500">
+                        {{ form.photos.length }} dosya seçildi
+                    </p>
                 </div>
 
                 <div>
@@ -83,12 +95,23 @@ function submit() {
                     <p v-if="form.errors.zip_file" class="mt-1 text-sm text-red-600">{{ form.errors.zip_file }}</p>
                 </div>
 
+                <div v-if="allErrors.length > 0" class="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
+                    <p v-for="(message, i) in allErrors" :key="i">{{ message }}</p>
+                </div>
+
+                <div v-if="form.progress" class="h-2 overflow-hidden rounded bg-gray-200">
+                    <div
+                        class="h-full bg-indigo-600"
+                        :style="{ width: `${form.progress.percentage}%` }"
+                    ></div>
+                </div>
+
                 <button
                     type="submit"
                     :disabled="form.processing"
                     class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
-                    Yükle ve eşleştir
+                    {{ form.processing ? 'Yükleniyor…' : 'Yükle ve eşleştir' }}
                 </button>
             </form>
         </div>
