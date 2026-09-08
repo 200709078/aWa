@@ -222,7 +222,7 @@ function isSelected(seat: SeatInfo): boolean {
 
 <template>
     <AppLayout :title="title">
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
@@ -233,21 +233,15 @@ function isSelected(seat: SeatInfo): boolean {
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <span
-                        v-if="plan.status === 'final'"
-                        class="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800"
+                    <button
+                        v-if="editMode"
+                        type="button"
+                        :disabled="!selected"
+                        class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        @click="salonModal = true"
                     >
-                        Final
-                    </span>
-                    <span v-else class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
-                        Taslak
-                    </span>
-                    <label
-                        class="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700"
-                    >
-                        <input v-model="showPhotos" type="checkbox" class="rounded border-gray-300" />
-                        Fotoğraflar
-                    </label>
+                        Salon Değiştir
+                    </button>
                     <button
                         type="button"
                         :title="editMode ? 'Düzenlemeyi Kapat' : 'Elle Düzenle'"
@@ -259,38 +253,48 @@ function isSelected(seat: SeatInfo): boolean {
                         "
                         @click="toggleEdit"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                        {{ editMode ? 'Düzenlemeyi Kapat' : 'Elle Düzenle' }}
                     </button>
-                    <button
-                        v-if="editMode"
-                        type="button"
-                        :disabled="!selected"
-                        class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                        @click="salonModal = true"
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            role="switch"
+                            :aria-checked="plan.status === 'final'"
+                            :title="plan.status === 'final' ? 'Taslağa Al' : 'Final Yap'"
+                            :class="[
+                                'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                                plan.status === 'final' ? 'bg-indigo-600' : 'bg-gray-300',
+                            ]"
+                            @click="plan.status === 'final' ? reopen() : finalize()"
+                        >
+                            <span
+                                :class="[
+                                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                                    plan.status === 'final' ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                                ]"
+                            />
+                        </button>
+                        <span
+                            v-if="plan.status === 'final'"
+                            class="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800"
+                        >
+                            Final
+                        </span>
+                        <span v-else class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                            Taslak
+                        </span>
+                    </div>
+                    <label
+                        class="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700"
                     >
-                        Salon Değiştir
-                    </button>
-                    <button
-                        v-if="plan.status !== 'final'"
-                        type="button"
-                        class="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
-                        @click="finalize"
-                    >
-                        Final Yap
-                    </button>
-                    <button
-                        v-else
-                        type="button"
-                        class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
-                        @click="reopen"
-                    >
-                        Taslağa Al
-                    </button>
+                        <input v-model="showPhotos" type="checkbox" class="rounded border-gray-300" />
+                        Fotoğraflar
+                    </label>
                     <Link
                         :href="`/distribution?exam_week_id=${week.id}`"
                         class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                        Dağıtıma dön
+                        Geri
                     </Link>
                 </div>
             </div>
@@ -384,13 +388,12 @@ function isSelected(seat: SeatInfo): boolean {
             </div>
         </div>
 
-        <div v-for="room in rooms" :key="room.room.id" class="mt-6 rounded-lg bg-white p-6 shadow-sm">
+        <div v-for="room in rooms" :key="room.room.id" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <h2 class="font-semibold text-gray-900">{{ room.room.name }}</h2>
             <div class="mt-3 overflow-x-auto">
                 <table class="border-collapse">
                     <tbody>
                         <tr v-for="row in rowNumbers(room)" :key="row">
-                            <td class="pr-2 text-right text-xs font-semibold text-gray-400">{{ row }}</td>
                             <td v-for="col in columnNumbers(room)" :key="col" class="p-1">
                                 <div
                                     v-if="seatMap(room).get(`${row}-${col}`)"

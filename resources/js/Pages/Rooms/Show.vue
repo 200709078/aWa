@@ -77,7 +77,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                     href="/rooms"
                     class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                    Salonlara dön
+                    Geri
                 </Link>
             </div>
 
@@ -128,7 +128,6 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
             <table class="border-collapse">
                 <tbody>
                     <tr v-for="row in rowNumbers" :key="row">
-                        <td class="pr-2 text-right text-xs font-semibold text-gray-400">{{ row }}</td>
                         <td v-for="col in columnNumbers" :key="col" class="p-1">
                             <button
                                 v-if="seatAt(row, col)"
