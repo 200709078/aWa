@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
-defineProps<{ title: string; hideFlash?: boolean }>();
+defineProps<{ title: string }>();
 
 const menuOpen = ref(false);
 
@@ -27,6 +27,25 @@ const nav = [
 const flashSuccess = computed(() => {
     const props = usePage().props as unknown as { flash: { success: string | null } };
     return props.flash.success;
+});
+
+const toastMessage = ref('');
+const toastVisible = ref(false);
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+function showToast(message: string) {
+    toastMessage.value = message;
+    toastVisible.value = true;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (toastVisible.value = false), 3000);
+}
+
+watch(flashSuccess, (value) => {
+    if (value) showToast(value);
+});
+
+onMounted(() => {
+    if (flashSuccess.value) showToast(flashSuccess.value);
 });
 
 function isActive(href: string): boolean {
@@ -92,11 +111,14 @@ function logout() {
             </aside>
 
             <main class="min-w-0 flex-1">
-                <p v-if="flashSuccess && !hideFlash" class="mb-4 rounded-md bg-green-50 px-4 py-2 text-sm text-green-800">
-                    {{ flashSuccess }}
-                </p>
                 <slot />
             </main>
+        </div>
+        <div
+            v-if="toastVisible"
+            class="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md bg-gray-900 px-4 py-2 text-sm text-white shadow-lg"
+        >
+            {{ toastMessage }}
         </div>
         <div
             class="pointer-events-none fixed bottom-2 right-3 z-50 select-none text-[20px] font-bold tracking-wide text-black"
