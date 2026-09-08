@@ -100,8 +100,35 @@ class StudentPhotoTest extends TestCase
         unlink($zipPath);
     }
 
-    public function test_desteklenmeyen_format_reddedilir(): void
+    public function test_bmp_icerikli_jpg_dosyasi_donusturulur(): void
     {
+        $user = User::factory()->create();
+        $year = $this->setupData();
+
+        // E-Okul dosyaları gibi: uzantı .jpg ama içerik BMP.
+        $bmpPath = sys_get_temp_dir().'/145.jpg';
+        $img = imagecreatetruecolor(133, 171);
+        imagefill($img, 0, 0, imagecolorallocate($img, 120, 140, 160));
+        imagebmp($img, $bmpPath);
+        imagedestroy($img);
+
+        $response = $this->actingAs($user)->post('/students/photos', [
+            'academic_year_id' => $year->id,
+            'photos' => [new UploadedFile($bmpPath, '145.jpg', 'image/bmp', null, true)],
+        ]);
+        $response->assertOk();
+
+        $props = $response->viewData('page')['props'];
+        $this->assertEquals(1, $props['summary']['eslesen']);
+
+        $student = Student::where('school_number', '145')->first();
+        $this->assertEquals('image/jpeg', finfo_file(finfo_open(FILEINFO_MIME_TYPE), Storage::disk('public')->path($student->photo_path)));
+
+        Storage::disk('public')->delete($student->photo_path);
+        unlink($bmpPath);
+    }
+
+    public function test_desteklenmeyen_format_reddedilir(): void    {
         $user = User::factory()->create();
         $year = $this->setupData();
 

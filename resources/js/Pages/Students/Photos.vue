@@ -67,13 +67,13 @@ function submit() {
 
                 <div>
                     <label for="photo-files" class="block text-sm font-medium text-gray-700">
-                        Fotoğraflar (jpg, jpeg, png, webp)
+                        Fotoğraflar (jpg, jpeg, png, webp, bmp)
                     </label>
                     <input
                         id="photo-files"
                         type="file"
                         multiple
-                        accept=".jpg,.jpeg,.png,.webp"
+                        accept=".jpg,.jpeg,.png,.webp,.bmp"
                         class="mt-1 block w-full text-sm text-gray-600"
                         @change="(e) => (form.photos = Array.from((e.target as HTMLInputElement).files ?? []))"
                     />
