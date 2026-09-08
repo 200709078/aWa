@@ -146,7 +146,7 @@ async function submit() {
     result.value = null;
 
     if (!academicYearId.value) {
-        errorMessages.value = ['Akademik yıl seçin.'];
+        errorMessages.value = ['Akademik Yıl seçin.'];
         return;
     }
     if (photoFiles.value.length === 0 && !zipFile.value) {
@@ -238,7 +238,7 @@ async function submit() {
 
             <form class="mt-4 space-y-4" @submit.prevent="submit">
                 <div>
-                    <label for="photo-year" class="block text-sm font-medium text-gray-700">Akademik yıl</label>
+                    <label for="photo-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
                     <select
                         id="photo-year"
                         v-model="academicYearId"
@@ -269,7 +269,7 @@ async function submit() {
                 </div>
 
                 <div>
-                    <label for="photo-zip" class="block text-sm font-medium text-gray-700">veya ZIP dosyası</label>
+                    <label for="photo-zip" class="block text-sm font-medium text-gray-700">Veya ZIP Dosyası</label>
                     <input
                         id="photo-zip"
                         type="file"
@@ -302,37 +302,37 @@ async function submit() {
 
         <div v-if="result" class="mt-6 max-w-2xl rounded-lg bg-white p-6 shadow-sm">
             <h2 class="text-xl font-bold text-gray-900">Fotoğraf Yükleme Sonucu</h2>
-            <p v-if="result.year" class="mt-1 text-sm text-gray-600">Akademik yıl: {{ result.year.name }}</p>
+            <p v-if="result.year" class="mt-1 text-sm text-gray-600">Akademik Yıl: {{ result.year.name }}</p>
 
             <dl class="mt-4 divide-y divide-gray-200">
                 <div class="flex justify-between py-2">
-                    <dt class="text-gray-600">Eşleşen fotoğraf</dt>
+                    <dt class="text-gray-600">Eşleşen Fotoğraf</dt>
                     <dd class="font-semibold text-green-700">{{ result.summary.eslesen }}</dd>
                 </div>
                 <div class="flex justify-between py-2">
-                    <dt class="text-gray-600">Eşleşmeyen dosya</dt>
+                    <dt class="text-gray-600">Eşleşmeyen Dosya</dt>
                     <dd class="font-semibold text-yellow-700">{{ result.summary.eslesmeyen }}</dd>
                 </div>
                 <div class="flex justify-between py-2">
-                    <dt class="text-gray-600">Fotoğrafı olmayan öğrenci</dt>
+                    <dt class="text-gray-600">Fotoğrafı Olmayan Öğrenci</dt>
                     <dd class="font-semibold">{{ result.summary.fotografsiz }}</dd>
                 </div>
                 <div class="flex justify-between py-2">
-                    <dt class="text-gray-600">Hatalı dosya</dt>
+                    <dt class="text-gray-600">Hatalı Dosya</dt>
                     <dd class="font-semibold text-red-700">{{ result.summary.hatali }}</dd>
                 </div>
             </dl>
         </div>
 
         <div v-if="result && result.unmatched.length > 0" class="mt-6 max-w-2xl rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="font-semibold text-gray-900">Eşleşmeyen dosyalar ({{ result.unmatched.length }})</h2>
+            <h2 class="font-semibold text-gray-900">Eşleşmeyen Dosyalar ({{ result.unmatched.length }})</h2>
             <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
                 <li v-for="name in result.unmatched" :key="name">{{ name }}</li>
             </ul>
         </div>
 
         <div v-if="result && result.failed.length > 0" class="mt-6 max-w-2xl rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="font-semibold text-gray-900">Hatalı dosyalar ({{ result.failed.length }})</h2>
+            <h2 class="font-semibold text-gray-900">Hatalı Dosyalar ({{ result.failed.length }})</h2>
             <ul class="mt-2 space-y-1 text-sm">
                 <li v-for="file in result.failed" :key="file.filename" class="text-gray-600">
                     {{ file.filename }} — <span class="text-red-600">{{ file.message }}</span>
@@ -341,7 +341,7 @@ async function submit() {
         </div>
 
         <div v-if="result && result.withoutPhoto.length > 0" class="mt-6 max-w-2xl rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="font-semibold text-gray-900">Fotoğrafı olmayan öğrenciler ({{ result.summary.fotografsiz }})</h2>
+            <h2 class="font-semibold text-gray-900">Fotoğrafı Olmayan Öğrenciler ({{ result.summary.fotografsiz }})</h2>
             <ul class="mt-2 space-y-1 text-sm text-gray-600">
                 <li v-for="student in result.withoutPhoto" :key="student.school_number">
                     {{ student.school_number }} — {{ student.full_name }}

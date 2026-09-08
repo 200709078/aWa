@@ -82,12 +82,108 @@ function dateRange(week: Week): string {
 
 <template>
     <AppLayout title="Sınav Haftaları">
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">Sınav Haftaları</h1>
+        </div>
+
+        <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Hafta</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Şube</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Öğrenci Sayısı</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Salon / Kapasite</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Durum</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <tr v-for="week in weeks" :key="week.id">
+                        <td class="px-4 py-3">
+                            <div class="font-medium text-gray-900">{{ week.name }}</div>
+                            <div class="text-xs text-gray-500">{{ week.academic_year }} · {{ dateRange(week) }}</div>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ week.branches_count }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ week.student_count }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                            {{ week.rooms_count }} / {{ week.capacity }}
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    :aria-checked="week.is_active"
+                                    :title="week.is_active ? 'Pasif' : 'Aktif'"
+                                    @click="
+                                        toggle(
+                                            week.is_active
+                                                ? `/exam-weeks/${week.id}/deactivate`
+                                                : `/exam-weeks/${week.id}/activate`,
+                                        )
+                                    "
+                                    :class="[
+                                        'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                                        week.is_active ? 'bg-indigo-600' : 'bg-gray-300',
+                                    ]"
+                                >
+                                    <span
+                                        :class="[
+                                            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                                            week.is_active ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                                        ]"
+                                    />
+                                </button>
+                                <span
+                                    v-if="week.is_active"
+                                    class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800"
+                                >
+                                    Aktif
+                                </span>
+                                <span
+                                    v-else
+                                    class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600"
+                                >
+                                    Pasif
+                                </span>
+                            </div>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-left">
+                            <div class="flex justify-start gap-2">
+                                <Link
+                                    :href="`/exam-weeks/${week.id}`"
+                                    title="İncele"
+                                    aria-label="İncele"
+                                    class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                </Link>
+                                <button
+                                    type="button"
+                                    title="Düzenle"
+                                    aria-label="Düzenle"
+                                    class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                                    @click="openEdit(week)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr v-if="weeks.length === 0">
+                        <td colspan="6" class="px-4 py-6 text-center text-gray-500">Henüz sınav haftası eklenmedi.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Yeni Sınav Haftası Ekle</h2>
 
             <form v-if="years.length > 0" class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-6" @submit.prevent="submitCreate">
                 <div>
-                    <label for="week-year" class="block text-sm font-medium text-gray-700">Akademik yıl</label>
+                    <label for="week-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
                     <select
                         id="week-year"
                         v-model="createForm.academic_year_id"
@@ -103,7 +199,7 @@ function dateRange(week: Week): string {
                     </p>
                 </div>
                 <div class="col-span-2">
-                    <label for="week-name" class="block text-sm font-medium text-gray-700">Hafta adı</label>
+                    <label for="week-name" class="block text-sm font-medium text-gray-700">Hafta Adı</label>
                     <input
                         id="week-name"
                         v-model="createForm.name"
@@ -139,10 +235,12 @@ function dateRange(week: Week): string {
                 <div class="flex items-end">
                     <button
                         type="submit"
+                        title="Ekle"
+                        aria-label="Ekle"
                         :disabled="createForm.processing"
-                        class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                        class="inline-flex w-full items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                     >
-                        Ekle
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     </button>
                 </div>
             </form>
@@ -151,87 +249,12 @@ function dateRange(week: Week): string {
             </div>
         </div>
 
-        <div class="mt-6 overflow-x-auto rounded-lg bg-white shadow-sm">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Hafta</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Şube</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Öğrenci</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Salon / Kapasite</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Durum</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    <tr v-for="week in weeks" :key="week.id">
-                        <td class="px-4 py-3">
-                            <div class="font-medium text-gray-900">{{ week.name }}</div>
-                            <div class="text-xs text-gray-500">{{ week.academic_year }} · {{ dateRange(week) }}</div>
-                        </td>
-                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ week.branches_count }}</td>
-                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ week.student_count }}</td>
-                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">
-                            {{ week.rooms_count }} / {{ week.capacity }}
-                        </td>
-                        <td class="whitespace-nowrap px-4 py-3">
-                            <span
-                                v-if="week.is_active"
-                                class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800"
-                            >
-                                Aktif
-                            </span>
-                            <span v-else class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">
-                                Pasif
-                            </span>
-                        </td>
-                        <td class="whitespace-nowrap px-4 py-3 text-right">
-                            <div class="flex justify-end gap-2">
-                                <Link
-                                    :href="`/exam-weeks/${week.id}`"
-                                    class="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
-                                >
-                                    İncele
-                                </Link>
-                                <button
-                                    type="button"
-                                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
-                                    @click="openEdit(week)"
-                                >
-                                    Düzenle
-                                </button>
-                                <button
-                                    v-if="!week.is_active"
-                                    type="button"
-                                    class="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
-                                    @click="toggle(`/exam-weeks/${week.id}/activate`)"
-                                >
-                                    Aktif Yap
-                                </button>
-                                <button
-                                    v-else
-                                    type="button"
-                                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
-                                    @click="toggle(`/exam-weeks/${week.id}/deactivate`)"
-                                >
-                                    Pasife Al
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr v-if="weeks.length === 0">
-                        <td colspan="6" class="px-4 py-6 text-center text-gray-500">Henüz sınav haftası eklenmedi.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
         <div v-if="editing" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow">
-                <h2 class="text-lg font-semibold text-gray-900">Sınav haftasını düzenle</h2>
+                <h2 class="text-lg font-semibold text-gray-900">Sınav Haftasını Düzenle</h2>
                 <form class="mt-4 space-y-4" @submit.prevent="submitEdit">
                     <div>
-                        <label for="edit-week-year" class="block text-sm font-medium text-gray-700">Akademik yıl</label>
+                        <label for="edit-week-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
                         <select
                             id="edit-week-year"
                             v-model="editForm.academic_year_id"
@@ -241,7 +264,7 @@ function dateRange(week: Week): string {
                         </select>
                     </div>
                     <div>
-                        <label for="edit-week-name" class="block text-sm font-medium text-gray-700">Hafta adı</label>
+                        <label for="edit-week-name" class="block text-sm font-medium text-gray-700">Hafta Adı</label>
                         <input
                             id="edit-week-name"
                             v-model="editForm.name"
@@ -288,17 +311,21 @@ function dateRange(week: Week): string {
                     <div class="flex justify-end gap-2">
                         <button
                             type="button"
-                            class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            title="Vazgeç"
+                            aria-label="Vazgeç"
+                            class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             @click="editing = null"
                         >
-                            Vazgeç
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                         <button
                             type="submit"
+                            title="Kaydet"
+                            aria-label="Kaydet"
                             :disabled="editForm.processing"
-                            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                            class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                         >
-                            Kaydet
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                         </button>
                     </div>
                 </form>

@@ -83,7 +83,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
 
             <form class="mt-4 flex flex-wrap items-end gap-3 border-t pt-4" @submit.prevent="submitBulk">
                 <div>
-                    <label for="bulk-rows" class="block text-sm font-medium text-gray-700">Satır sayısı</label>
+                    <label for="bulk-rows" class="block text-sm font-medium text-gray-700">Satır Sayısı</label>
                     <input
                         id="bulk-rows"
                         v-model.number="bulkForm.rows"
@@ -97,7 +97,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                     <p v-if="bulkForm.errors.rows" class="mt-1 text-sm text-red-600">{{ bulkForm.errors.rows }}</p>
                 </div>
                 <div>
-                    <label for="bulk-cols" class="block text-sm font-medium text-gray-700">Sütun sayısı</label>
+                    <label for="bulk-cols" class="block text-sm font-medium text-gray-700">Sütun Sayısı</label>
                     <input
                         id="bulk-cols"
                         v-model.number="bulkForm.columns"
@@ -113,7 +113,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                 <button
                     type="submit"
                     :disabled="bulkForm.processing"
-                    class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                    class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                 >
                     Koltukları Ekle
                 </button>
@@ -133,7 +133,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                             <button
                                 v-if="seatAt(row, col)"
                                 type="button"
-                                :title="seatAt(row, col)!.is_active ? 'Pasife almak için tıkla' : 'Aktif etmek için tıkla'"
+                                :title="seatAt(row, col)!.is_active ? 'Pasif' : 'Aktif'"
                                 class="h-12 w-14 rounded-md text-xs font-semibold"
                                 :class="
                                     seatAt(row, col)!.is_active

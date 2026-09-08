@@ -45,7 +45,7 @@ function changeWeek() {
     router.get('/distribution', { exam_week_id: selectedWeek.value }, { preserveState: true });
 }
 
-const startForm = useForm({ exam_week_id: props.selectedWeekId as number | null, name: '' });
+const startForm = useForm({ exam_week_id: props.selectedWeekId as number | null });
 
 function start() {
     startForm.exam_week_id = selectedWeek.value;
@@ -61,16 +61,11 @@ function planName(plan: Plan): string {
 
 <template>
     <AppLayout title="Dağıtım">
-        <div class="rounded-lg bg-white p-6 shadow-sm">
-            <h1 class="text-2xl font-bold text-gray-900">Dağıtım</h1>
-
-            <div v-if="weeks.length === 0" class="mt-4 rounded-md bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-                Önce bir sınav haftası ekleyin.
-            </div>
-
-            <div v-else class="mt-4 grid gap-3 md:grid-cols-3">
-                <div>
-                    <label for="dist-week" class="block text-sm font-medium text-gray-700">Sınav haftası</label>
+        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-2xl font-bold text-gray-900">Dağıtım</h1>
+                <div v-if="weeks.length > 0" class="ml-auto w-64">
+                    <label for="dist-week" class="block text-sm font-medium text-gray-700">Sınav Haftası</label>
                     <select
                         id="dist-week"
                         v-model="selectedWeek"
@@ -82,32 +77,26 @@ function planName(plan: Plan): string {
                         </option>
                     </select>
                 </div>
-                <form class="md:col-span-2" @submit.prevent="start">
-                    <label for="dist-name" class="block text-sm font-medium text-gray-700">Plan adı (isteğe bağlı)</label>
-                    <div class="mt-1 flex gap-2">
-                        <input
-                            id="dist-name"
-                            v-model="startForm.name"
-                            type="text"
-                            maxlength="100"
-                            placeholder="örn. 1. deneme"
-                            class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <button
-                            type="submit"
-                            :disabled="startForm.processing || !summary?.feasible"
-                            class="whitespace-nowrap rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                        >
-                            Dağıtımı Başlat
-                        </button>
-                    </div>
-                </form>
+            </div>
+
+            <form v-if="weeks.length > 0" class="mt-4" @submit.prevent="start">
+                <button
+                    type="submit"
+                    :disabled="startForm.processing || !summary?.feasible"
+                    class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                >
+                    Dağıtımı Başlat
+                </button>
+            </form>
+
+            <div v-if="weeks.length === 0" class="mt-4 rounded-md bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                Önce bir sınav haftası ekleyin.
             </div>
             <p v-if="pageErrors.exam_week_id" class="mt-2 text-sm text-red-600">{{ pageErrors.exam_week_id }}</p>
         </div>
 
-        <div v-if="summary" class="mt-6 rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="font-semibold text-gray-900">Dağıtım öncesi özet — {{ summary.week.name }}</h2>
+        <div v-if="summary" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="font-semibold text-gray-900">Dağıtım Öncesi Özet — {{ summary.week.name }}</h2>
             <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.branchCount }}</div>
@@ -119,15 +108,15 @@ function planName(plan: Plan): string {
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.roomCount }}</div>
-                    <div class="text-xs text-gray-500">İzinli salon</div>
-                </div>
-                <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
-                    <div class="text-xl font-bold">{{ summary.capacity }}</div>
-                    <div class="text-xs text-gray-500">Koltuk</div>
+                    <div class="text-xs text-gray-500">Toplam Salon</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.minRooms ?? '—' }}</div>
-                    <div class="text-xs text-gray-500">Tahmini min. salon</div>
+                    <div class="text-xs text-gray-500">Kullanılacak Salon</div>
+                </div>
+                <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
+                    <div class="text-xl font-bold">{{ summary.capacity }}</div>
+                    <div class="text-xs text-gray-500">Koltuk Sayısı</div>
                 </div>
             </div>
             <p v-if="!summary.feasible" class="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
@@ -135,7 +124,7 @@ function planName(plan: Plan): string {
             </p>
             <div class="mt-3 grid gap-4 text-sm md:grid-cols-2">
                 <div>
-                    <h3 class="font-medium text-gray-700">Dahil şubeler</h3>
+                    <h3 class="font-medium text-gray-700">Dahil Şubeler</h3>
                     <ul class="mt-1 space-y-1 text-gray-600">
                         <li v-for="branch in summary.branches" :key="branch.id">
                             {{ branch.name }} ({{ branch.active_students_count }})
@@ -144,7 +133,7 @@ function planName(plan: Plan): string {
                     </ul>
                 </div>
                 <div>
-                    <h3 class="font-medium text-gray-700">İzinli salonlar</h3>
+                    <h3 class="font-medium text-gray-700">Toplam Salonlar</h3>
                     <ul class="mt-1 space-y-1 text-gray-600">
                         <li v-for="room in summary.rooms" :key="room.id">
                             {{ room.name }} ({{ room.active_seats_count }})
@@ -156,7 +145,7 @@ function planName(plan: Plan): string {
             </div>
         </div>
 
-        <div v-if="plans.length > 0" class="mt-6 overflow-x-auto rounded-lg bg-white shadow-sm">
+        <div v-if="plans.length > 0" class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -165,7 +154,7 @@ function planName(plan: Plan): string {
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Öğrenci</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Salon</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Oluşturan</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">İşlem</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -185,12 +174,14 @@ function planName(plan: Plan): string {
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ plan.total_students }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ plan.used_room_count }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ plan.creator?.name ?? '—' }}</td>
-                        <td class="whitespace-nowrap px-4 py-3 text-right">
+                        <td class="whitespace-nowrap px-4 py-3 text-left">
                             <Link
                                 :href="`/distribution/plans/${plan.id}`"
-                                class="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
+                                title="İncele"
+                                aria-label="İncele"
+                                class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
                             >
-                                İncele
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             </Link>
                         </td>
                     </tr>

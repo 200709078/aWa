@@ -111,10 +111,36 @@ function toggle(url: string) {
 
 <template>
     <AppLayout title="Öğrenciler">
-        <div class="rounded-lg bg-white p-6 shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <h1 class="text-2xl font-bold text-gray-900">Öğrenciler</h1>
-                <div class="flex gap-2">
+        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="shrink-0 text-2xl font-bold text-gray-900">Öğrenciler</h1>
+                <div class="flex min-w-52 flex-1 items-center justify-center gap-2">
+                    <input
+                        id="filter-search"
+                        v-model="filterSearch"
+                        type="text"
+                        placeholder="Numara veya ad ara (örn. 145 veya Ali)"
+                        aria-label="Öğrenci ara"
+                        class="block w-64 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        @keydown.enter.prevent="applyFilters()"
+                    />
+                    <button
+                        type="button"
+                        class="shrink-0 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        @click="applyFilters()"
+                    >
+                        Ara
+                    </button>
+                    <button
+                        v-if="branchId || search"
+                        type="button"
+                        class="shrink-0 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        @click="clearFilters()"
+                    >
+                        Temizle
+                    </button>
+                </div>
+                <div class="flex shrink-0 gap-2">
                     <Link
                         href="/students/photos"
                         class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
@@ -123,16 +149,16 @@ function toggle(url: string) {
                     </Link>
                     <Link
                         href="/students/import"
-                        class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                        class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
                     >
                         Excelden İçe Aktar
                     </Link>
                 </div>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div class="mt-4 grid grid-cols-2 gap-3 md:ml-auto md:max-w-md md:grid-cols-2">
                 <div>
-                    <label for="filter-year" class="block text-sm font-medium text-gray-700">Akademik yıl</label>
+                    <label for="filter-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
                     <select
                         id="filter-year"
                         v-model="filterYear"
@@ -158,101 +184,10 @@ function toggle(url: string) {
                         </option>
                     </select>
                 </div>
-                <div class="col-span-2">
-                    <label for="filter-search" class="block text-sm font-medium text-gray-700">Arama (numara veya ad)</label>
-                    <div class="mt-1 flex gap-2">
-                        <input
-                            id="filter-search"
-                            v-model="filterSearch"
-                            type="text"
-                            placeholder="örn. 145 veya Ali"
-                            class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            @keydown.enter.prevent="applyFilters()"
-                        />
-                        <button
-                            type="button"
-                            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-                            @click="applyFilters()"
-                        >
-                            Ara
-                        </button>
-                        <button
-                            v-if="branchId || search"
-                            type="button"
-                            class="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            @click="clearFilters()"
-                        >
-                            Temizle
-                        </button>
-                    </div>
-                </div>
             </div>
-
-            <form
-                v-if="branches.length > 0"
-                class="mt-4 grid grid-cols-2 gap-3 border-t pt-4 md:grid-cols-5"
-                @submit.prevent="submitCreate"
-            >
-                <div>
-                    <label for="student-branch" class="block text-sm font-medium text-gray-700">Şube</label>
-                    <select
-                        id="student-branch"
-                        v-model="createForm.branch_id"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                        <option v-for="branch in branches" :key="branch.id" :value="branch.id">
-                            {{ branch.name }}
-                        </option>
-                    </select>
-                    <p v-if="createForm.errors.branch_id" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.branch_id }}
-                    </p>
-                </div>
-                <div>
-                    <label for="student-number" class="block text-sm font-medium text-gray-700">Okul no</label>
-                    <input
-                        id="student-number"
-                        v-model="createForm.school_number"
-                        type="text"
-                        required
-                        maxlength="20"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.school_number" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.school_number }}
-                    </p>
-                </div>
-                <div class="col-span-2">
-                    <label for="student-name" class="block text-sm font-medium text-gray-700">Ad soyad</label>
-                    <input
-                        id="student-name"
-                        v-model="createForm.full_name"
-                        type="text"
-                        required
-                        maxlength="100"
-                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.full_name" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.full_name }}
-                    </p>
-                </div>
-                <div class="flex items-end gap-2">
-                    <label class="flex items-center gap-2 pb-2 text-sm text-gray-700">
-                        <input v-model="createForm.is_active" type="checkbox" class="rounded border-gray-300" />
-                        Aktif
-                    </label>
-                    <button
-                        type="submit"
-                        :disabled="createForm.processing"
-                        class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                        Ekle
-                    </button>
-                </div>
-            </form>
         </div>
 
-        <div class="mt-6 overflow-x-auto rounded-lg bg-white shadow-sm">
+        <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -261,7 +196,7 @@ function toggle(url: string) {
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Şube</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Durum</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -279,40 +214,55 @@ function toggle(url: string) {
                             />
                         </td>
                         <td class="whitespace-nowrap px-4 py-3">
-                            <span
-                                v-if="student.is_active"
-                                class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800"
-                            >
-                                Aktif
-                            </span>
-                            <span v-else class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">
-                                Pasif
-                            </span>
-                        </td>
-                        <td class="whitespace-nowrap px-4 py-3 text-right">
-                            <div class="flex justify-end gap-2">
+                            <div class="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                                    role="switch"
+                                    :aria-checked="student.is_active"
+                                    :title="student.is_active ? 'Pasif' : 'Aktif'"
+                                    @click="
+                                        toggle(
+                                            student.is_active
+                                                ? `/students/${student.id}/deactivate`
+                                                : `/students/${student.id}/activate`,
+                                        )
+                                    "
+                                    :class="[
+                                        'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                                        student.is_active ? 'bg-indigo-600' : 'bg-gray-300',
+                                    ]"
+                                >
+                                    <span
+                                        :class="[
+                                            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                                            student.is_active ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                                        ]"
+                                    />
+                                </button>
+                                <span
+                                    v-if="student.is_active"
+                                    class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800"
+                                >
+                                    Aktif
+                                </span>
+                                <span
+                                    v-else
+                                    class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600"
+                                >
+                                    Pasif
+                                </span>
+                            </div>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-left">
+                            <div class="flex justify-start gap-2">
+                                <button
+                                    type="button"
+                                    title="Düzenle"
+                                    aria-label="Düzenle"
+                                    class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
                                     @click="openEdit(student)"
                                 >
-                                    Düzenle
-                                </button>
-                                <button
-                                    v-if="!student.is_active"
-                                    type="button"
-                                    class="rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
-                                    @click="toggle(`/students/${student.id}/activate`)"
-                                >
-                                    Aktif Yap
-                                </button>
-                                <button
-                                    v-else
-                                    type="button"
-                                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
-                                    @click="toggle(`/students/${student.id}/deactivate`)"
-                                >
-                                    Pasife Al
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                                 </button>
                             </div>
                         </td>
@@ -344,9 +294,70 @@ function toggle(url: string) {
             </div>
         </div>
 
+        <div v-if="branches.length > 0" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Yeni Öğrenci Ekle</h2>
+
+            <form class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5" @submit.prevent="submitCreate">
+                <div>
+                    <label for="student-branch" class="block text-sm font-medium text-gray-700">Şube</label>
+                    <select
+                        id="student-branch"
+                        v-model="createForm.branch_id"
+                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    >
+                        <option v-for="branch in branches" :key="branch.id" :value="branch.id">
+                            {{ branch.name }}
+                        </option>
+                    </select>
+                    <p v-if="createForm.errors.branch_id" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.branch_id }}
+                    </p>
+                </div>
+                <div>
+                    <label for="student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
+                    <input
+                        id="student-number"
+                        v-model="createForm.school_number"
+                        type="text"
+                        required
+                        maxlength="20"
+                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.school_number" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.school_number }}
+                    </p>
+                </div>
+                <div class="col-span-2">
+                    <label for="student-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                    <input
+                        id="student-name"
+                        v-model="createForm.full_name"
+                        type="text"
+                        required
+                        maxlength="100"
+                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.full_name" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.full_name }}
+                    </p>
+                </div>
+                <div class="flex items-end">
+                    <button
+                        type="submit"
+                        title="Ekle"
+                        aria-label="Ekle"
+                        :disabled="createForm.processing"
+                        class="inline-flex w-full items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+
         <div v-if="editing" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
-                <h2 class="text-lg font-semibold text-gray-900">Öğrenciyi düzenle</h2>
+                <h2 class="text-lg font-semibold text-gray-900">Öğrenciyi Düzenle</h2>
                 <form class="mt-4 space-y-4" @submit.prevent="submitEdit">
                     <div>
                         <label for="edit-student-branch" class="block text-sm font-medium text-gray-700">Şube</label>
@@ -361,7 +372,7 @@ function toggle(url: string) {
                         </select>
                     </div>
                     <div>
-                        <label for="edit-student-number" class="block text-sm font-medium text-gray-700">Okul no</label>
+                        <label for="edit-student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
                         <input
                             id="edit-student-number"
                             v-model="editForm.school_number"
@@ -375,7 +386,7 @@ function toggle(url: string) {
                         </p>
                     </div>
                     <div>
-                        <label for="edit-student-name" class="block text-sm font-medium text-gray-700">Ad soyad</label>
+                        <label for="edit-student-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
                         <input
                             id="edit-student-name"
                             v-model="editForm.full_name"
@@ -388,24 +399,24 @@ function toggle(url: string) {
                             {{ editForm.errors.full_name }}
                         </p>
                     </div>
-                    <label class="flex items-center gap-2 text-sm text-gray-700">
-                        <input v-model="editForm.is_active" type="checkbox" class="rounded border-gray-300" />
-                        Aktif
-                    </label>
                     <div class="flex justify-end gap-2">
                         <button
                             type="button"
-                            class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            title="Vazgeç"
+                            aria-label="Vazgeç"
+                            class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             @click="editing = null"
                         >
-                            Vazgeç
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                         <button
                             type="submit"
+                            title="Kaydet"
+                            aria-label="Kaydet"
                             :disabled="editForm.processing"
-                            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                            class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                         >
-                            Kaydet
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                         </button>
                     </div>
                 </form>

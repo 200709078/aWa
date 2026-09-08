@@ -22,27 +22,27 @@ defineProps<{
     <PrintLayout title="Dağılım Özeti" :back-href="`/distribution/plans/${plan.id}`">
         <h1 class="text-xl font-bold">Dağılım Özeti — {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}</h1>
 
-        <h2 class="mt-6 text-lg font-semibold">Genel özet</h2>
+        <h2 class="mt-6 text-lg font-semibold">Genel Özet</h2>
         <table class="mt-2 w-full max-w-xl border-collapse text-sm">
             <tbody>
                 <tr class="border-b border-gray-200">
-                    <td class="py-1">Toplam öğrenci</td>
+                    <td class="py-1">Toplam Öğrenci</td>
                     <td class="py-1 text-right font-semibold">{{ summary.total_students }}</td>
                 </tr>
                 <tr class="border-b border-gray-200">
-                    <td class="py-1">Kullanılan salon</td>
+                    <td class="py-1">Kullanılan Salon</td>
                     <td class="py-1 text-right font-semibold">{{ summary.used_rooms.length }}</td>
                 </tr>
                 <tr class="border-b border-gray-200">
-                    <td class="py-1">Dolu koltuk</td>
+                    <td class="py-1">Dolu Koltuk</td>
                     <td class="py-1 text-right font-semibold">{{ summary.used_seats }}</td>
                 </tr>
                 <tr class="border-b border-gray-200">
-                    <td class="py-1">Boş koltuk</td>
+                    <td class="py-1">Boş Koltuk</td>
                     <td class="py-1 text-right font-semibold">{{ summary.empty_seats }}</td>
                 </tr>
                 <tr class="border-b border-gray-200">
-                    <td class="py-1">Yatay ihlal</td>
+                    <td class="py-1">Yatay İhlal</td>
                     <td class="py-1 text-right font-semibold">{{ summary.violations }}</td>
                 </tr>
             </tbody>
@@ -51,7 +51,7 @@ defineProps<{
             Kullanılmayan salonlar: {{ summary.unused_rooms.map((r) => r.name).join(', ') }}
         </p>
 
-        <h2 class="mt-6 text-lg font-semibold">Salon × şube dağılımı</h2>
+        <h2 class="mt-6 text-lg font-semibold">Salon × Şube Dağılımı</h2>
         <table class="mt-2 border-collapse text-xs">
             <thead>
                 <tr class="border-b-2 border-gray-800">

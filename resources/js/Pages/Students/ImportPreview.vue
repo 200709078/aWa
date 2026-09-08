@@ -70,12 +70,12 @@ const actionClass: Record<PreviewRow['action'], string> = {
     <AppLayout title="Aktarma Önizleme">
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">Aktarma Önizleme</h1>
-            <p class="mt-1 text-sm text-gray-600">Akademik yıl: {{ year.name }}</p>
+            <p class="mt-1 text-sm text-gray-600">Akademik Yıl: {{ year.name }}</p>
 
             <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.toplam }}</div>
-                    <div class="text-xs text-gray-500">Toplam satır</div>
+                    <div class="text-xs text-gray-500">Toplam Satır</div>
                 </div>
                 <div class="rounded-md bg-green-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold text-green-800">{{ summary.eklenecek }}</div>
@@ -97,7 +97,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
 
             <div class="mt-4 grid gap-3 md:grid-cols-3">
                 <div>
-                    <label for="map-number" class="block text-sm font-medium text-gray-700">Okul numarası sütunu</label>
+                    <label for="map-number" class="block text-sm font-medium text-gray-700">Okul Numarası Sütunu</label>
                     <select
                         id="map-number"
                         v-model.number="form.mapping.school_number"
@@ -109,7 +109,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                     </select>
                 </div>
                 <div>
-                    <label for="map-name" class="block text-sm font-medium text-gray-700">Ad soyad sütunu</label>
+                    <label for="map-name" class="block text-sm font-medium text-gray-700">Ad Soyad Sütunu</label>
                     <select
                         id="map-name"
                         v-model.number="form.mapping.full_name"
@@ -121,7 +121,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                     </select>
                 </div>
                 <div>
-                    <label for="map-branch" class="block text-sm font-medium text-gray-700">Şube sütunu</label>
+                    <label for="map-branch" class="block text-sm font-medium text-gray-700">Şube Sütunu</label>
                     <select
                         id="map-branch"
                         v-model.number="form.mapping.branch"

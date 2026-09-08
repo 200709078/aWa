@@ -100,22 +100,33 @@ function formatTime(value: string | null): string {
             <div class="mt-4 grid grid-cols-3 gap-3">
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.student_count }}</div>
-                    <div class="text-xs text-gray-500">Dahil öğrenci</div>
+                    <div class="text-xs text-gray-500">Dahil Öğrenci</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.room_count }}</div>
-                    <div class="text-xs text-gray-500">Aktif salon</div>
+                    <div class="text-xs text-gray-500">Aktif Salon</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.capacity }}</div>
-                    <div class="text-xs text-gray-500">Aktif koltuk</div>
+                    <div class="text-xs text-gray-500">Aktif Koltuk</div>
                 </div>
             </div>
         </div>
 
         <div class="mt-6 grid gap-6 lg:grid-cols-2">
             <form class="rounded-lg bg-white p-6 shadow-sm" @submit.prevent="saveBranches">
-                <h2 class="font-semibold text-gray-900">Dağıtıma Dahil Şubeler</h2>
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="font-semibold text-gray-900">Dağıtıma Dahil Şubeler</h2>
+                    <button
+                        type="submit"
+                        title="Şubeleri Kaydet"
+                        aria-label="Şubeleri Kaydet"
+                        :disabled="branchForm.processing"
+                        class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                    </button>
+                </div>
                 <div class="mt-2 flex gap-3 text-sm">
                     <button
                         type="button"
@@ -153,17 +164,21 @@ function formatTime(value: string | null): string {
                 <p v-if="branchForm.errors.branch_ids" class="mt-2 text-sm text-red-600">
                     {{ branchForm.errors.branch_ids }}
                 </p>
-                <button
-                    type="submit"
-                    :disabled="branchForm.processing"
-                    class="mt-3 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                >
-                    Şubeleri Kaydet
-                </button>
             </form>
 
             <form class="rounded-lg bg-white p-6 shadow-sm" @submit.prevent="saveRooms">
-                <h2 class="font-semibold text-gray-900">Kullanılmasına İzin Verilen Salonlar</h2>
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="font-semibold text-gray-900">Kullanılmasına İzin Verilen Salonlar</h2>
+                    <button
+                        type="submit"
+                        title="Salonları Kaydet"
+                        aria-label="Salonları Kaydet"
+                        :disabled="roomForm.processing"
+                        class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                    </button>
+                </div>
                 <div class="mt-2 flex gap-3 text-sm">
                     <button
                         type="button"
@@ -202,13 +217,6 @@ function formatTime(value: string | null): string {
                 <p v-if="roomForm.errors.room_ids" class="mt-2 text-sm text-red-600">
                     {{ roomForm.errors.room_ids }}
                 </p>
-                <button
-                    type="submit"
-                    :disabled="roomForm.processing"
-                    class="mt-3 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                >
-                    Salonları Kaydet
-                </button>
             </form>
         </div>
 
@@ -235,7 +243,7 @@ function formatTime(value: string | null): string {
 
             <form class="mt-4 grid gap-3 border-t pt-4 md:grid-cols-5" @submit.prevent="submitExam">
                 <div class="md:col-span-2">
-                    <label for="exam-name" class="block text-sm font-medium text-gray-700">Sınav adı</label>
+                    <label for="exam-name" class="block text-sm font-medium text-gray-700">Sınav Adı</label>
                     <input
                         id="exam-name"
                         v-model="examForm.name"
@@ -270,10 +278,12 @@ function formatTime(value: string | null): string {
                 <div class="flex items-end">
                     <button
                         type="submit"
+                        title="Ekle"
+                        aria-label="Ekle"
                         :disabled="examForm.processing"
-                        class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                        class="inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                     >
-                        Ekle
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     </button>
                 </div>
             </form>

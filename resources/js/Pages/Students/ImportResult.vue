@@ -27,11 +27,11 @@ defineProps<{
     <AppLayout title="Aktarma Sonucu">
         <div class="max-w-2xl rounded-lg bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">Aktarma Sonucu</h1>
-            <p v-if="year" class="mt-1 text-sm text-gray-600">Akademik yıl: {{ year.name }}</p>
+            <p v-if="year" class="mt-1 text-sm text-gray-600">Akademik Yıl: {{ year.name }}</p>
 
             <dl class="mt-4 divide-y divide-gray-200">
                 <div class="flex justify-between py-2">
-                    <dt class="text-gray-600">Toplam satır</dt>
+                    <dt class="text-gray-600">Toplam Satır</dt>
                     <dd class="font-semibold">{{ summary.toplam }}</dd>
                 </div>
                 <div class="flex justify-between py-2">
