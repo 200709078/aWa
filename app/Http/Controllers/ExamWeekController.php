@@ -88,15 +88,9 @@ class ExamWeekController extends Controller
     {
         $data = $this->validated($request);
 
-        $week = ExamWeek::create($data);
+        ExamWeek::create($data);
 
-        // Yeni haftada tüm şubeler dahil, tüm salonlar izinli başlar; kullanıcı isterse çıkarır.
-        $week->branches()->sync(
-            Branch::where('academic_year_id', $week->academic_year_id)->pluck('id')->all()
-        );
-        $week->rooms()->sync(Room::pluck('id')->all());
-
-        return redirect("/exam-weeks/{$week->id}")->with('success', 'Sınav haftası eklendi. Şube ve salon seçimini inceleyin.');
+        return back()->with('success', 'Sınav haftası eklendi.');
     }
 
     public function update(Request $request, ExamWeek $examWeek): RedirectResponse
