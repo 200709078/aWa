@@ -111,7 +111,7 @@ function toggle(url: string) {
 
 <template>
     <AppLayout title="Öğrenciler">
-        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+        <div class="sticky top-20 z-10 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center gap-3">
                 <h1 class="shrink-0 text-2xl font-bold text-gray-900">Öğrenciler</h1>
                 <div class="flex min-w-52 flex-1 items-center justify-center gap-2">
