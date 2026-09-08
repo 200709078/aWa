@@ -121,7 +121,7 @@ function toggle(url: string) {
                         type="text"
                         placeholder="Numara veya ad ara (örn. 145 veya Ali)"
                         aria-label="Öğrenci ara"
-                        class="block w-64 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="block h-9 w-64 rounded-md border-gray-300 px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @keydown.enter.prevent="applyFilters()"
                     />
                     <button
