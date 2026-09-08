@@ -111,7 +111,7 @@ function toggle(url: string) {
 
 <template>
     <AppLayout title="Öğrenciler">
-        <div class="sticky top-20 z-20 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center gap-3">
                 <h1 class="shrink-0 text-2xl font-bold text-gray-900">Öğrenciler</h1>
                 <div class="flex min-w-52 flex-1 items-center justify-center gap-2">
@@ -274,9 +274,8 @@ function toggle(url: string) {
             </table>
         </div>
 
-        <div v-if="students.total > 0" class="mt-4 flex items-center justify-between text-sm text-gray-600">
-            <span>{{ students.from }}-{{ students.to }} / Toplam {{ students.total }}</span>
-            <div class="flex gap-2">
+        <div v-if="students.total > 0" class="mt-4 flex w-full max-w-[80%] items-center text-sm text-gray-600">
+            <div class="flex w-24 justify-start">
                 <Link
                     v-if="students.prev_page_url"
                     :href="students.prev_page_url"
@@ -284,6 +283,16 @@ function toggle(url: string) {
                 >
                     Önceki
                 </Link>
+                <span
+                    v-else
+                    aria-disabled="true"
+                    class="cursor-not-allowed rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-gray-400"
+                >
+                    Önceki
+                </span>
+            </div>
+            <span class="flex-1 text-center">{{ students.from }}-{{ students.to }} / Toplam {{ students.total }}</span>
+            <div class="flex w-24 justify-end">
                 <Link
                     v-if="students.next_page_url"
                     :href="students.next_page_url"
@@ -291,6 +300,13 @@ function toggle(url: string) {
                 >
                     Sonraki
                 </Link>
+                <span
+                    v-else
+                    aria-disabled="true"
+                    class="cursor-not-allowed rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-gray-400"
+                >
+                    Sonraki
+                </span>
             </div>
         </div>
 
