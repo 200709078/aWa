@@ -2,7 +2,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
-defineProps<{ title: string }>();
+defineProps<{ title: string; hideFlash?: boolean }>();
 
 const menuOpen = ref(false);
 
@@ -92,7 +92,7 @@ function logout() {
             </aside>
 
             <main class="min-w-0 flex-1">
-                <p v-if="flashSuccess" class="mb-4 rounded-md bg-green-50 px-4 py-2 text-sm text-green-800">
+                <p v-if="flashSuccess && !hideFlash" class="mb-4 rounded-md bg-green-50 px-4 py-2 text-sm text-green-800">
                     {{ flashSuccess }}
                 </p>
                 <slot />
