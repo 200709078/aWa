@@ -57,6 +57,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/rooms/{room}/seats', [SeatController::class, 'store'])->name('seats.store');
     Route::post('/rooms/{room}/seats/bulk', [SeatController::class, 'bulk'])->name('seats.bulk');
     Route::post('/seats/{seat}/toggle', [SeatController::class, 'toggle'])->name('seats.toggle');
+    Route::delete('/seats/{seat}', [SeatController::class, 'destroy'])->name('seats.destroy');
     Route::get('/exam-weeks', [ExamWeekController::class, 'index'])->name('exam-weeks.index');
     Route::post('/exam-weeks', [ExamWeekController::class, 'store'])->name('exam-weeks.store');
     Route::get('/exam-weeks/{examWeek}', [ExamWeekController::class, 'show'])->name('exam-weeks.show');

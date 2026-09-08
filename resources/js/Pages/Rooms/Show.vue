@@ -54,6 +54,10 @@ function toggleSeat(seat: Seat) {
     router.post(`/seats/${seat.id}/toggle`);
 }
 
+function deleteSeat(seat: Seat) {
+    router.delete(`/seats/${seat.id}`);
+}
+
 function addSeat(row: number, column: number) {
     router.post(`/rooms/${props.room.id}/seats`, { row, column });
 }
@@ -118,8 +122,8 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                     Koltukları Ekle
                 </button>
                 <p class="w-full text-xs text-gray-500">
-                    Var olan koltuklar korunur. Koltuğa tıklayarak aktif/pasif yapabilir, boş hücreye tıklayarak tek
-                    koltuk ekleyebilirsiniz.
+                    Var olan koltuklar korunur. Koltuğa tıklayarak aktif/pasif yapabilir, üzerine gelince beliren
+                    sil ikonuyla koltuğu silebilir, boş hücreye tıklayarak tek koltuk ekleyebilirsiniz.
                 </p>
             </form>
         </div>
@@ -129,20 +133,30 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                 <tbody>
                     <tr v-for="row in rowNumbers" :key="row">
                         <td v-for="col in columnNumbers" :key="col" class="p-1">
-                            <button
-                                v-if="seatAt(row, col)"
-                                type="button"
-                                :title="seatAt(row, col)!.is_active ? 'Pasif' : 'Aktif'"
-                                class="h-12 w-14 rounded-md text-xs font-semibold"
-                                :class="
-                                    seatAt(row, col)!.is_active
-                                        ? 'bg-indigo-100 text-indigo-900 hover:bg-indigo-200'
-                                        : 'bg-gray-200 text-gray-400 line-through hover:bg-gray-300'
-                                "
-                                @click="toggleSeat(seatAt(row, col)!)"
-                            >
-                                {{ seatLabel(seatAt(row, col)!) }}
-                            </button>
+                            <div v-if="seatAt(row, col)" class="group relative inline-block">
+                                <button
+                                    type="button"
+                                    :title="seatAt(row, col)!.is_active ? 'Pasif' : 'Aktif'"
+                                    class="h-12 w-14 rounded-md text-xs font-semibold"
+                                    :class="
+                                        seatAt(row, col)!.is_active
+                                            ? 'bg-indigo-100 text-indigo-900 hover:bg-indigo-200'
+                                            : 'bg-gray-200 text-gray-400 line-through hover:bg-gray-300'
+                                    "
+                                    @click="toggleSeat(seatAt(row, col)!)"
+                                >
+                                    {{ seatLabel(seatAt(row, col)!) }}
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Koltuğu sil"
+                                    aria-label="Koltuğu sil"
+                                    class="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-red-600 text-white shadow hover:bg-red-700 group-hover:inline-flex"
+                                    @click.stop="deleteSeat(seatAt(row, col)!)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3 w-3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
                             <button
                                 v-else
                                 type="button"
