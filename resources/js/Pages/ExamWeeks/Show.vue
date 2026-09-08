@@ -116,6 +116,22 @@ function formatTime(value: string | null): string {
         <div class="mt-6 grid gap-6 lg:grid-cols-2">
             <form class="rounded-lg bg-white p-6 shadow-sm" @submit.prevent="saveBranches">
                 <h2 class="font-semibold text-gray-900">Dağıtıma dahil şubeler</h2>
+                <div class="mt-2 flex gap-3 text-sm">
+                    <button
+                        type="button"
+                        class="text-indigo-600 hover:underline"
+                        @click="branchForm.branch_ids = branches.map((b) => b.id)"
+                    >
+                        Tümünü seç
+                    </button>
+                    <button
+                        type="button"
+                        class="text-gray-500 hover:underline"
+                        @click="branchForm.branch_ids = []"
+                    >
+                        Temizle
+                    </button>
+                </div>
                 <div class="mt-3 max-h-96 space-y-1 overflow-y-auto">
                     <label
                         v-for="branch in branches"
@@ -148,6 +164,22 @@ function formatTime(value: string | null): string {
 
             <form class="rounded-lg bg-white p-6 shadow-sm" @submit.prevent="saveRooms">
                 <h2 class="font-semibold text-gray-900">Kullanılmasına izin verilen salonlar</h2>
+                <div class="mt-2 flex gap-3 text-sm">
+                    <button
+                        type="button"
+                        class="text-indigo-600 hover:underline"
+                        @click="roomForm.room_ids = rooms.map((r) => r.id)"
+                    >
+                        Tümünü seç
+                    </button>
+                    <button
+                        type="button"
+                        class="text-gray-500 hover:underline"
+                        @click="roomForm.room_ids = []"
+                    >
+                        Temizle
+                    </button>
+                </div>
                 <div class="mt-3 max-h-96 space-y-1 overflow-y-auto">
                     <label
                         v-for="room in rooms"
