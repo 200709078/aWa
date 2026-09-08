@@ -68,7 +68,7 @@ function logout() {
     <Head :title="title" />
 
     <div class="min-h-screen bg-gray-50">
-        <header class="sticky top-0 bg-white shadow-sm print:hidden">
+        <header class="sticky top-0 z-30 bg-white shadow-sm print:hidden">
             <div class="flex items-center justify-between px-2 py-3">
                 <div class="flex items-center gap-3">
                     <button
@@ -102,7 +102,7 @@ function logout() {
         </header>
 
         <div class="flex gap-6 px-2 py-6">
-            <aside class="sticky top-20 hidden w-56 shrink-0 self-start md:block print:hidden">
+            <aside class="sticky top-20 z-20 hidden w-56 shrink-0 self-start md:block print:hidden">
                 <nav class="space-y-1 rounded-lg bg-white p-3 shadow-sm">
                     <Link v-for="item in nav" :key="item.href" :href="item.href" :class="linkClass(item.href)">
                         {{ item.label }}

@@ -111,7 +111,7 @@ function toggle(url: string) {
 
 <template>
     <AppLayout title="Öğrenciler">
-        <div class="sticky top-20 z-10 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+        <div class="sticky top-20 z-20 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center gap-3">
                 <h1 class="shrink-0 text-2xl font-bold text-gray-900">Öğrenciler</h1>
                 <div class="flex min-w-52 flex-1 items-center justify-center gap-2">
@@ -355,7 +355,7 @@ function toggle(url: string) {
             </form>
         </div>
 
-        <div v-if="editing" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
+        <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
                 <form class="space-y-4" @submit.prevent="submitEdit">
                     <div class="flex items-center justify-between gap-2">

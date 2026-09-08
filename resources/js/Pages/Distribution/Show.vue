@@ -452,7 +452,7 @@ function isSelected(seat: SeatInfo): boolean {
             </div>
         </div>
 
-        <div v-if="salonModal" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
+        <div v-if="salonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow">
                 <h2 class="text-lg font-semibold text-gray-900">Salon Değiştir</h2>
                 <p class="mt-1 text-sm text-gray-500">Hedef salonda boş bir koltuk seçin.</p>
@@ -484,7 +484,7 @@ function isSelected(seat: SeatInfo): boolean {
             </div>
         </div>
 
-        <div v-if="confirmState" class="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
+        <div v-if="confirmState" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
                 <h2 class="text-lg font-semibold text-gray-900">Kural İhlali Uyarısı</h2>
                 <p class="mt-2 text-sm text-gray-600">{{ confirmState.message }}</p>
