@@ -79,7 +79,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/distribution/plans/{plan}/print/rooms', [PrintController::class, 'rooms'])->name('distribution.print.rooms');
     Route::get('/distribution/plans/{plan}/print/summary', [PrintController::class, 'summary'])->name('distribution.print.summary');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/settings', fn () => Inertia::render('Settings/Index'));
 
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });

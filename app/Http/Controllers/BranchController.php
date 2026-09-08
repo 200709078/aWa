@@ -90,13 +90,13 @@ class BranchController extends Controller
         ], [
             'academic_year_id.required' => 'Akademik yıl seçin.',
             'academic_year_id.exists' => 'Seçilen akademik yıl bulunamadı.',
-            'name.required' => 'Şube adı gerekli. (örn. 9A)',
-            'name.unique' => 'Bu akademik yılda bu şube zaten kayıtlı.',
-            'grade_level.required' => 'Sınıf seviyesi gerekli.',
-            'grade_level.integer' => 'Sınıf seviyesi sayı olmalı.',
-            'grade_level.min' => 'Sınıf seviyesi 1-12 arasında olmalı.',
-            'grade_level.max' => 'Sınıf seviyesi 1-12 arasında olmalı.',
-            'section.required' => 'Şube harfi/bölümü gerekli. (örn. A)',
+            'name.required' => 'Sınıf adı gerekli.',
+            'name.unique' => 'Bu akademik yılda bu sınıf zaten kayıtlı.',
+            'grade_level.required' => 'Seviye gerekli.',
+            'grade_level.integer' => 'Seviye sayı olmalı.',
+            'grade_level.min' => 'Seviye 1-12 arasında olmalı.',
+            'grade_level.max' => 'Seviye 1-12 arasında olmalı.',
+            'section.required' => 'Şube gerekli.',
         ]);
 
         $data['name'] = mb_strtoupper(trim($data['name']));

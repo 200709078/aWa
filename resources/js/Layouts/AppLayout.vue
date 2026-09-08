@@ -14,7 +14,7 @@ const user = computed(() => {
 const currentUrl = computed(() => usePage().url);
 
 const nav = [
-    { label: 'Panel', href: '/' },
+    { label: 'Giriş', href: '/' },
     { label: 'Akademik Yıllar', href: '/academic-years' },
     { label: 'Sınav Haftaları', href: '/exam-weeks' },
     { label: 'Salonlar', href: '/rooms' },
@@ -22,7 +22,6 @@ const nav = [
     { label: 'Öğrenciler', href: '/students' },
     { label: 'Dağıtım', href: '/distribution' },
     { label: 'Çıktılar', href: '/reports' },
-    { label: 'Ayarlar', href: '/settings' },
 ];
 
 const flashSuccess = computed(() => {
@@ -62,7 +61,7 @@ function logout() {
                     </button>
                     <Link href="/" class="flex items-center gap-2">
                         <img :src="'/favicon.png'" alt="Kelebek logosu" class="h-8 w-8 object-contain" />
-                        <span class="font-semibold text-gray-900">Kelebek</span>
+                        <span class="font-semibold text-gray-900">Kelebek Oturma Planı</span>
                     </Link>
                 </div>
                 <div class="flex items-center gap-3">
@@ -98,6 +97,11 @@ function logout() {
                 </p>
                 <slot />
             </main>
+        </div>
+        <div
+            class="pointer-events-none fixed bottom-2 right-3 z-50 select-none text-[20px] font-bold tracking-wide text-black"
+        >
+            made by <span class="font-bold text-black">m</span><span class="font-bold text-blue-900">ADEM</span><span class="font-bold text-black">atik</span>
         </div>
     </div>
 </template>

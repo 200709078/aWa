@@ -19,7 +19,7 @@ function printUrl(plan: Plan, type: string): string {
 
 <template>
     <AppLayout title="Çıktılar">
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">Çıktılar</h1>
             <p class="mt-1 text-sm text-gray-500">
                 Her plan için yazdırılabilir çıktılar yeni sekmede açılır. Tarayıcıdan Yazdır → PDF olarak kaydet
@@ -31,7 +31,7 @@ function printUrl(plan: Plan, type: string): string {
             Henüz dağıtım planı yok. Önce Dağıtım sayfasından plan oluşturun.
         </div>
 
-        <div v-for="plan in plans" :key="plan.id" class="mt-6 rounded-lg bg-white p-6 shadow-sm">
+        <div v-for="plan in plans" :key="plan.id" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <h2 class="font-semibold text-gray-900">{{ plan.name }}</h2>

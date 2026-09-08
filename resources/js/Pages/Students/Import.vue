@@ -33,7 +33,7 @@ function submit() {
 
             <form class="mt-4 space-y-4" @submit.prevent="submit">
                 <div>
-                    <label for="import-year" class="block text-sm font-medium text-gray-700">Akademik yıl</label>
+                    <label for="import-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
                     <select
                         id="import-year"
                         v-model="form.academic_year_id"
@@ -50,7 +50,7 @@ function submit() {
                 </div>
 
                 <div>
-                    <label for="import-file" class="block text-sm font-medium text-gray-700">Excel dosyası</label>
+                    <label for="import-file" class="block text-sm font-medium text-gray-700">Excel Dosyası</label>
                     <input
                         id="import-file"
                         type="file"
