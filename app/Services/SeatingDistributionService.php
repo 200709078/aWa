@@ -388,23 +388,40 @@ class SeatingDistributionService
     /**
      * @param  array<int, array{room_id: int, row: int, col: int, level: int|null, seat_id: int}>  $placements
      * @return array{count: int, seat_ids: array}
+     *
+     * Komşuluk: aynı salon+satırda art arda gelen AKTİF koltuklar.
+     * Sütun numaraları arasındaki sayısal farka bakılmaz; koridor için
+     * pasif bırakılan sütunlar (örn. 3 ve 6) komşuluğu kesmez.
+     * Aktif ama boş koltuk komşuluğu keser (arada boş sandalye varsa ihlal yok).
      */
     private function computeViolations(array $placements): array
     {
-        $byRow = [];
-        foreach ($placements as $p) {
-            $byRow[$p['room_id'].':'.$p['row']][] = $p;
+        if ($placements === []) {
+            return ['count' => 0, 'seat_ids' => []];
         }
+
+        $roomIds = collect($placements)->pluck('room_id')->unique()->values()->all();
+        $activeByRow = Seat::whereIn('room_id', $roomIds)
+            ->where('is_active', true)
+            ->orderBy('row')
+            ->orderBy('column')
+            ->get(['id', 'room_id', 'row'])
+            ->groupBy(fn ($seat) => $seat->room_id.':'.$seat->row);
 
         $count = 0;
         $seatIds = [];
-        foreach ($byRow as $seats) {
-            usort($seats, fn ($a, $b) => $a['col'] <=> $b['col']);
-            for ($i = 1; $i < count($seats); $i++) {
-                if ($seats[$i]['col'] - $seats[$i - 1]['col'] === 1 && $seats[$i]['level'] !== null && $seats[$i]['level'] === $seats[$i - 1]['level']) {
+        foreach ($activeByRow as $seats) {
+            $ids = $seats->pluck('id')->all();
+            for ($i = 1; $i < count($ids); $i++) {
+                $a = $placements[$ids[$i - 1]] ?? null;
+                $b = $placements[$ids[$i]] ?? null;
+                if ($a === null || $b === null) {
+                    continue;
+                }
+                if ($a['level'] !== null && $a['level'] === $b['level']) {
                     $count++;
-                    $seatIds[] = $seats[$i]['seat_id'];
-                    $seatIds[] = $seats[$i - 1]['seat_id'];
+                    $seatIds[] = $a['seat_id'];
+                    $seatIds[] = $b['seat_id'];
                 }
             }
         }
@@ -506,21 +523,23 @@ class SeatingDistributionService
             }
         }
 
-        $pos = [];
+        // Komşuluk: aynı salon+satırda art arda gelen AKTİF koltuklar.
+        // Sütun numarası farkına bakılmaz; pasif (koridor) sütunlar komşuluğu kesmez.
+        $neighbors = array_fill(0, count($seats), []);
+        $orderByRow = [];
         foreach ($seats as $i => $seat) {
-            $pos[$seat['room_id'].':'.$seat['row'].':'.$seat['col']] = $i;
+            $orderByRow[$seat['room_id'].':'.$seat['row']][] = $i;
         }
-
-        $neighbors = [];
-        foreach ($seats as $i => $seat) {
-            $list = [];
-            foreach ([-1, 1] as $d) {
-                $key = $seat['room_id'].':'.$seat['row'].':'.($seat['col'] + $d);
-                if (isset($pos[$key])) {
-                    $list[] = $pos[$key];
+        foreach ($orderByRow as $list) {
+            usort($list, fn ($a, $b) => $seats[$a]['col'] <=> $seats[$b]['col']);
+            for ($k = 0; $k < count($list); $k++) {
+                if ($k > 0) {
+                    $neighbors[$list[$k]][] = $list[$k - 1];
+                }
+                if ($k < count($list) - 1) {
+                    $neighbors[$list[$k]][] = $list[$k + 1];
                 }
             }
-            $neighbors[$i] = $list;
         }
 
         $free = array_keys($seats);
