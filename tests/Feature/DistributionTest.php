@@ -168,6 +168,56 @@ class DistributionTest extends TestCase
         (new SeatingDistributionService())->distribute($week);
     }
 
+    public function test_koridor_bosluklu_satirda_karsi_koltukta_ayni_seviye_ihlal_sayar(): void
+    {
+        $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
+        $b1 = Branch::create(['academic_year_id' => $year->id, 'name' => '10A', 'grade_level' => 10, 'section' => 'A']);
+        $b2 = Branch::create(['academic_year_id' => $year->id, 'name' => '10B', 'grade_level' => 10, 'section' => 'B']);
+        $s1 = Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => '1', 'full_name' => 'Ali']);
+        $s2 = Student::create(['academic_year_id' => $year->id, 'branch_id' => $b2->id, 'school_number' => '2', 'full_name' => 'Veli']);
+
+        // 3. sütun koridor (pasif): 2 ve 4 aktif ama ekranda/fiziken yan yana.
+        $room = Room::create(['name' => 'Salon 1']);
+        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 2]);
+        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 4]);
+
+        $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
+        $week->branches()->sync([$b1->id, $b2->id]);
+        $week->rooms()->sync([$room->id]);
+
+        $plan = (new SeatingDistributionService())->distribute($week);
+
+        // İki aynı seviye öğrencisi iki koltuğu da doldurmak zorunda: koridor karşısı ihlal.
+        $this->assertEquals(1, (new SeatingDistributionService())->summary($plan)['violations']);
+    }
+
+    public function test_dagitim_koridor_karsisinda_ayni_seviyeyi_yan_yana_getirmez(): void
+    {
+        $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
+        $b9 = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
+        $b10 = Branch::create(['academic_year_id' => $year->id, 'name' => '10A', 'grade_level' => 10, 'section' => 'A']);
+        foreach ([$b9, $b10] as $branch) {
+            for ($i = 1; $i <= 6; $i++) {
+                Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => $branch->name.$i, 'full_name' => "Ö {$branch->name} $i"]);
+            }
+        }
+
+        // Koridorlu düzen: 3 ve 6 pasif, aktif sütunlar 1,2,4,5,7,8.
+        $room = Room::create(['name' => 'Salon 1']);
+        foreach ([1, 2, 4, 5, 7, 8] as $col) {
+            Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => $col]);
+            Seat::create(['room_id' => $room->id, 'row' => 2, 'column' => $col]);
+        }
+
+        $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
+        $week->branches()->sync([$b9->id, $b10->id]);
+        $week->rooms()->sync([$room->id]);
+
+        $plan = (new SeatingDistributionService())->distribute($week);
+
+        $this->assertEquals(0, (new SeatingDistributionService())->summary($plan)['violations']);
+    }
+
     public function test_http_dagitim_akisi_yeni_plan_olusturur(): void
     {
         $user = User::factory()->create();
