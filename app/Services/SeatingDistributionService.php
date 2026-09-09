@@ -169,7 +169,7 @@ class SeatingDistributionService
      */
     public function seatingGrid(SeatingPlan $plan): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name']);
+        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name,grade_level']);
 
         $assignedBySeat = $plan->assignments->keyBy(fn ($a) => $a->seat_id);
         $roomIds = $assignedBySeat->map(fn ($a) => $a->seat->room_id)->unique()->values()->all();
@@ -193,6 +193,7 @@ class SeatingDistributionService
                         'school_number' => $assignedBySeat[$seat->id]->student->school_number,
                         'full_name' => $assignedBySeat[$seat->id]->student->full_name,
                         'branch' => $assignedBySeat[$seat->id]->student->branch?->name,
+                        'grade_level' => $assignedBySeat[$seat->id]->student->branch?->grade_level,
                         'photo_url' => $assignedBySeat[$seat->id]->student->photo_path
                             ? asset('storage/'.$assignedBySeat[$seat->id]->student->photo_path)
                             : null,

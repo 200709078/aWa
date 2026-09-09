@@ -12,6 +12,7 @@ interface SeatInfo {
         school_number: string;
         full_name: string;
         branch: string | null;
+        grade_level: number | null;
         photo_url: string | null;
     } | null;
 }
@@ -49,6 +50,27 @@ function rowNumbers(room: RoomData): number[] {
 function columnNumbers(room: RoomData): number[] {
     return Array.from({ length: room.maxColumn }, (_, i) => i + 1);
 }
+
+function levelTables(room: RoomData): { label: string; rows: { branch: string; count: number }[] }[] {
+    const byLevel = new Map<number | null, Map<string, number>>();
+    for (const seat of room.seats) {
+        if (!seat.student) continue;
+        const level = seat.student.grade_level ?? null;
+        const branch = seat.student.branch || '—';
+        if (!byLevel.has(level)) byLevel.set(level, new Map());
+        const counts = byLevel.get(level)!;
+        counts.set(branch, (counts.get(branch) || 0) + 1);
+    }
+    const toRows = (level: number | null) =>
+        [...(byLevel.get(level) ?? new Map()).entries()]
+            .map(([branch, count]) => ({ branch, count }))
+            .sort((a, b) => a.branch.localeCompare(b.branch, 'tr', { numeric: true }));
+    const groups = [9, 10, 11, 12].map((level) => ({ label: `${level}. Sınıf`, rows: toRows(level) }));
+    if (byLevel.has(null)) {
+        groups.push({ label: '—', rows: toRows(null) });
+    }
+    return groups;
+}
 </script>
 
 <template>
@@ -80,7 +102,6 @@ function columnNumbers(room: RoomData): number[] {
             <table class="mt-2 w-full table-fixed border-collapse">
                 <tbody>
                     <tr v-for="row in rowNumbers(room)" :key="row">
-                        <td class="w-6 pr-2 text-right text-xs font-semibold text-gray-400">{{ row }}</td>
                         <td v-for="col in columnNumbers(room)" :key="col" class="border border-gray-300 p-1">
                             <div
                                 v-if="seatMap(room).get(`${row}-${col}`)"
@@ -106,14 +127,32 @@ function columnNumbers(room: RoomData): number[] {
                                         {{ seatMap(room).get(`${row}-${col}`)!.student!.branch }}
                                     </div>
                                 </template>
-                                <template v-else>
-                                    <div class="text-gray-400">Boş ({{ row }}-{{ col }})</div>
-                                </template>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
+            <div class="mt-3 grid grid-cols-4 gap-3 print:break-inside-avoid">
+                <div v-for="group in levelTables(room)" :key="group.label">
+                    <table class="w-full border-collapse border text-[11px]">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="border px-2 py-0.5 text-left font-medium text-gray-500">Şube</th>
+                                <th class="border px-2 py-0.5 text-right font-medium text-gray-500">Öğrenci</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="entry in group.rows" :key="entry.branch">
+                                <td class="border px-2 py-0.5">{{ entry.branch }}</td>
+                                <td class="border px-2 py-0.5 text-right">{{ entry.count }}</td>
+                            </tr>
+                            <tr v-if="group.rows.length === 0">
+                                <td colspan="2" class="border px-2 py-0.5 text-gray-400">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </PrintLayout>
 </template>
