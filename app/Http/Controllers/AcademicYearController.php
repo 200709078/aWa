@@ -14,8 +14,7 @@ class AcademicYearController extends Controller
     public function index(): Response
     {
         $years = AcademicYear::withCount('branches')
-            ->orderByDesc('is_active')
-            ->orderByDesc('name')
+            ->orderByDesc('id')
             ->get();
 
         return Inertia::render('AcademicYears/Index', [
