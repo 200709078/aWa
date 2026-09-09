@@ -19,7 +19,7 @@ class ExamWeekController extends Controller
     public function index(): Response
     {
         $weeks = ExamWeek::with(['academicYear:id,name'])
-            ->withCount(['branches', 'rooms'])
+            ->withCount(['branches', 'rooms', 'seatingPlans'])
             ->orderByDesc('id')
             ->get()
             ->map(fn (ExamWeek $week) => [
@@ -33,6 +33,7 @@ class ExamWeekController extends Controller
                 'is_active' => $week->is_active,
                 'branches_count' => $week->branches_count,
                 'rooms_count' => $week->rooms_count,
+                'plans_count' => $week->seating_plans_count,
                 'student_count' => $this->studentCount($week),
                 'capacity' => $this->capacity($week),
             ]);
@@ -98,6 +99,15 @@ class ExamWeekController extends Controller
         $examWeek->update($this->validated($request));
 
         return back()->with('success', 'Sınav haftası güncellendi.');
+    }
+
+    public function destroy(ExamWeek $examWeek): RedirectResponse
+    {
+        // Şube/salon seçimleri, sınavlar, dağıtım planları ve atamalar
+        // FK cascade ile birlikte silinir; şube, salon ve öğrenciler korunur.
+        $examWeek->delete();
+
+        return back()->with('success', 'Sınav haftası silindi.');
     }
 
     public function activate(ExamWeek $examWeek): RedirectResponse

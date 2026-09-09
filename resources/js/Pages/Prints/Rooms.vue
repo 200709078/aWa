@@ -29,15 +29,13 @@ defineProps<{
             <table class="mt-2 w-full border-collapse text-sm">
                 <thead>
                     <tr class="border-b-2 border-gray-800">
-                        <th class="py-1 pr-4 text-left">Koltuk</th>
                         <th class="py-1 pr-4 text-left">Okul No</th>
                         <th class="py-1 pr-4 text-left">Ad Soyad</th>
-                        <th class="py-1 text-left">Şube</th>
+                        <th class="py-1 text-left">Sınıf</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="student in list.students" :key="student.school_number" class="border-b border-gray-200">
-                        <td class="py-1 pr-4">{{ student.seat }}</td>
                         <td class="py-1 pr-4">{{ student.school_number }}</td>
                         <td class="py-1 pr-4">{{ student.full_name }}</td>
                         <td class="py-1">{{ student.branch }}</td>

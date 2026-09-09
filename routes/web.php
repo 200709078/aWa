@@ -46,12 +46,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
     Route::post('/branches', [BranchController::class, 'store'])->name('branches.store');
     Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
+    Route::delete('/branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
     Route::post('/branches/{branch}/activate', [BranchController::class, 'activate'])->name('branches.activate');
     Route::post('/branches/{branch}/deactivate', [BranchController::class, 'deactivate'])->name('branches.deactivate');
     Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
     Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
     Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('rooms.show');
     Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('rooms.update');
+    Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('rooms.destroy');
     Route::post('/rooms/{room}/activate', [RoomController::class, 'activate'])->name('rooms.activate');
     Route::post('/rooms/{room}/deactivate', [RoomController::class, 'deactivate'])->name('rooms.deactivate');
     Route::post('/rooms/{room}/seats', [SeatController::class, 'store'])->name('seats.store');
@@ -62,6 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/exam-weeks', [ExamWeekController::class, 'store'])->name('exam-weeks.store');
     Route::get('/exam-weeks/{examWeek}', [ExamWeekController::class, 'show'])->name('exam-weeks.show');
     Route::put('/exam-weeks/{examWeek}', [ExamWeekController::class, 'update'])->name('exam-weeks.update');
+    Route::delete('/exam-weeks/{examWeek}', [ExamWeekController::class, 'destroy'])->name('exam-weeks.destroy');
     Route::post('/exam-weeks/{examWeek}/activate', [ExamWeekController::class, 'activate'])->name('exam-weeks.activate');
     Route::post('/exam-weeks/{examWeek}/deactivate', [ExamWeekController::class, 'deactivate'])->name('exam-weeks.deactivate');
     Route::put('/exam-weeks/{examWeek}/branches', [ExamWeekController::class, 'syncBranches'])->name('exam-weeks.branches');

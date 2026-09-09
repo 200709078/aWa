@@ -45,35 +45,28 @@ function printUrl(plan: Plan, type: string): string {
                 <a
                     :href="printUrl(plan, 'seating') + '?photo=1'"
                     target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
-                    Salon Planları (Fotoğraflı)
-                </a>
-                <a
-                    :href="printUrl(plan, 'seating') + '?photo=0'"
-                    target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                    Salon Planları (Fotoğrafsız)
+                    Salon Planları
                 </a>
                 <a
                     :href="printUrl(plan, 'branches')"
                     target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
-                    Şube Listeleri
+                    Sınıf Listeleri
                 </a>
                 <a
                     :href="printUrl(plan, 'rooms')"
                     target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     Salon Listeleri
                 </a>
                 <a
                     :href="printUrl(plan, 'summary')"
                     target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     Dağılım Özeti
                 </a>

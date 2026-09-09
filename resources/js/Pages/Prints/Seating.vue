@@ -86,7 +86,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
             </label>
             <label class="no-print flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700">
                 <input v-model="showBranch" type="checkbox" class="rounded border-gray-300" />
-                Şube
+                Sınıf
             </label>
         </template>
 
@@ -137,7 +137,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     <table class="w-full border-collapse border text-[11px]">
                         <thead>
                             <tr class="bg-gray-50">
-                                <th class="border px-2 py-0.5 text-left font-medium text-gray-500">Şube</th>
+                                <th class="border px-2 py-0.5 text-left font-medium text-gray-500">Sınıf</th>
                                 <th class="border px-2 py-0.5 text-right font-medium text-gray-500">Öğrenci</th>
                             </tr>
                         </thead>

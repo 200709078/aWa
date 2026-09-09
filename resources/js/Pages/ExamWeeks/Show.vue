@@ -91,7 +91,7 @@ function formatTime(value: string | null): string {
                 </div>
                 <Link
                     href="/exam-weeks"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     Geri
                 </Link>
@@ -116,11 +116,11 @@ function formatTime(value: string | null): string {
         <div class="mt-6 grid gap-6 lg:grid-cols-2">
             <form class="rounded-lg bg-white p-6 shadow-sm" @submit.prevent="saveBranches">
                 <div class="flex items-center justify-between gap-2">
-                    <h2 class="font-semibold text-gray-900">Dağıtıma Dahil Şubeler</h2>
+                    <h2 class="font-semibold text-gray-900">Dağıtıma Dahil Sınıflar</h2>
                     <button
                         type="submit"
-                        title="Şubeleri Kaydet"
-                        aria-label="Şubeleri Kaydet"
+                        title="Sınıfları Kaydet"
+                        aria-label="Sınıfları Kaydet"
                         :disabled="branchForm.processing"
                         class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                     >
@@ -250,7 +250,7 @@ function formatTime(value: string | null): string {
                         type="text"
                         required
                         maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="examForm.errors.name" class="mt-1 text-sm text-red-600">{{ examForm.errors.name }}</p>
                 </div>
@@ -260,7 +260,7 @@ function formatTime(value: string | null): string {
                         id="exam-date"
                         v-model="examForm.exam_date"
                         type="date"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                 </div>
                 <div>
@@ -269,7 +269,7 @@ function formatTime(value: string | null): string {
                         id="exam-time"
                         v-model="examForm.start_time"
                         type="time"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="examForm.errors.start_time" class="mt-1 text-sm text-red-600">
                         {{ examForm.errors.start_time }}

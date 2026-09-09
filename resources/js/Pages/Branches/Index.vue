@@ -76,19 +76,32 @@ function submitEdit() {
 function toggle(url: string) {
     router.post(url);
 }
+
+const deleting = ref<Branch | null>(null);
+
+function askDelete(branch: Branch) {
+    deleting.value = branch;
+}
+
+function confirmDelete() {
+    if (!deleting.value) return;
+    router.delete(`/branches/${deleting.value.id}`, {
+        onFinish: () => (deleting.value = null),
+    });
+}
 </script>
 
 <template>
-    <AppLayout title="Şubeler">
+    <AppLayout title="Sınıflar">
         <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h1 class="text-2xl font-bold text-gray-900">Şubeler</h1>
+                <h1 class="text-2xl font-bold text-gray-900">Sınıflar</h1>
                 <div class="flex items-center gap-2">
                     <label for="year-filter" class="text-sm text-gray-600">Akademik Yıl</label>
                     <select
                         id="year-filter"
                         v-model="filterYear"
-                        class="h-9 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="h-9 rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @change="applyFilter"
                     >
                         <option v-for="year in years" :key="year.id" :value="year.id">
@@ -171,23 +184,33 @@ function toggle(url: string) {
                                     type="button"
                                     title="Düzenle"
                                     aria-label="Düzenle"
-                                    class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                                     @click="openEdit(branch)"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    :title="branch.students_count > 0 ? 'Öğrencisi olan sınıf silinemez' : 'Sil'"
+                                    aria-label="Sil"
+                                    :disabled="branch.students_count > 0"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700 focus:border-red-500 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+                                    @click="askDelete(branch)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
                                 </button>
                             </div>
                         </td>
                     </tr>
                     <tr v-if="branches.length === 0">
-                        <td colspan="6" class="px-4 py-6 text-center text-gray-500">Bu yılda şube bulunmuyor.</td>
+                        <td colspan="6" class="px-4 py-6 text-center text-gray-500">Bu yılda sınıf bulunmuyor.</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         <div v-if="years.length > 0" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-gray-900">Yeni Şube Ekle</h2>
+            <h2 class="text-lg font-semibold text-gray-900">Yeni Sınıf Ekle</h2>
 
             <form class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-6" @submit.prevent="submitCreate">
                 <div class="col-span-2">
@@ -199,7 +222,7 @@ function toggle(url: string) {
                         required
                         maxlength="10"
                         placeholder="9A"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
                 </div>
@@ -213,7 +236,7 @@ function toggle(url: string) {
                         min="1"
                         max="12"
                         placeholder="9"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.grade_level" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.grade_level }}
@@ -228,7 +251,7 @@ function toggle(url: string) {
                         required
                         maxlength="10"
                         placeholder="A"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="createForm.errors.section" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.section }}
@@ -240,7 +263,7 @@ function toggle(url: string) {
                         title="Ekle"
                         aria-label="Ekle"
                         :disabled="createForm.processing"
-                        class="inline-flex w-full items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        class="inline-flex h-9 w-full items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     </button>
@@ -255,7 +278,7 @@ function toggle(url: string) {
             <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
                 <form class="space-y-4" @submit.prevent="submitEdit">
                     <div class="flex items-center justify-between gap-2">
-                        <h2 class="text-lg font-semibold text-gray-900">Şubeyi Düzenle</h2>
+                        <h2 class="text-lg font-semibold text-gray-900">Sınıfı Düzenle</h2>
                         <div class="flex gap-2">
                             <button
                                 type="submit"
@@ -270,7 +293,7 @@ function toggle(url: string) {
                                 type="button"
                                 title="Vazgeç"
                                 aria-label="Vazgeç"
-                                class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                                 @click="editing = null"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -282,7 +305,7 @@ function toggle(url: string) {
                         <select
                             id="edit-branch-year"
                             v-model="editForm.academic_year_id"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         >
                             <option v-for="year in years" :key="year.id" :value="year.id">{{ year.name }}</option>
                         </select>
@@ -295,7 +318,7 @@ function toggle(url: string) {
                             type="text"
                             required
                             maxlength="10"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
                         <p v-if="editForm.errors.name" class="mt-1 text-sm text-red-600">{{ editForm.errors.name }}</p>
                     </div>
@@ -309,7 +332,7 @@ function toggle(url: string) {
                                 required
                                 min="1"
                                 max="12"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                             <p v-if="editForm.errors.grade_level" class="mt-1 text-sm text-red-600">
                                 {{ editForm.errors.grade_level }}
@@ -323,7 +346,7 @@ function toggle(url: string) {
                                 type="text"
                                 required
                                 maxlength="10"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                             <p v-if="editForm.errors.section" class="mt-1 text-sm text-red-600">
                                 {{ editForm.errors.section }}
@@ -331,6 +354,30 @@ function toggle(url: string) {
                         </div>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div v-if="deleting" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
+                <h2 class="text-lg font-semibold text-gray-900">Sınıfı Sil</h2>
+                <p class="mt-2 text-sm text-gray-600">{{ deleting.name }} silinsin mi? Bu işlem geri alınamaz.</p>
+                <p class="mt-1 text-sm text-gray-500">Sınav haftası seçimleri de kaldırılır.</p>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                        @click="deleting = null"
+                    >
+                        Vazgeç
+                    </button>
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+                        @click="confirmDelete"
+                    >
+                        Sil
+                    </button>
+                </div>
             </div>
         </div>
     </AppLayout>

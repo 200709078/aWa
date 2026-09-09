@@ -79,7 +79,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                 </div>
                 <Link
                     href="/rooms"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     Geri
                 </Link>
@@ -96,7 +96,7 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                         min="1"
                         max="50"
                         placeholder="5"
-                        class="mt-1 block h-9 w-28 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-28 rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="bulkForm.errors.rows" class="mt-1 text-sm text-red-600">{{ bulkForm.errors.rows }}</p>
                 </div>
@@ -110,14 +110,14 @@ const columnNumbers = computed(() => Array.from({ length: props.maxColumn }, (_,
                         min="1"
                         max="50"
                         placeholder="6"
-                        class="mt-1 block h-9 w-28 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-28 rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     <p v-if="bulkForm.errors.columns" class="mt-1 text-sm text-red-600">{{ bulkForm.errors.columns }}</p>
                 </div>
                 <button
                     type="submit"
                     :disabled="bulkForm.processing"
-                    class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
                 >
                     Koltukları Ekle
                 </button>

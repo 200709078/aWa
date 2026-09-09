@@ -58,9 +58,17 @@ function planName(plan: Plan): string {
     return plan.name || `Plan #${plan.id}`;
 }
 
-function deletePlan(plan: Plan) {
-    if (!confirm(`${planName(plan)} silinsin mi? Bu işlem geri alınamaz.`)) return;
-    router.delete(`/distribution/plans/${plan.id}`);
+const deleting = ref<Plan | null>(null);
+
+function askDelete(plan: Plan) {
+    deleting.value = plan;
+}
+
+function confirmDelete() {
+    if (!deleting.value) return;
+    router.delete(`/distribution/plans/${deleting.value.id}`, {
+        onFinish: () => (deleting.value = null),
+    });
 }
 </script>
 
@@ -74,7 +82,7 @@ function deletePlan(plan: Plan) {
                     <select
                         id="dist-week"
                         v-model="selectedWeek"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @change="changeWeek"
                     >
                         <option v-for="week in weeks" :key="week.id" :value="week.id">
@@ -105,7 +113,7 @@ function deletePlan(plan: Plan) {
             <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.branchCount }}</div>
-                    <div class="text-xs text-gray-500">Şube</div>
+                    <div class="text-xs text-gray-500">Sınıf</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.studentCount }}</div>
@@ -129,12 +137,12 @@ function deletePlan(plan: Plan) {
             </p>
             <div class="mt-3 grid gap-4 text-sm md:grid-cols-2">
                 <div>
-                    <h3 class="font-medium text-gray-700">Dahil Şubeler</h3>
+                    <h3 class="font-medium text-gray-700">Dahil Sınıflar</h3>
                     <ul class="mt-1 space-y-1 text-gray-600">
                         <li v-for="branch in summary.branches" :key="branch.id">
                             {{ branch.name }} ({{ branch.active_students_count }})
                         </li>
-                        <li v-if="summary.branches.length === 0" class="text-gray-400">Şube seçilmedi.</li>
+                        <li v-if="summary.branches.length === 0" class="text-gray-400">Sınıf seçilmedi.</li>
                     </ul>
                 </div>
                 <div>
@@ -185,7 +193,7 @@ function deletePlan(plan: Plan) {
                                     :href="`/distribution/plans/${plan.id}`"
                                     title="İncele"
                                     aria-label="İncele"
-                                    class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                 </Link>
@@ -194,7 +202,7 @@ function deletePlan(plan: Plan) {
                                     title="Sil"
                                     aria-label="Sil"
                                     class="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm text-red-600 hover:bg-red-50"
-                                    @click="deletePlan(plan)"
+                                    @click="askDelete(plan)"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
                                 </button>
@@ -203,6 +211,31 @@ function deletePlan(plan: Plan) {
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div v-if="deleting" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
+                <h2 class="text-lg font-semibold text-gray-900">Planı Sil</h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    {{ planName(deleting) }} silinsin mi? Bu işlem geri alınamaz.
+                </p>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                        @click="deleting = null"
+                    >
+                        Vazgeç
+                    </button>
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+                        @click="confirmDelete"
+                    >
+                        Sil
+                    </button>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>

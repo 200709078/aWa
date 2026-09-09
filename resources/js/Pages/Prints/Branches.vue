@@ -14,9 +14,9 @@ defineProps<{
 </script>
 
 <template>
-    <PrintLayout title="Şube Bazında Sınav Yeri Listesi" :back-href="`/distribution/plans/${plan.id}`">
+    <PrintLayout title="Sınıf Bazında Sınav Yeri Listesi" :back-href="`/distribution/plans/${plan.id}`">
         <h1 class="text-xl font-bold">
-            Şube Bazında Sınav Yeri Listesi — {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}
+            Sınıf Bazında Sınav Yeri Listesi — {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}
         </h1>
 
         <div
@@ -32,7 +32,6 @@ defineProps<{
                         <th class="py-1 pr-4 text-left">Okul No</th>
                         <th class="py-1 pr-4 text-left">Ad Soyad</th>
                         <th class="py-1 pr-4 text-left">Salon</th>
-                        <th class="py-1 text-left">Koltuk</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -40,7 +39,6 @@ defineProps<{
                         <td class="py-1 pr-4">{{ student.school_number }}</td>
                         <td class="py-1 pr-4">{{ student.full_name }}</td>
                         <td class="py-1 pr-4">{{ student.room }}</td>
-                        <td class="py-1">{{ student.seat }}</td>
                     </tr>
                 </tbody>
             </table>

@@ -101,7 +101,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                     <select
                         id="map-number"
                         v-model.number="form.mapping.school_number"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm"
                     >
                         <option v-for="col in columns" :key="col.index" :value="col.index">
                             {{ col.letter }}: {{ col.header || '(boş başlık)' }}
@@ -113,7 +113,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                     <select
                         id="map-name"
                         v-model.number="form.mapping.full_name"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm"
                     >
                         <option v-for="col in columns" :key="col.index" :value="col.index">
                             {{ col.letter }}: {{ col.header || '(boş başlık)' }}
@@ -125,7 +125,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                     <select
                         id="map-branch"
                         v-model.number="form.mapping.branch"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 text-sm shadow-sm"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm"
                     >
                         <option v-for="col in columns" :key="col.index" :value="col.index">
                             {{ col.letter }}: {{ col.header || '(boş başlık)' }}
@@ -138,7 +138,7 @@ const actionClass: Record<PreviewRow['action'], string> = {
                 <button
                     type="button"
                     :disabled="form.processing"
-                    class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
                     @click="refreshPreview"
                 >
                     Önizlemeyi güncelle

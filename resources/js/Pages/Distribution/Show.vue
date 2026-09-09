@@ -258,7 +258,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                         v-if="editMode"
                         type="button"
                         :disabled="!selected"
-                        class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
                         @click="salonModal = true"
                     >
                         Salon Değiştir
@@ -270,7 +270,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                         :class="
                             editMode
                                 ? 'inline-flex items-center rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700'
-                                : 'inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100'
+                                : 'inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500'
                         "
                         @click="toggleEdit"
                     >
@@ -313,7 +313,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     </label>
                     <Link
                         :href="`/distribution?exam_week_id=${week.id}`"
-                        class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         Geri
                     </Link>
@@ -374,35 +374,28 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                 <a
                     :href="`/distribution/plans/${plan.id}/print/seating?photo=1`"
                     target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
-                    Salon Planları (Fotoğraflı)
-                </a>
-                <a
-                    :href="`/distribution/plans/${plan.id}/print/seating?photo=0`"
-                    target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                    Salon Planları (Fotoğrafsız)
+                    Salon Planları
                 </a>
                 <a
                     :href="`/distribution/plans/${plan.id}/print/branches`"
                     target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
-                    Şube Listeleri
+                    Sınıf Listeleri
                 </a>
                 <a
                     :href="`/distribution/plans/${plan.id}/print/rooms`"
                     target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     Salon Listeleri
                 </a>
                 <a
                     :href="`/distribution/plans/${plan.id}/print/summary`"
                     target="_blank"
-                    class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     Dağılım Özeti
                 </a>
@@ -479,7 +472,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     <table class="w-56 divide-y divide-gray-200 border text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-1 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Şube</th>
+                                <th class="px-3 py-1 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sınıf</th>
                                 <th class="px-3 py-1 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Öğrenci</th>
                             </tr>
                         </thead>
@@ -520,7 +513,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                         type="button"
                         title="Vazgeç"
                         aria-label="Vazgeç"
-                        class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                         @click="salonModal = false"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -538,7 +531,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                         type="button"
                         title="Vazgeç"
                         aria-label="Vazgeç"
-                        class="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                         @click="confirmState = null"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
