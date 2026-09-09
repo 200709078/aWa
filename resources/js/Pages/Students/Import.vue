@@ -8,13 +8,13 @@ interface Year {
     is_active: boolean;
 }
 
-defineProps<{
+const props = defineProps<{
     years: Year[];
     activeYearId: number | null;
 }>();
 
 const form = useForm({
-    academic_year_id: null as number | null,
+    academic_year_id: props.activeYearId,
     file: null as File | null,
 });
 

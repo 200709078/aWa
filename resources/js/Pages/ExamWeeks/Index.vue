@@ -25,14 +25,14 @@ interface Year {
     is_active: boolean;
 }
 
-defineProps<{
+const props = defineProps<{
     weeks: Week[];
     years: Year[];
     activeYearId: number | null;
 }>();
 
 const createForm = useForm({
-    academic_year_id: null as number | null,
+    academic_year_id: props.activeYearId,
     name: '',
     description: '',
     starts_at: '',
