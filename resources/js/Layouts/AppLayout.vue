@@ -18,7 +18,7 @@ const nav = [
     { label: 'Akademik Yıllar', href: '/academic-years' },
     { label: 'Sınav Haftaları', href: '/exam-weeks' },
     { label: 'Salonlar', href: '/rooms' },
-    { label: 'Şubeler', href: '/branches' },
+    { label: 'Sınıflar', href: '/branches' },
     { label: 'Öğrenciler', href: '/students' },
     { label: 'Dağıtım', href: '/distribution' },
     { label: 'Çıktılar', href: '/reports' },
@@ -87,7 +87,7 @@ function logout() {
                     <span class="hidden text-sm text-gray-600 sm:inline">{{ user?.name }}</span>
                     <button
                         type="button"
-                        class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                         @click="logout"
                     >
                         Çıkış

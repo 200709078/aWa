@@ -40,10 +40,10 @@ class BranchController extends Controller
         try {
             Branch::create($this->validated($request));
         } catch (QueryException $e) {
-            return back()->withErrors(['name' => 'Bu akademik yılda bu şube zaten kayıtlı.'])->withInput();
+            return back()->withErrors(['name' => 'Bu akademik yılda bu sınıf zaten kayıtlı.'])->withInput();
         }
 
-        return back()->with('success', 'Şube eklendi.');
+        return back()->with('success', 'Sınıf eklendi.');
     }
 
     public function update(Request $request, Branch $branch): RedirectResponse
@@ -54,7 +54,19 @@ class BranchController extends Controller
             return back()->withErrors(['name' => 'Bu akademik yılda bu şube zaten kayıtlı.'])->withInput();
         }
 
-        return back()->with('success', 'Şube güncellendi.');
+        return back()->with('success', 'Sınıf güncellendi.');
+    }
+
+    public function destroy(Branch $branch): RedirectResponse
+    {
+        if ($branch->students()->exists()) {
+            return back()->withErrors(['branch' => 'Bu sınıfta kayıtlı öğrenci olduğu için silinemez.']);
+        }
+
+        // Sınav haftası seçimleri FK cascade ile kaldırılır.
+        $branch->delete();
+
+        return back()->with('success', 'Sınıf silindi.');
     }
 
     public function activate(Branch $branch): RedirectResponse

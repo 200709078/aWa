@@ -93,4 +93,13 @@ class RoomController extends Controller
 
         return back()->with('success', $room->name.' pasife alındı.');
     }
+
+    public function destroy(Room $room): RedirectResponse
+    {
+        // Koltuklar, sınav haftası seçimleri ve dağıtım planlarındaki
+        // bu salona ait atamalar FK cascade ile birlikte silinir.
+        $room->delete();
+
+        return back()->with('success', 'Salon silindi.');
+    }
 }

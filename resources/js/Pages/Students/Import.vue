@@ -37,7 +37,7 @@ function submit() {
                     <select
                         id="import-year"
                         v-model="form.academic_year_id"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         <option :value="null">Seçin</option>
                         <option v-for="year in years" :key="year.id" :value="year.id">

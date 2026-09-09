@@ -22,7 +22,7 @@ function closePage() {
         <div class="no-print mb-4 flex flex-wrap items-center gap-2">
             <button
                 type="button"
-                class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 @click="closePage"
             >
                 Kapat
