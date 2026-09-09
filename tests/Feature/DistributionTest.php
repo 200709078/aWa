@@ -33,7 +33,7 @@ class DistributionTest extends TestCase
     {
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $branches = [];
-        foreach (['9A' => 9, '9B' => 9, '9C' => 9] as $name => $grade) {
+        foreach (['9A' => 9, '10A' => 10, '11A' => 11] as $name => $grade) {
             $branches[] = Branch::create(['academic_year_id' => $year->id, 'name' => $name, 'grade_level' => $grade, 'section' => substr($name, -1)]);
         }
 
@@ -80,7 +80,7 @@ class DistributionTest extends TestCase
     {
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $b1 = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
-        $b2 = Branch::create(['academic_year_id' => $year->id, 'name' => '9B', 'grade_level' => 9, 'section' => 'B']);
+        $b2 = Branch::create(['academic_year_id' => $year->id, 'name' => '10A', 'grade_level' => 10, 'section' => 'A']);
         for ($i = 1; $i <= 5; $i++) {
             Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => "1$i", 'full_name' => "A $i"]);
             Student::create(['academic_year_id' => $year->id, 'branch_id' => $b2->id, 'school_number' => "2$i", 'full_name' => "B $i"]);
@@ -101,6 +101,41 @@ class DistributionTest extends TestCase
 
         $this->assertEquals(1, $plan->used_room_count);
         $this->assertEquals(0, (new SeatingDistributionService())->summary($plan)['violations']);
+    }
+
+    public function test_ayni_seviye_farkli_sube_yan_yana_ihlal_sayar(): void
+    {
+        $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
+        $b1 = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
+        $b2 = Branch::create(['academic_year_id' => $year->id, 'name' => '9B', 'grade_level' => 9, 'section' => 'B']);
+        Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => '1', 'full_name' => 'Ali']);
+        Student::create(['academic_year_id' => $year->id, 'branch_id' => $b2->id, 'school_number' => '2', 'full_name' => 'Veli']);
+
+        $room = Room::create(['name' => 'Salon 1']);
+        $this->addSeats($room, 1, 2);
+
+        $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
+        $week->branches()->sync([$b1->id, $b2->id]);
+        $week->rooms()->sync([$room->id]);
+
+        $plan = (new SeatingDistributionService())->distribute($week);
+
+        // Tek satırda yan yana oturmak zorundalar ve aynı seviyedeler.
+        $this->assertEquals(1, (new SeatingDistributionService())->summary($plan)['violations']);
+    }
+
+    public function test_plan_silme_atamalari_da_siler(): void
+    {
+        $user = User::factory()->create();
+        $week = $this->setupWeek();
+
+        $plan = (new SeatingDistributionService())->distribute($week);
+        $this->assertGreaterThan(0, SeatingAssignment::where('seating_plan_id', $plan->id)->count());
+
+        $this->actingAs($user)->delete("/distribution/plans/{$plan->id}")->assertRedirect();
+
+        $this->assertDatabaseMissing('seating_plans', ['id' => $plan->id]);
+        $this->assertEquals(0, SeatingAssignment::where('seating_plan_id', $plan->id)->count());
     }
 
     public function test_kapasite_yetersizken_hata_verir(): void

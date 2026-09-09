@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
 use App\Models\ExamWeek;
 use App\Models\Room;
 use App\Models\SeatingAssignment;
@@ -21,7 +22,10 @@ class SeatingDistributionService
 
     public function distribute(ExamWeek $examWeek, ?string $name = null, ?int $createdBy = null): SeatingPlan
     {
-        $students = Student::whereIn('branch_id', $examWeek->branches()->pluck('branches.id'))
+        $branchIds = $examWeek->branches()->pluck('branches.id');
+        $levels = Branch::whereIn('id', $branchIds)->pluck('grade_level', 'id');
+
+        $students = Student::whereIn('branch_id', $branchIds)
             ->where('is_active', true)
             ->get(['id', 'branch_id']);
 
@@ -50,7 +54,7 @@ class SeatingDistributionService
 
         $ordered = $this->interleaveByBranch($students)->values();
         $studentIds = $ordered->map(fn (Student $s) => $s->id)->all();
-        $studentBranches = $ordered->map(fn (Student $s) => $s->branch_id)->all();
+        $studentLevels = $ordered->map(fn (Student $s) => $levels[$s->branch_id] ?? null)->all();
 
         $caps = $rooms->map(fn (Room $room) => $room->seats->count())->all();
         $count = $rooms->count();
@@ -75,7 +79,7 @@ class SeatingDistributionService
                     break 2;
                 }
                 $roomSet = collect($combo)->map(fn (int $i) => $rooms[$i])->values();
-                $result = $this->place($studentBranches, $roomSet);
+                $result = $this->place($studentLevels, $roomSet);
                 if ($best === null || $result['violations'] < $best['violations']) {
                     $best = $result;
                 }
@@ -207,7 +211,7 @@ class SeatingDistributionService
      */
     public function countPlanViolations(SeatingPlan $plan): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student']);
+        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name,grade_level']);
 
         return $this->computeViolations($this->placements($plan));
     }
@@ -219,7 +223,7 @@ class SeatingDistributionService
      */
     public function moveAssignment(SeatingPlan $plan, int $assignmentId, int $toSeatId, bool $force = false): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student', 'examWeek.rooms']);
+        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name,grade_level', 'examWeek.rooms']);
 
         $assignment = $plan->assignments->firstWhere('id', $assignmentId);
         if (! $assignment) {
@@ -261,7 +265,7 @@ class SeatingDistributionService
             return [
                 'applied' => false,
                 'needs_confirm' => true,
-                'message' => 'Bu taşıma aynı şubeden öğrencilerin yan yana gelmesine neden olacak.',
+                'message' => 'Bu taşıma aynı seviyeden öğrencilerin yan yana gelmesine neden olacak.',
                 'violations' => $after['count'],
                 'violating_seat_ids' => $after['seat_ids'],
             ];
@@ -288,7 +292,7 @@ class SeatingDistributionService
      */
     public function swapAssignments(SeatingPlan $plan, int $assignmentId, int $otherAssignmentId, bool $force = false): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student']);
+        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name,grade_level']);
 
         $first = $plan->assignments->firstWhere('id', $assignmentId);
         $second = $plan->assignments->firstWhere('id', $otherAssignmentId);
@@ -304,9 +308,9 @@ class SeatingDistributionService
         $before = $this->computeViolations($this->placements($plan))['seat_ids'];
 
         $placements = $this->placements($plan);
-        $tmpBranch = $placements[$first->seat_id]['branch'];
-        $placements[$first->seat_id]['branch'] = $placements[$second->seat_id]['branch'];
-        $placements[$second->seat_id]['branch'] = $tmpBranch;
+        $tmpLevel = $placements[$first->seat_id]['level'];
+        $placements[$first->seat_id]['level'] = $placements[$second->seat_id]['level'];
+        $placements[$second->seat_id]['level'] = $tmpLevel;
 
         $after = $this->computeViolations($placements);
         $new = array_values(array_diff($after['seat_ids'], $before));
@@ -315,7 +319,7 @@ class SeatingDistributionService
             return [
                 'applied' => false,
                 'needs_confirm' => true,
-                'message' => 'Bu takas aynı şubeden öğrencilerin yan yana gelmesine neden olacak.',
+                'message' => 'Bu takas aynı seviyeden öğrencilerin yan yana gelmesine neden olacak.',
                 'violations' => $after['count'],
                 'violating_seat_ids' => $after['seat_ids'],
             ];
@@ -363,7 +367,7 @@ class SeatingDistributionService
     }
 
     /**
-     * @return array<int, array{room_id: int, row: int, col: int, branch: int, seat_id: int}>
+     * @return array<int, array{room_id: int, row: int, col: int, level: int|null, seat_id: int}>
      */
     private function placements(SeatingPlan $plan): array
     {
@@ -373,7 +377,7 @@ class SeatingDistributionService
                 'room_id' => $assignment->seat->room_id,
                 'row' => $assignment->seat->row,
                 'col' => $assignment->seat->column,
-                'branch' => $assignment->student->branch_id,
+                'level' => $assignment->student->branch?->grade_level,
                 'seat_id' => $assignment->seat_id,
             ];
         }
@@ -382,7 +386,7 @@ class SeatingDistributionService
     }
 
     /**
-     * @param  array<int, array{room_id: int, row: int, col: int, branch: int, seat_id: int}>  $placements
+     * @param  array<int, array{room_id: int, row: int, col: int, level: int|null, seat_id: int}>  $placements
      * @return array{count: int, seat_ids: array}
      */
     private function computeViolations(array $placements): array
@@ -397,7 +401,7 @@ class SeatingDistributionService
         foreach ($byRow as $seats) {
             usort($seats, fn ($a, $b) => $a['col'] <=> $b['col']);
             for ($i = 1; $i < count($seats); $i++) {
-                if ($seats[$i]['col'] - $seats[$i - 1]['col'] === 1 && $seats[$i]['branch'] === $seats[$i - 1]['branch']) {
+                if ($seats[$i]['col'] - $seats[$i - 1]['col'] === 1 && $seats[$i]['level'] !== null && $seats[$i]['level'] === $seats[$i - 1]['level']) {
                     $count++;
                     $seatIds[] = $seats[$i]['seat_id'];
                     $seatIds[] = $seats[$i - 1]['seat_id'];
@@ -489,11 +493,11 @@ class SeatingDistributionService
     }
 
     /**
-     * @param  array<int>  $studentBranches  sıra => şube id
+     * @param  array<int, int|null>  $studentLevels  sıra => seviye
      * @param  Collection<int, Room>  $rooms
      * @return array{rooms: Collection<int, Room>, seats: array, violations: int}
      */
-    private function place(array $studentBranches, Collection $rooms): array
+    private function place(array $studentLevels, Collection $rooms): array
     {
         $seats = [];
         foreach ($rooms as $room) {
@@ -520,10 +524,10 @@ class SeatingDistributionService
         }
 
         $free = array_keys($seats);
-        foreach ($studentBranches as $si => $branchId) {
+        foreach ($studentLevels as $si => $level) {
             $chosen = null;
             foreach ($free as $key => $i) {
-                if (! $this->conflicts($i, $branchId, $seats, $neighbors, $studentBranches)) {
+                if (! $this->conflicts($i, $level, $seats, $neighbors, $studentLevels)) {
                     $chosen = $key;
                     break;
                 }
@@ -535,21 +539,24 @@ class SeatingDistributionService
             unset($free[$chosen]);
         }
 
-        $this->repair($seats, $neighbors, $studentBranches);
+        $this->repair($seats, $neighbors, $studentLevels);
 
-        return ['rooms' => $rooms, 'seats' => $seats, 'violations' => $this->countViolations($seats, $neighbors, $studentBranches)];
+        return ['rooms' => $rooms, 'seats' => $seats, 'violations' => $this->countViolations($seats, $neighbors, $studentLevels)];
     }
 
     /**
      * @param  array  $seats
      * @param  array<int, array<int>>  $neighbors
-     * @param  array<int, int>  $studentBranches
+     * @param  array<int, int|null>  $studentLevels
      */
-    private function conflicts(int $i, int $branchId, array $seats, array $neighbors, array $studentBranches): bool
+    private function conflicts(int $i, ?int $level, array $seats, array $neighbors, array $studentLevels): bool
     {
+        if ($level === null) {
+            return false;
+        }
         foreach ($neighbors[$i] as $n) {
             $si = $seats[$n]['student'];
-            if ($si !== null && $studentBranches[$si] === $branchId) {
+            if ($si !== null && $studentLevels[$si] === $level) {
                 return true;
             }
         }
@@ -557,7 +564,7 @@ class SeatingDistributionService
         return false;
     }
 
-    private function countViolations(array $seats, array $neighbors, array $studentBranches): int
+    private function countViolations(array $seats, array $neighbors, array $studentLevels): int
     {
         $count = 0;
         foreach ($seats as $i => $seat) {
@@ -565,7 +572,7 @@ class SeatingDistributionService
                 continue;
             }
             foreach ($neighbors[$i] as $n) {
-                if ($n > $i && $seats[$n]['student'] !== null && $studentBranches[$seats[$n]['student']] === $studentBranches[$seat['student']]) {
+                if ($n > $i && $seats[$n]['student'] !== null && $studentLevels[$seats[$n]['student']] !== null && $studentLevels[$seats[$n]['student']] === $studentLevels[$seat['student']]) {
                     $count++;
                 }
             }
@@ -574,12 +581,15 @@ class SeatingDistributionService
         return $count;
     }
 
-    private function incidentCount(int $i, int $branchId, array $seats, array $neighbors, array $studentBranches): int
+    private function incidentCount(int $i, ?int $level, array $seats, array $neighbors, array $studentLevels): int
     {
+        if ($level === null) {
+            return 0;
+        }
         $count = 0;
         foreach ($neighbors[$i] as $n) {
             $si = $seats[$n]['student'];
-            if ($si !== null && $studentBranches[$si] === $branchId) {
+            if ($si !== null && $studentLevels[$si] === $level) {
                 $count++;
             }
         }
@@ -590,9 +600,9 @@ class SeatingDistributionService
     /**
      * @param  array  $seats
      * @param  array<int, array<int>>  $neighbors
-     * @param  array<int, int>  $studentBranches
+     * @param  array<int, int|null>  $studentLevels
      */
-    private function repair(array &$seats, array $neighbors, array $studentBranches): void
+    private function repair(array &$seats, array $neighbors, array $studentLevels): void
     {
         $occupied = [];
         $free = [];
@@ -607,7 +617,7 @@ class SeatingDistributionService
         for ($iter = 0; $iter < self::MAX_REPAIR_ITERATIONS; $iter++) {
             $bad = [];
             foreach ($occupied as $i) {
-                if ($this->incidentCount($i, $studentBranches[$seats[$i]['student']], $seats, $neighbors, $studentBranches) > 0) {
+                if ($this->incidentCount($i, $studentLevels[$seats[$i]['student']], $seats, $neighbors, $studentLevels) > 0) {
                     $bad[] = $i;
                 }
             }
@@ -619,7 +629,7 @@ class SeatingDistributionService
             $improved = false;
 
             foreach ($bad as $a) {
-                if ($this->trySwap($a, $seats, $neighbors, $studentBranches, $occupied)) {
+                if ($this->trySwap($a, $seats, $neighbors, $studentLevels, $occupied)) {
                     $improved = true;
                     break;
                 }
@@ -627,7 +637,7 @@ class SeatingDistributionService
 
             if (! $improved && $free !== []) {
                 foreach ($bad as $a) {
-                    if ($this->tryMove($a, $seats, $neighbors, $studentBranches, $free, $occupied)) {
+                    if ($this->tryMove($a, $seats, $neighbors, $studentLevels, $free, $occupied)) {
                         $improved = true;
                         break;
                     }
@@ -648,35 +658,35 @@ class SeatingDistributionService
     /**
      * @param  array  $seats
      * @param  array<int, array<int>>  $neighbors
-     * @param  array<int, int>  $studentBranches
+     * @param  array<int, int|null>  $studentLevels
      * @param  array<int>  $occupied
      */
-    private function trySwap(int $a, array &$seats, array $neighbors, array $studentBranches, array $occupied): bool
+    private function trySwap(int $a, array &$seats, array $neighbors, array $studentLevels, array $occupied): bool
     {
         $siA = $seats[$a]['student'];
-        $branchA = $studentBranches[$siA];
+        $levelA = $studentLevels[$siA];
 
         foreach ($occupied as $b) {
             if ($b === $a) {
                 continue;
             }
             $siB = $seats[$b]['student'];
-            $branchB = $studentBranches[$siB];
+            $levelB = $studentLevels[$siB];
 
-            if ($branchA === $branchB) {
+            if ($levelA === $levelB) {
                 continue;
             }
 
-            $shared = $this->adjacent($a, $b, $neighbors) && $branchA === $branchB ? 1 : 0;
-            $before = $this->incidentCount($a, $branchA, $seats, $neighbors, $studentBranches)
-                + $this->incidentCount($b, $branchB, $seats, $neighbors, $studentBranches)
+            $shared = $this->adjacent($a, $b, $neighbors) && $levelA === $levelB ? 1 : 0;
+            $before = $this->incidentCount($a, $levelA, $seats, $neighbors, $studentLevels)
+                + $this->incidentCount($b, $levelB, $seats, $neighbors, $studentLevels)
                 - $shared;
 
             $seats[$a]['student'] = $siB;
             $seats[$b]['student'] = $siA;
 
-            $after = $this->incidentCount($a, $branchB, $seats, $neighbors, $studentBranches)
-                + $this->incidentCount($b, $branchA, $seats, $neighbors, $studentBranches)
+            $after = $this->incidentCount($a, $levelB, $seats, $neighbors, $studentLevels)
+                + $this->incidentCount($b, $levelA, $seats, $neighbors, $studentLevels)
                 - $shared;
 
             if ($after < $before) {
@@ -693,21 +703,21 @@ class SeatingDistributionService
     /**
      * @param  array  $seats
      * @param  array<int, array<int>>  $neighbors
-     * @param  array<int, int>  $studentBranches
+     * @param  array<int, int|null>  $studentLevels
      * @param  array<int>  $free
      * @param  array<int>  $occupied
      */
-    private function tryMove(int $a, array &$seats, array $neighbors, array $studentBranches, array &$free, array &$occupied): bool
+    private function tryMove(int $a, array &$seats, array $neighbors, array $studentLevels, array &$free, array &$occupied): bool
     {
-        $branchA = $studentBranches[$seats[$a]['student']];
-        $before = $this->incidentCount($a, $branchA, $seats, $neighbors, $studentBranches);
+        $levelA = $studentLevels[$seats[$a]['student']];
+        $before = $this->incidentCount($a, $levelA, $seats, $neighbors, $studentLevels);
 
         if ($before === 0) {
             return false;
         }
 
         foreach ($free as $key => $f) {
-            if ($this->incidentCount($f, $branchA, $seats, $neighbors, $studentBranches) < $before) {
+            if ($this->incidentCount($f, $levelA, $seats, $neighbors, $studentLevels) < $before) {
                 $seats[$f]['student'] = $seats[$a]['student'];
                 $seats[$a]['student'] = null;
                 unset($free[$key]);

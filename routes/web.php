@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/distribution', [DistributionController::class, 'index'])->name('distribution.index');
     Route::post('/distribution', [DistributionController::class, 'store'])->name('distribution.store');
     Route::get('/distribution/plans/{plan}', [DistributionController::class, 'show'])->name('distribution.plans.show');
+    Route::delete('/distribution/plans/{plan}', [DistributionController::class, 'destroy'])->name('distribution.plans.destroy');
     Route::post('/distribution/plans/{plan}/finalize', [DistributionController::class, 'finalize'])->name('distribution.plans.finalize');
     Route::post('/distribution/plans/{plan}/reopen', [DistributionController::class, 'reopen'])->name('distribution.plans.reopen');
     Route::post('/distribution/plans/{plan}/move', [DistributionController::class, 'move'])->name('distribution.plans.move');

@@ -22,7 +22,7 @@ class PlanEditTest extends TestCase
     {
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $bx = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
-        $by = Branch::create(['academic_year_id' => $year->id, 'name' => '9B', 'grade_level' => 9, 'section' => 'B']);
+        $by = Branch::create(['academic_year_id' => $year->id, 'name' => '10A', 'grade_level' => 10, 'section' => 'A']);
 
         $room = Room::create(['name' => 'Salon 1']);
         $seats = [];
