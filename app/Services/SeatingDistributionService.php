@@ -30,7 +30,7 @@ class SeatingDistributionService
             ->get(['id', 'branch_id']);
 
         if ($students->isEmpty()) {
-            throw new DistributionException('Dağıtıma dahil aktif öğrenci bulunamadı. Sınav haftasına şube ekleyin.');
+            throw new DistributionException('Dağıtıma dahil aktif öğrenci bulunamadı. Sınav haftasına sınıf ekleyin.');
         }
 
         $rooms = Room::whereIn('id', $examWeek->rooms()->pluck('rooms.id'))
