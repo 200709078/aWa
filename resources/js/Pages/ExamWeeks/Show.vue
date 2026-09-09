@@ -93,7 +93,7 @@ function formatTime(value: string | null): string {
                     href="/exam-weeks"
                     class="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                    Haftalara dön
+                    Geri
                 </Link>
             </div>
 
