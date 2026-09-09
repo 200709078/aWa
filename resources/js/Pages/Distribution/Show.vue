@@ -11,7 +11,7 @@ interface SeatInfo {
     label: string | null;
     violation: boolean;
     assignment_id: number | null;
-    student: { school_number: string; full_name: string; branch: string | null; photo_url: string | null } | null;
+    student: { school_number: string; full_name: string; branch: string | null; grade_level: number | null; photo_url: string | null } | null;
 }
 
 interface RoomData {
@@ -218,6 +218,27 @@ const otherRooms = computed(() => {
 function isSelected(seat: SeatInfo): boolean {
     return selected.value !== null && selected.value.seatId === seat.id;
 }
+
+function levelTables(room: RoomData): { label: string; rows: { branch: string; count: number }[] }[] {
+    const byLevel = new Map<number | null, Map<string, number>>();
+    for (const seat of room.seats) {
+        if (!seat.student) continue;
+        const level = seat.student.grade_level ?? null;
+        const branch = seat.student.branch || '—';
+        if (!byLevel.has(level)) byLevel.set(level, new Map());
+        const counts = byLevel.get(level)!;
+        counts.set(branch, (counts.get(branch) || 0) + 1);
+    }
+    const toRows = (level: number | null) =>
+        [...(byLevel.get(level) ?? new Map()).entries()]
+            .map(([branch, count]) => ({ branch, count }))
+            .sort((a, b) => a.branch.localeCompare(b.branch, 'tr', { numeric: true }));
+    const groups = [9, 10, 11, 12].map((level) => ({ label: `${level}. Sınıf`, rows: toRows(level) }));
+    if (byLevel.has(null)) {
+        groups.push({ label: '—', rows: toRows(null) });
+    }
+    return groups;
+}
 </script>
 
 <template>
@@ -396,7 +417,7 @@ function isSelected(seat: SeatInfo): boolean {
                         <tr v-for="row in rowNumbers(room)" :key="row">
                             <td v-for="col in columnNumbers(room)" :key="col" class="p-1">
                                 <div
-                                    v-if="seatMap(room).get(`${row}-${col}`)"
+                                    v-if="seatMap(room).get(`${row}-${col}`) && (seatMap(room).get(`${row}-${col}`)!.student || editMode)"
                                     class="min-h-12 rounded-md px-2 py-1 text-center text-xs"
                                     :class="[
                                         seatMap(room).get(`${row}-${col}`)!.violation
@@ -452,6 +473,27 @@ function isSelected(seat: SeatInfo): boolean {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-4">
+                <div v-for="group in levelTables(room)" :key="group.label">
+                    <table class="w-56 divide-y divide-gray-200 border text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-1 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Şube</th>
+                                <th class="px-3 py-1 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Öğrenci</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr v-for="entry in group.rows" :key="entry.branch">
+                                <td class="px-3 py-1 text-gray-900">{{ entry.branch }}</td>
+                                <td class="px-3 py-1 text-right text-gray-600">{{ entry.count }}</td>
+                            </tr>
+                            <tr v-if="group.rows.length === 0">
+                                <td colspan="2" class="px-3 py-1 text-gray-400">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
