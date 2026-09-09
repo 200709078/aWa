@@ -366,7 +366,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
             </div>
 
             <p v-if="summaryState.violations > 0" class="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
-                {{ summaryState.violations }} koltukta aynı şube yan yana geldi (kırmızı).
+                {{ summaryState.violations }} koltukta aynı seviye yan yana geldi (kırmızı).
             </p>
 
             <div class="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">

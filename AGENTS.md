@@ -649,9 +649,9 @@ Dağıtım kuralları:
 
 ## Kesin kural
 
-Aynı şubeden iki öğrenci yatay olarak yan yana oturmamalı.
+Aynı seviyeden iki öğrenci yatay olarak yan yana oturmamalı.
 
-Örn. iki `9A` öğrencisi aynı satırda komşu iki koltukta olamaz.
+Örn. `9A` ve `9B` öğrencileri aynı satırda komşu iki koltukta olamaz.
 
 Yatay komşu:
 - aynı row
@@ -659,7 +659,7 @@ Yatay komşu:
 
 ## İzin verilen durum
 
-Aynı şubeden öğrenciler gerekirse arka arkaya oturabilir.
+Aynı seviyeden öğrenciler gerekirse arka arkaya oturabilir.
 
 Yani dikey komşuluk yasak değildir.
 
@@ -724,7 +724,7 @@ Geçerli çözüm bulunamazsa açık hata ver; sonsuz döngü oluşturma.
 
 Dağıtım algoritması için yalnızca kritik otomatik testler yaz:
 
-- aynı şube yatay yan yana gelmiyor
+- aynı seviye yatay yan yana gelmiyor
 - kapasite yetersizken hata
 - minimum salon yaklaşımı
 - bütün öğrenciler tam bir kez atanıyor
@@ -1117,8 +1117,8 @@ Bu bölüm tüm geliştirme boyunca korunmalıdır.
 
 - Her öğrenci her uygun salonda/koltukta oturabilir.
 - Sınıf seviyesi veya renk tabanlı koltuk kısıtı yoktur.
-- Aynı şubeden öğrenciler yatay yan yana oturmamalıdır.
-- Aynı şubeden öğrenciler gerekirse arka arkaya oturabilir.
+- Aynı seviyeden öğrenciler yatay yan yana oturmamalıdır.
+- Aynı seviyeden öğrenciler gerekirse arka arkaya oturabilir.
 - Mümkünse bir salonda aynı şubeden en az iki öğrenci bulunması tercih edilir.
 - Mümkün olan en az sayıda salon kullanılmalıdır.
 - Kullanıcı bazı şubeleri sınav haftasından hariç tutabilir.

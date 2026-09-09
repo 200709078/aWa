@@ -97,6 +97,13 @@ class DistributionController extends Controller
         return back()->with('success', 'Plan taslağa alındı.');
     }
 
+    public function destroy(SeatingPlan $plan): RedirectResponse
+    {
+        $plan->delete();
+
+        return back()->with('success', 'Dağıtım planı silindi.');
+    }
+
     public function move(SeatingPlan $plan): JsonResponse
     {
         $data = request()->validate([
