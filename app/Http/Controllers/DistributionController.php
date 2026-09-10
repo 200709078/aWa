@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicYear;
 use App\Models\ExamWeek;
 use App\Models\Room;
 use App\Models\SeatingPlan;
@@ -19,7 +20,11 @@ class DistributionController extends Controller
 
     public function index(): Response
     {
+        $yearId = AcademicYear::where('is_active', true)->orderByDesc('name')->value('id')
+            ?? AcademicYear::orderByDesc('name')->value('id');
+
         $weeks = ExamWeek::with('academicYear:id,name')
+            ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId))
             ->orderByDesc('id')
             ->get(['id', 'name', 'academic_year_id', 'is_active']);
 

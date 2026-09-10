@@ -13,7 +13,7 @@ class AcademicYearController extends Controller
 {
     public function index(): Response
     {
-        $years = AcademicYear::withCount('branches')
+        $years = AcademicYear::withCount(['branches', 'students', 'examWeeks'])
             ->orderByDesc('id')
             ->get();
 
@@ -65,5 +65,16 @@ class AcademicYearController extends Controller
         $academicYear->update(['is_active' => false]);
 
         return back()->with('success', $academicYear->name.' pasife alındı.');
+    }
+
+    public function destroy(AcademicYear $academicYear): RedirectResponse
+    {
+        if ($academicYear->branches()->exists() || $academicYear->students()->exists() || $academicYear->examWeeks()->exists()) {
+            return back()->withErrors(['year' => 'Bu yıla ait sınıf, öğrenci veya sınav haftası olduğu için silinemez.']);
+        }
+
+        $academicYear->delete();
+
+        return back()->with('success', $academicYear->name.' silindi.');
     }
 }
