@@ -53,8 +53,14 @@ function columnNumbers(room: RoomData): number[] {
 
 function cellPadClass(room: RoomData, col: number): string {
     const third = Math.ceil(room.maxColumn / 3);
-    if (col <= third) return 'pl-4';
-    if (col > room.maxColumn - third) return 'pr-4';
+    if (col <= third) return 'pl-2';
+    if (col > room.maxColumn - third) return 'pr-2';
+    return '';
+}
+
+function nameSizeClass(fullName: string): string {
+    if (fullName.length > 28) return 'text-[9px] print:text-[8px]';
+    if (fullName.length > 18) return 'text-[10px] print:text-[9px]';
     return '';
 }
 
@@ -190,8 +196,8 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                                 <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
                                     <div v-if="photos" class="my-1 border-t border-dashed border-gray-300 print:my-0.5"></div>
                                     <div
-                                        class="line-clamp-2 min-h-[2.5em] text-center font-semibold"
-                                        :class="seatMap(room).get(`${row}-${col}`)!.student!.full_name.length > 20 ? 'text-[10px] print:text-[9px]' : ''"
+                                        class="min-h-[2.5em] text-center font-semibold"
+                                        :class="nameSizeClass(seatMap(room).get(`${row}-${col}`)!.student!.full_name)"
                                     >
                                         <span v-if="showNumber"
                                             >{{ seatMap(room).get(`${row}-${col}`)!.student!.school_number }}
@@ -211,7 +217,8 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     </tr>
                 </tbody>
             </table>
-            <div class="mt-2 grid grid-cols-4 gap-2 print:mt-1 print:break-inside-avoid">
+            <div class="mt-2 flex flex-wrap items-start gap-2 print:mt-1 print:break-inside-avoid">
+                <div class="grid min-w-0 flex-1 grid-cols-4 gap-2">
                 <div v-for="group in levelTables(room)" :key="group.label">
                     <table class="w-full border-collapse border text-[10px]">
                         <thead>
@@ -231,6 +238,17 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                         </tbody>
                     </table>
                 </div>
+                </div>
+                <table class="ml-auto w-32 shrink-0 border-collapse border text-sm">
+                    <tbody>
+                        <tr>
+                            <td class="border px-3 py-1.5 text-center font-semibold">Öğretmen</td>
+                        </tr>
+                        <tr>
+                            <td class="border px-3 py-1.5 text-center font-semibold">Masası</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             </div>
         </div>
