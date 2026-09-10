@@ -455,6 +455,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
         <div v-for="room in rooms" :key="room.room.id" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <h2 class="font-semibold text-gray-900">{{ room.room.name }}</h2>
             <div class="mt-3 overflow-x-auto">
+            <div class="w-fit max-w-full">
                 <table class="border-collapse">
                     <tbody>
                         <tr v-for="row in rowNumbers(room)" :key="row">
@@ -537,27 +538,44 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                         </tr>
                     </tbody>
                 </table>
-            </div>
-            <div class="mt-4 flex flex-wrap gap-4">
+            <div class="mt-4 flex flex-wrap items-start gap-4">
+            <div class="flex min-w-0 flex-1 flex-wrap gap-4">
                 <div v-for="group in levelTables(room)" :key="group.label">
-                    <table class="w-56 divide-y divide-gray-200 border text-sm">
+                    <table class="w-40 divide-y divide-gray-200 border text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-3 py-1 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sınıf</th>
-                                <th class="px-3 py-1 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Öğrenci</th>
+                                <th class="px-2 py-1 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sınıf</th>
+                                <th class="px-2 py-1 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Öğrenci</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             <tr v-for="entry in group.rows" :key="entry.branch">
-                                <td class="px-3 py-1 text-gray-900">{{ entry.branch }}</td>
-                                <td class="px-3 py-1 text-right text-gray-600">{{ entry.count }}</td>
+                                <td class="px-2 py-1 text-gray-900">{{ entry.branch }}</td>
+                                <td class="px-2 py-1 text-right text-gray-600">{{ entry.count }}</td>
                             </tr>
                             <tr v-if="group.rows.length === 0">
-                                <td colspan="2" class="px-3 py-1 text-gray-400">—</td>
+                                <td colspan="2" class="px-2 py-1 text-gray-400">—</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+                <table class="ml-auto w-32 shrink-0 border-collapse border border-gray-300 text-sm">
+                    <tbody>
+                        <tr>
+                            <td class="border border-gray-300 px-3 py-1.5 text-center font-semibold text-gray-900">
+                                Öğretmen
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 px-3 py-1.5 text-center font-semibold text-gray-900">
+                                Masası
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
             </div>
         </div>
 

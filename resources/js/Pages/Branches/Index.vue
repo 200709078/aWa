@@ -97,7 +97,6 @@ function confirmDelete() {
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h1 class="text-2xl font-bold text-gray-900">Sınıflar</h1>
                 <div class="flex items-center gap-2">
-                    <label for="year-filter" class="text-sm text-gray-600">Akademik Yıl</label>
                     <select
                         id="year-filter"
                         v-model="filterYear"
@@ -105,12 +104,9 @@ function confirmDelete() {
                         @change="applyFilter"
                     >
                         <option v-for="year in years" :key="year.id" :value="year.id">
-                            {{ year.name }}{{ year.is_active ? ' (aktif)' : '' }}
+                            {{ year.name }}
                         </option>
                     </select>
-                    <Link href="/academic-years" class="text-sm text-indigo-600 hover:underline">
-                        Yılları yönet
-                    </Link>
                 </div>
             </div>
 
