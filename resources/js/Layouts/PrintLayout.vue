@@ -3,6 +3,13 @@ import { Head } from '@inertiajs/vue3';
 
 const props = defineProps<{ title: string; backHref: string }>();
 
+const today = new Date().toLocaleDateString('tr-TR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+});
+
 function printPage() {
     window.print();
 }
@@ -18,7 +25,14 @@ function closePage() {
 <template>
     <Head :title="title" />
 
-    <div class="bg-white p-6 print:p-0">
+    <div class="bg-white p-6 print:px-[10mm] print:pb-[4mm] print:pt-[8mm]">
+        <div class="mb-2 hidden items-center justify-between text-xs text-gray-600 print:flex">
+            <span>{{ today }}</span>
+            <span
+                >made by <span class="font-bold text-black">m</span
+                ><span class="font-bold text-blue-900">ADEM</span><span class="font-bold text-black">atik</span></span
+            >
+        </div>
         <div class="no-print mb-4 flex flex-wrap items-center gap-2">
             <button
                 type="button"
@@ -29,9 +43,10 @@ function closePage() {
             </button>
             <button
                 type="button"
-                class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                class="inline-flex items-center justify-center gap-0 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
                 @click="printPage"
             >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
                 Yazdır
             </button>
             <slot name="actions" />
@@ -44,3 +59,10 @@ function closePage() {
         </div>
     </div>
 </template>
+
+<style>
+@page {
+    size: A4;
+    margin: 0;
+}
+</style>

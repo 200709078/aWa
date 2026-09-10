@@ -23,7 +23,7 @@ defineProps<{
             v-for="(list, index) in lists"
             :key="list.room.id"
             :class="index < lists.length - 1 ? 'print:break-after-page' : ''"
-            class="mt-6"
+            class="mt-6 print:pb-[8mm]"
         >
             <h2 class="text-lg font-semibold">{{ list.room.name }} ({{ list.students.length }} öğrenci)</h2>
             <table class="mt-2 w-full border-collapse text-sm">

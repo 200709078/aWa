@@ -205,6 +205,23 @@ function onDrop(seat: SeatInfo) {
     doSwap(seat.assignment_id!);
 }
 
+function openSalonModal(seat: SeatInfo) {
+    if (!editMode.value || busy.value || !seat.student) return;
+    notice.value = null;
+    selected.value = { assignmentId: seat.assignment_id!, seatId: seat.id };
+    salonModal.value = true;
+}
+
+function openPrint(url: string) {
+    const width = 850;
+    const height = 900;
+    const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+    const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+    const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=no,scrollbars=yes`;
+    const win = window.open(url, 'kelebek-print', features);
+    if (!win) window.open(url, '_blank');
+}
+
 const otherRooms = computed(() => {
     if (!selected.value) return [];
     return rooms.value
@@ -254,18 +271,6 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button
-                        v-if="editMode"
-                        type="button"
-                        :disabled="!selected"
-                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
-                        @click="salonModal = true"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4 mr-1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>
-                        </svg>
-                        Salon Değiştir
-                    </button>
                     <button
                         type="button"
                         :title="editMode ? 'Düzenlemeyi Kapat' : 'Elle Düzenle'"
@@ -324,12 +329,27 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                             Taslak
                         </span>
                     </div>
-                    <label
-                        class="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700"
-                    >
-                        <input v-model="showPhotos" type="checkbox" class="rounded border-gray-300" />
-                        Fotoğraflar
-                    </label>
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            role="switch"
+                            :aria-checked="showPhotos"
+                            title="Fotoğrafları Göster/Gizle"
+                            :class="[
+                                'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                                showPhotos ? 'bg-indigo-600' : 'bg-gray-300',
+                            ]"
+                            @click="showPhotos = !showPhotos"
+                        >
+                            <span
+                                :class="[
+                                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                                    showPhotos ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                                ]"
+                            />
+                        </button>
+                        <span class="text-sm text-gray-700">Fotoğraflar</span>
+                    </div>
                     <Link
                         :href="`/distribution?exam_week_id=${week.id}`"
                         class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
@@ -391,15 +411,15 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
         </div>
 
         <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="font-semibold text-gray-900">Çıktılar</h2>
+            <h2 class="text-2xl font-bold text-gray-900">Yazdır</h2>
             <p class="mt-1 text-sm text-gray-500">
-                Her plan için yazdırılabilir çıktılar yeni sekmede açılır. Tarayıcıdan Yazdır → PDF olarak kaydet
+                Her plan için yazdırılabilir çıktılar ayrı bir pencerede açılır. Tarayıcıdan Yazdır → PDF olarak kaydet
                 kullanılabilir.
             </p>
             <div class="mt-3 flex flex-wrap items-center gap-2">
                 <a
                     :href="`/distribution/plans/${plan.id}/print/seating?photo=1`"
-                    target="_blank"
+                    @click.prevent="openPrint(`/distribution/plans/${plan.id}/print/seating?photo=1`)"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
@@ -407,7 +427,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                 </a>
                 <a
                     :href="`/distribution/plans/${plan.id}/print/branches`"
-                    target="_blank"
+                    @click.prevent="openPrint(`/distribution/plans/${plan.id}/print/branches`)"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
@@ -415,7 +435,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                 </a>
                 <a
                     :href="`/distribution/plans/${plan.id}/print/rooms`"
-                    target="_blank"
+                    @click.prevent="openPrint(`/distribution/plans/${plan.id}/print/rooms`)"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
@@ -423,7 +443,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                 </a>
                 <a
                     :href="`/distribution/plans/${plan.id}/print/summary`"
-                    target="_blank"
+                    @click.prevent="openPrint(`/distribution/plans/${plan.id}/print/summary`)"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
@@ -441,7 +461,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                             <td v-for="col in columnNumbers(room)" :key="col" class="p-1">
                                 <div
                                     v-if="seatMap(room).get(`${row}-${col}`) && (seatMap(room).get(`${row}-${col}`)!.student || editMode)"
-                                    class="min-h-12 rounded-md px-2 py-1 text-center text-xs"
+                                    class="group relative min-h-12 rounded-md px-2 py-1 text-center text-xs"
                                     :class="[
                                         seatMap(room).get(`${row}-${col}`)!.violation
                                             ? 'bg-red-100 text-red-900'
@@ -452,7 +472,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                                         isSelected(seatMap(room).get(`${row}-${col}`)!)
                                             ? 'ring-2 ring-indigo-600'
                                             : '',
-                                        showPhotos ? 'w-36' : 'w-28',
+                                        'w-36',
                                     ]"
                                     :draggable="editMode && !!seatMap(room).get(`${row}-${col}`)!.student"
                                     @click="onSeatClick(seatMap(room).get(`${row}-${col}`)!)"
@@ -464,19 +484,40 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                                     @dragover.prevent
                                     @drop="onDrop(seatMap(room).get(`${row}-${col}`)!)"
                                 >
+                                    <button
+                                        v-if="editMode && seatMap(room).get(`${row}-${col}`)!.student"
+                                        type="button"
+                                        title="Salon Değiştir"
+                                        aria-label="Salon Değiştir"
+                                        class="absolute right-1 top-1 rounded-md border border-gray-300 bg-white p-1 text-gray-600 opacity-0 shadow-sm transition-opacity hover:bg-indigo-100 hover:text-indigo-800 focus-visible:opacity-100 group-hover:opacity-100"
+                                        @click.stop="openSalonModal(seatMap(room).get(`${row}-${col}`)!)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="block h-3.5 w-3.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h11c3 0 5 2 5 5" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.5 2.5 4 6l4.5 3.5" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 18H9c-3 0-5-2-5-5" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 14.5 20 18l-4.5 3.5" />
+                                        </svg>
+                                    </button>
                                     <div class="font-semibold">
                                         {{ seatLabel(seatMap(room).get(`${row}-${col}`)!) }}
                                     </div>
                                     <div
-                                        v-if="showPhotos && seatMap(room).get(`${row}-${col}`)!.student"
+                                        v-if="seatMap(room).get(`${row}-${col}`)!.student"
                                         class="mb-1"
                                     >
                                         <StudentAvatar
+                                            v-if="showPhotos"
                                             :photo-url="seatMap(room).get(`${row}-${col}`)!.student!.photo_url"
                                             :full-name="seatMap(room).get(`${row}-${col}`)!.student!.full_name"
                                             img-class="block h-auto w-full rounded object-contain"
                                             placeholder-class="w-full"
                                             circle-class="w-24 text-2xl"
+                                        />
+                                        <div
+                                            v-else
+                                            class="invisible aspect-[3/4] w-full rounded"
+                                            aria-hidden="true"
                                         />
                                     </div>
                                     <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
@@ -523,8 +564,11 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
         <div v-if="salonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow">
                 <h2 class="flex items-center gap-2 text-lg font-semibold text-gray-900">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="h-5 w-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h11c3 0 5 2 5 5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.5 2.5 4 6l4.5 3.5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 18H9c-3 0-5-2-5-5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 14.5 20 18l-4.5 3.5" />
                     </svg>
                     Salon Değiştir
                 </h2>
