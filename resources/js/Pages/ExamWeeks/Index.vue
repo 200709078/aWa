@@ -15,6 +15,7 @@ interface Week {
     branches_count: number;
     rooms_count: number;
     plans_count: number;
+    exams_count: number;
     student_count: number;
     capacity: number;
 }
@@ -76,6 +77,10 @@ function toggle(url: string) {
 }
 
 const deleting = ref<Week | null>(null);
+
+function isUsed(week: Week): boolean {
+    return week.plans_count > 0 || week.exams_count > 0;
+}
 
 function askDelete(week: Week) {
     deleting.value = week;
@@ -184,9 +189,10 @@ function dateRange(week: Week): string {
                                 </button>
                                 <button
                                     type="button"
-                                    title="Sil"
+                                    :title="isUsed(week) ? 'Dağıtım planı veya sınavı olan hafta silinemez' : 'Sil'"
                                     aria-label="Sil"
-                                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700 focus:border-red-500 focus:ring-red-500"
+                                    :disabled="isUsed(week)"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700 focus:border-red-500 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                                     @click="askDelete(week)"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
@@ -200,6 +206,9 @@ function dateRange(week: Week): string {
                 </tbody>
             </table>
         </div>
+        <p v-if="$page.props.errors.week" class="mt-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
+            {{ $page.props.errors.week }}
+        </p>
 
         <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <h2 class="text-lg font-semibold text-gray-900">Yeni Sınav Haftası Ekle</h2>
@@ -363,11 +372,8 @@ function dateRange(week: Week): string {
                 <p class="mt-2 text-sm text-gray-600">
                     {{ deleting.name }} silinsin mi? Bu işlem geri alınamaz.
                 </p>
-                <p v-if="deleting.plans_count > 0" class="mt-2 text-sm font-medium text-red-600">
-                    Bu haftaya ait {{ deleting.plans_count }} dağıtım planı da silinecek.
-                </p>
                 <p class="mt-1 text-sm text-gray-500">
-                    Sınavlar ile şube/salon seçimleri de silinir; şubeler, salonlar ve öğrenciler korunur.
+                    Şube/salon seçimleri de silinir; şubeler, salonlar ve öğrenciler korunur.
                 </p>
                 <div class="mt-4 flex justify-end gap-2">
                     <button

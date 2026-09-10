@@ -8,6 +8,7 @@ use App\Models\Student;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,6 +31,7 @@ class StudentController extends Controller
         $search = trim((string) $request->input('q', ''));
 
         $students = Student::with('branch:id,name')
+            ->withCount('seatingAssignments')
             ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId))
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
@@ -84,6 +86,21 @@ class StudentController extends Controller
         $student->update(['is_active' => false]);
 
         return back()->with('success', $student->full_name.' pasife alındı.');
+    }
+
+    public function destroy(Student $student): RedirectResponse
+    {
+        if ($student->seatingAssignments()->exists()) {
+            return back()->withErrors(['student' => 'Bu öğrenci bir oturma planında kullanıldığı için silinemez.']);
+        }
+
+        if ($student->photo_path) {
+            Storage::disk('public')->delete($student->photo_path);
+        }
+
+        $student->delete();
+
+        return back()->with('success', $student->full_name.' silindi.');
     }
 
     /**

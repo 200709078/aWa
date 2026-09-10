@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
     Route::post('/students/{student}/activate', [StudentController::class, 'activate'])->name('students.activate');
     Route::post('/students/{student}/deactivate', [StudentController::class, 'deactivate'])->name('students.deactivate');
+    Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
 
     Route::get('/students/import', [StudentImportController::class, 'show'])->name('students.import');
     Route::post('/students/import/preview', [StudentImportController::class, 'preview'])->name('students.import.preview');
@@ -41,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/academic-years/{academicYear}', [AcademicYearController::class, 'update'])->name('academic-years.update');
     Route::post('/academic-years/{academicYear}/activate', [AcademicYearController::class, 'activate'])->name('academic-years.activate');
     Route::post('/academic-years/{academicYear}/deactivate', [AcademicYearController::class, 'deactivate'])->name('academic-years.deactivate');
+    Route::delete('/academic-years/{academicYear}', [AcademicYearController::class, 'destroy'])->name('academic-years.destroy');
 
     Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
     Route::post('/branches', [BranchController::class, 'store'])->name('branches.store');
