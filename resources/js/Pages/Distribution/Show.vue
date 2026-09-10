@@ -261,6 +261,9 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                         class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
                         @click="salonModal = true"
                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4 mr-1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>
+                        </svg>
                         Salon Değiştir
                     </button>
                     <button
@@ -269,12 +272,28 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                         :aria-label="editMode ? 'Düzenlemeyi Kapat' : 'Elle Düzenle'"
                         :class="
                             editMode
-                                ? 'inline-flex items-center rounded-md bg-indigo-600 px-3 py-1 text-sm font-semibold text-white hover:bg-indigo-700'
+                                ? 'inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700'
                                 : 'inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500'
                         "
                         @click="toggleEdit"
                     >
-                        {{ editMode ? 'Düzenlemeyi Kapat' : 'Elle Düzenle' }}
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="h-5 w-5"
+                        >
+                            <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+                            <path d="M14 10V4a2 2 0 0 0-4 0v6" />
+                            <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+                            <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+                            <path v-if="editMode" d="M5 5l14 14" />
+                            <path v-if="editMode" d="M19 5L5 19" />
+                        </svg>
                     </button>
                     <div class="flex items-center gap-2">
                         <button
@@ -369,13 +388,21 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                 {{ summaryState.violations }} koltukta aynı seviye yan yana geldi (kırmızı).
             </p>
 
-            <div class="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
-                <span class="py-1 text-sm font-medium text-gray-700">Çıktılar:</span>
+        </div>
+
+        <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="font-semibold text-gray-900">Çıktılar</h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Her plan için yazdırılabilir çıktılar yeni sekmede açılır. Tarayıcıdan Yazdır → PDF olarak kaydet
+                kullanılabilir.
+            </p>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
                 <a
                     :href="`/distribution/plans/${plan.id}/print/seating?photo=1`"
                     target="_blank"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
                     Salon Planları
                 </a>
                 <a
@@ -383,6 +410,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     target="_blank"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
                     Sınıf Listeleri
                 </a>
                 <a
@@ -390,6 +418,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     target="_blank"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
                     Salon Listeleri
                 </a>
                 <a
@@ -397,6 +426,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     target="_blank"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="mr-1.5 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
                     Dağılım Özeti
                 </a>
             </div>
@@ -492,7 +522,12 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
 
         <div v-if="salonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow">
-                <h2 class="text-lg font-semibold text-gray-900">Salon Değiştir</h2>
+                <h2 class="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>
+                    </svg>
+                    Salon Değiştir
+                </h2>
                 <p class="mt-1 text-sm text-gray-500">Hedef salonda boş bir koltuk seçin.</p>
                 <div v-for="entry in otherRooms" :key="entry.room.room.id" class="mt-4">
                     <h3 class="text-sm font-semibold text-gray-700">{{ entry.room.room.name }}</h3>
