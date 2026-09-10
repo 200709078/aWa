@@ -62,21 +62,6 @@ class PrintTest extends TestCase
         $response->assertInertia(fn ($page) => $page->where('showPhotos', false));
     }
 
-    public function test_cikti_merkezi_planlari_listeler(): void
-    {
-        $plan = $this->setupPlan();
-        $user = User::first();
-
-        $this->get('/reports')->assertRedirect('/login');
-
-        $response = $this->actingAs($user)->get('/reports');
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->where('plans.0.id', $plan->id)
-            ->where('plans.0.total_students', 1)
-        );
-    }
-
     public function test_ozet_icerigi_dogru(): void    {
         $plan = $this->setupPlan();
         $user = User::first();

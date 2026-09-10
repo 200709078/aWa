@@ -21,7 +21,6 @@ const nav = [
     { label: 'Sınıflar', href: '/branches' },
     { label: 'Öğrenciler', href: '/students' },
     { label: 'Dağıtım', href: '/distribution' },
-    { label: 'Çıktılar', href: '/reports' },
 ];
 
 const flashSuccess = computed(() => {

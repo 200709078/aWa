@@ -51,6 +51,13 @@ function columnNumbers(room: RoomData): number[] {
     return Array.from({ length: room.maxColumn }, (_, i) => i + 1);
 }
 
+function cellPadClass(room: RoomData, col: number): string {
+    const third = Math.ceil(room.maxColumn / 3);
+    if (col <= third) return 'pl-4';
+    if (col > room.maxColumn - third) return 'pr-4';
+    return '';
+}
+
 function levelTables(room: RoomData): { label: string; rows: { branch: string; count: number }[] }[] {
     const byLevel = new Map<number | null, Map<string, number>>();
     for (const seat of room.seats) {
@@ -76,54 +83,126 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
 <template>
     <PrintLayout :title="`Salon Oturma Planları`" :back-href="`/distribution/plans/${plan.id}`">
         <template #actions>
-            <label class="no-print flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700">
-                <input v-model="photos" type="checkbox" class="rounded border-gray-300" />
-                Fotoğraflar
-            </label>
-            <label class="no-print flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700">
-                <input v-model="showNumber" type="checkbox" class="rounded border-gray-300" />
-                Numara
-            </label>
-            <label class="no-print flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700">
-                <input v-model="showBranch" type="checkbox" class="rounded border-gray-300" />
-                Sınıf
-            </label>
+            <div class="no-print flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2">
+                <button
+                    type="button"
+                    role="switch"
+                    :aria-checked="photos"
+                    title="Fotoğrafları Göster/Gizle"
+                    :class="[
+                        'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                        photos ? 'bg-indigo-600' : 'bg-gray-300',
+                    ]"
+                    @click="photos = !photos"
+                >
+                    <span
+                        :class="[
+                            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                            photos ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                        ]"
+                    />
+                </button>
+                <span class="text-sm text-gray-700">Fotoğraflar</span>
+            </div>
+            <div class="no-print flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2">
+                <button
+                    type="button"
+                    role="switch"
+                    :aria-checked="showNumber"
+                    title="Numarayı Göster/Gizle"
+                    :class="[
+                        'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                        showNumber ? 'bg-indigo-600' : 'bg-gray-300',
+                    ]"
+                    @click="showNumber = !showNumber"
+                >
+                    <span
+                        :class="[
+                            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                            showNumber ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                        ]"
+                    />
+                </button>
+                <span class="text-sm text-gray-700">Numara</span>
+            </div>
+            <div class="no-print flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2">
+                <button
+                    type="button"
+                    role="switch"
+                    :aria-checked="showBranch"
+                    title="Sınıfı Göster/Gizle"
+                    :class="[
+                        'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                        showBranch ? 'bg-indigo-600' : 'bg-gray-300',
+                    ]"
+                    @click="showBranch = !showBranch"
+                >
+                    <span
+                        :class="[
+                            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                            showBranch ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                        ]"
+                    />
+                </button>
+                <span class="text-sm text-gray-700">Sınıf</span>
+            </div>
         </template>
-
-        <h1 class="text-xl font-bold">Salon Oturma Planları — {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}</h1>
 
         <div
             v-for="(room, index) in grid"
             :key="room.room.id"
             :class="index < grid.length - 1 ? 'print:break-after-page' : ''"
-            class="mt-6"
+            class="mt-6 print:pb-[8mm]"
         >
-            <h2 class="text-lg font-semibold">{{ room.room.name }}</h2>
-            <table class="mt-2 w-full table-fixed border-collapse">
+            <h2 class="text-lg font-semibold print:text-base">{{ week.name }} - {{ room.room.name }} Oturma Planı</h2>
+            <div class="print:break-inside-avoid">
+            <table class="mt-2 w-full table-fixed border-collapse print:mt-1">
                 <tbody>
                     <tr v-for="row in rowNumbers(room)" :key="row">
-                        <td v-for="col in columnNumbers(room)" :key="col" class="border border-gray-300 p-1">
+                        <td
+                            v-for="col in columnNumbers(room)"
+                            :key="col"
+                            class="p-0.5 align-top"
+                            :class="[
+                                seatMap(room).get(`${row}-${col}`)?.student ? 'border border-gray-300' : '',
+                                cellPadClass(room, col),
+                            ]"
+                        >
                             <div
                                 v-if="seatMap(room).get(`${row}-${col}`)"
-                                class="text-center leading-tight"
-                                :class="photos ? 'text-[11px]' : 'text-[10px]'"
+                                class="text-center text-[11px] leading-tight print:text-[10px]"
                             >
-                                <StudentAvatar
-                                    v-if="photos && seatMap(room).get(`${row}-${col}`)!.student"
-                                    :photo-url="seatMap(room).get(`${row}-${col}`)!.student!.photo_url"
-                                    :full-name="seatMap(room).get(`${row}-${col}`)!.student!.full_name"
-                                    img-class="mb-1 block h-auto w-full object-contain"
-                                    placeholder-class="mb-1 w-full"
-                                    circle-class="w-14 text-lg"
-                                />
                                 <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
-                                    <div class="text-center font-semibold">
+                                    <StudentAvatar
+                                        v-if="photos"
+                                        :photo-url="seatMap(room).get(`${row}-${col}`)!.student!.photo_url"
+                                        :full-name="seatMap(room).get(`${row}-${col}`)!.student!.full_name"
+                                        img-class="block h-20 w-full object-contain print:h-14"
+                                        placeholder-class="max-h-20 w-full print:max-h-14"
+                                        circle-class="w-12 text-base"
+                                    />
+                                    <div
+                                        v-else
+                                        class="invisible h-20 w-full print:h-14"
+                                        aria-hidden="true"
+                                    />
+                                </template>
+                                <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
+                                    <div v-if="photos" class="my-1 border-t border-dashed border-gray-300 print:my-0.5"></div>
+                                    <div
+                                        class="line-clamp-2 min-h-[2.5em] text-center font-semibold"
+                                        :class="seatMap(room).get(`${row}-${col}`)!.student!.full_name.length > 20 ? 'text-[10px] print:text-[9px]' : ''"
+                                    >
                                         <span v-if="showNumber"
                                             >{{ seatMap(room).get(`${row}-${col}`)!.student!.school_number }}
                                         </span>
                                         {{ seatMap(room).get(`${row}-${col}`)!.student!.full_name }}
                                     </div>
-                                    <div v-if="showBranch" class="text-center text-gray-500">
+                                    <div
+                                        class="min-h-[1.25em] truncate text-center text-gray-500"
+                                        :class="showBranch ? '' : 'invisible'"
+                                        :aria-hidden="!showBranch"
+                                    >
                                         {{ seatMap(room).get(`${row}-${col}`)!.student!.branch }}
                                     </div>
                                 </template>
@@ -132,26 +211,27 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                     </tr>
                 </tbody>
             </table>
-            <div class="mt-3 grid grid-cols-4 gap-3 print:break-inside-avoid">
+            <div class="mt-2 grid grid-cols-4 gap-2 print:mt-1 print:break-inside-avoid">
                 <div v-for="group in levelTables(room)" :key="group.label">
-                    <table class="w-full border-collapse border text-[11px]">
+                    <table class="w-full border-collapse border text-[10px]">
                         <thead>
                             <tr class="bg-gray-50">
-                                <th class="border px-2 py-0.5 text-left font-medium text-gray-500">Sınıf</th>
-                                <th class="border px-2 py-0.5 text-right font-medium text-gray-500">Öğrenci</th>
+                                <th class="border px-1.5 py-px text-left font-medium text-gray-500">Sınıf</th>
+                                <th class="border px-1.5 py-px text-right font-medium text-gray-500">Öğrenci</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="entry in group.rows" :key="entry.branch">
-                                <td class="border px-2 py-0.5">{{ entry.branch }}</td>
-                                <td class="border px-2 py-0.5 text-right">{{ entry.count }}</td>
+                                <td class="border px-1.5 py-px">{{ entry.branch }}</td>
+                                <td class="border px-1.5 py-px text-right">{{ entry.count }}</td>
                             </tr>
                             <tr v-if="group.rows.length === 0">
-                                <td colspan="2" class="border px-2 py-0.5 text-gray-400">—</td>
+                                <td colspan="2" class="border px-1.5 py-px text-gray-400">—</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
             </div>
         </div>
     </PrintLayout>
