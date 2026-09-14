@@ -23,6 +23,8 @@ class RoomTest extends TestCase
 
         $room = Room::first();
 
+        $this->assertEquals(30, Seat::where('room_id', $room->id)->count());
+
         $this->actingAs($user)->put("/rooms/{$room->id}", ['name' => 'Salon A', 'is_active' => false])
             ->assertRedirect();
 
@@ -50,9 +52,7 @@ class RoomTest extends TestCase
     {
         $user = User::factory()->create();
         $room = Room::create(['name' => 'Salon 1']);
-        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 1]);
-        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 2]);
-        $seat = Seat::where('column', 2)->first();
+        $seat = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 2)->first();
 
         $this->actingAs($user)->post("/seats/{$seat->id}/toggle")->assertRedirect();
         $this->assertFalse($seat->fresh()->is_active);
@@ -60,25 +60,24 @@ class RoomTest extends TestCase
         $response = $this->actingAs($user)->get("/rooms/{$room->id}");
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->where('activeCount', 1)
-            ->where('seats', fn ($seats) => count($seats) === 2)
+            ->where('activeCount', 29)
+            ->where('seats', fn ($seats) => count($seats) === 30)
         );
 
-        $this->actingAs($user)->post("/rooms/{$room->id}/seats", ['row' => 2, 'column' => 1])
+        $this->actingAs($user)->post("/rooms/{$room->id}/seats", ['row' => 6, 'column' => 1])
             ->assertRedirect();
-        $this->assertEquals(3, Seat::where('room_id', $room->id)->count());
+        $this->assertEquals(31, Seat::where('room_id', $room->id)->count());
     }
 
     public function test_koltuk_silme(): void
     {
         $user = User::factory()->create();
         $room = Room::create(['name' => 'Salon 1']);
-        $seat = Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 1]);
-        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 2]);
+        $seat = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 1)->first();
 
         $this->actingAs($user)->delete("/seats/{$seat->id}")->assertRedirect();
 
         $this->assertDatabaseMissing('seats', ['id' => $seat->id]);
-        $this->assertEquals(1, Seat::where('room_id', $room->id)->count());
+        $this->assertEquals(29, Seat::where('room_id', $room->id)->count());
     }
 }

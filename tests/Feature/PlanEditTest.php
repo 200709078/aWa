@@ -27,7 +27,7 @@ class PlanEditTest extends TestCase
         $room = Room::create(['name' => 'Salon 1']);
         $seats = [];
         for ($c = 1; $c <= 4; $c++) {
-            $seats[$c] = Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => $c]);
+            $seats[$c] = Seat::where('room_id', $room->id)->where('row', 1)->where('column', $c)->first();
         }
 
         $sx1 = Student::create(['academic_year_id' => $year->id, 'branch_id' => $bx->id, 'school_number' => '1', 'full_name' => 'X1']);
@@ -133,7 +133,7 @@ class PlanEditTest extends TestCase
         $user = User::factory()->create();
         $plan = $this->setupPlan();
         $room2 = Room::create(['name' => 'Salon 2']);
-        $target = Seat::create(['room_id' => $room2->id, 'row' => 1, 'column' => 1]);
+        $target = Seat::where('room_id', $room2->id)->where('row', 1)->where('column', 1)->first();
         $plan->examWeek->rooms()->attach($room2->id);
 
         $x1 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '1'))->first();

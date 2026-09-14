@@ -49,14 +49,14 @@ class RoomController extends Controller
             'name.required' => 'Salon adı gerekli.',
         ]);
 
-        Room::create([
+        $room = Room::create([
             'name' => trim($data['name']),
             'description' => isset($data['description']) ? trim($data['description']) : null,
             'sort_order' => $data['sort_order'] ?? 0,
             'is_active' => $request->boolean('is_active', true),
         ]);
 
-        return back()->with('success', 'Salon eklendi.');
+        return back()->with('success', 'Salon eklendi (5x6 koltuk oluşturuldu).');
     }
 
     public function update(Request $request, Room $room): RedirectResponse

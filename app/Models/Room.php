@@ -20,4 +20,18 @@ class Room extends Model
     {
         return $this->hasMany(Seat::class);
     }
+
+    protected static function booted(): void
+    {
+        static::created(function (Room $room) {
+            foreach (range(1, 5) as $row) {
+                foreach (range(1, 6) as $column) {
+                    Seat::firstOrCreate(
+                        ['room_id' => $room->id, 'row' => $row, 'column' => $column],
+                        ['is_active' => true]
+                    );
+                }
+            }
+        });
+    }
 }
