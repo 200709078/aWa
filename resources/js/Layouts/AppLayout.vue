@@ -6,22 +6,57 @@ defineProps<{ title: string }>();
 
 const menuOpen = ref(false);
 
+interface PageUser {
+    name: string;
+    role: string;
+}
+
+interface PageSchool {
+    id: number;
+    name: string;
+    kurum_kodu: string;
+}
+
 const user = computed(() => {
-    const props = usePage().props as unknown as { auth: { user: { name: string } | null } };
+    const props = usePage().props as unknown as { auth: { user: PageUser | null } };
     return props.auth.user;
 });
 
+const currentSchool = computed(() => {
+    const props = usePage().props as unknown as { current_school: PageSchool | null };
+    return props.current_school ?? null;
+});
+
+const mySchools = computed(() => {
+    const props = usePage().props as unknown as { my_schools: PageSchool[] };
+    return props.my_schools ?? [];
+});
+
+const isSuperAdmin = computed(() => user.value?.role === 'super_admin');
+
 const currentUrl = computed(() => usePage().url);
 
-const nav = [
-    { label: 'Giriş', href: '/' },
-    { label: 'Akademik Yıllar', href: '/academic-years' },
-    { label: 'Sınav Haftaları', href: '/exam-weeks' },
-    { label: 'Salonlar', href: '/rooms' },
-    { label: 'Sınıflar', href: '/branches' },
-    { label: 'Öğrenciler', href: '/students' },
-    { label: 'Dağıtım', href: '/distribution' },
-];
+const nav = computed(() => {
+    const items = [
+        { label: 'Giriş', href: '/' },
+        { label: 'Akademik Yıllar', href: '/academic-years' },
+        { label: 'Sınav Haftaları', href: '/exam-weeks' },
+        { label: 'Salonlar', href: '/rooms' },
+        { label: 'Sınıflar', href: '/branches' },
+        { label: 'Öğrenciler', href: '/students' },
+        { label: 'Dağıtım', href: '/distribution' },
+    ];
+    if (isSuperAdmin.value) {
+        items.push({ label: 'Okullar', href: '/schools' }, { label: 'Kullanıcılar', href: '/users' });
+    }
+    return items;
+});
+
+function switchSchool(id: number) {
+    if (currentSchool.value?.id !== id) {
+        router.post('/select-school', { school_id: id });
+    }
+}
 
 interface Toast {
     id: number;
@@ -113,6 +148,21 @@ function logout() {
                     </Link>
                 </div>
                 <div class="flex items-center gap-3">
+                    <span v-if="currentSchool" class="hidden rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800 lg:inline">
+                        {{ currentSchool.name }}
+                    </span>
+                    <select
+                        v-if="mySchools.length > 1"
+                        :value="currentSchool?.id ?? ''"
+                        title="Okul değiştir"
+                        aria-label="Okul değiştir"
+                        class="h-9 max-w-44 rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        @change="switchSchool(Number(($event.target as HTMLSelectElement).value))"
+                    >
+                        <option v-for="school in mySchools" :key="school.id" :value="school.id">
+                            {{ school.name }}
+                        </option>
+                    </select>
                     <span class="hidden text-sm text-gray-600 sm:inline">{{ user?.name }}</span>
                     <button
                         type="button"

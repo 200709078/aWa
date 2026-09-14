@@ -8,10 +8,12 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamWeekController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\SeatController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\StudentPhotoController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -20,7 +22,25 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'store']);
 });
 
+Route::get('/select-school', [LoginController::class, 'showSchool'])->name('schools.select');
+Route::post('/select-school', [LoginController::class, 'storeSchool'])->name('schools.select.store');
+
 Route::middleware('auth')->group(function () {
+    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+});
+
+Route::middleware(['auth', 'superadmin'])->group(function () {
+    Route::get('/schools', [SchoolController::class, 'index'])->name('schools.index');
+    Route::post('/schools', [SchoolController::class, 'store'])->name('schools.store');
+    Route::put('/schools/{school}', [SchoolController::class, 'update'])->name('schools.update');
+    Route::delete('/schools/{school}', [SchoolController::class, 'destroy'])->name('schools.destroy');
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+});
+
+Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/', fn () => Inertia::render('Home'));
 
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
@@ -84,6 +104,4 @@ Route::middleware('auth')->group(function () {
     Route::get('/distribution/plans/{plan}/print/branches', [PrintController::class, 'branches'])->name('distribution.print.branches');
     Route::get('/distribution/plans/{plan}/print/rooms', [PrintController::class, 'rooms'])->name('distribution.print.rooms');
     Route::get('/distribution/plans/{plan}/print/summary', [PrintController::class, 'summary'])->name('distribution.print.summary');
-
-    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Branch;
+use App\Support\SchoolScope;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class BranchController extends Controller
 {
     public function index(Request $request): Response
     {
-        $years = AcademicYear::orderByDesc('name')->get(['id', 'name', 'is_active']);
+        $years = AcademicYear::where('school_id', SchoolScope::id())->orderByDesc('name')->get(['id', 'name', 'is_active']);
 
         $selectedYearId = $request->integer('academic_year_id')
             ?: $years->firstWhere('is_active', true)?->id
@@ -48,6 +49,7 @@ class BranchController extends Controller
 
     public function update(Request $request, Branch $branch): RedirectResponse
     {
+        SchoolScope::ensure($branch);
         try {
             $branch->update($this->validated($request, $branch));
         } catch (QueryException $e) {
@@ -59,6 +61,7 @@ class BranchController extends Controller
 
     public function destroy(Branch $branch): RedirectResponse
     {
+        SchoolScope::ensure($branch);
         if ($branch->students()->exists()) {
             return back()->withErrors(['branch' => 'Bu sınıfta kayıtlı öğrenci olduğu için silinemez.']);
         }
@@ -71,6 +74,7 @@ class BranchController extends Controller
 
     public function activate(Branch $branch): RedirectResponse
     {
+        SchoolScope::ensure($branch);
         $branch->update(['is_active' => true]);
 
         return back()->with('success', $branch->name.' aktif edildi.');
@@ -78,6 +82,7 @@ class BranchController extends Controller
 
     public function deactivate(Branch $branch): RedirectResponse
     {
+        SchoolScope::ensure($branch);
         $branch->update(['is_active' => false]);
 
         return back()->with('success', $branch->name.' pasife alındı.');
@@ -91,7 +96,7 @@ class BranchController extends Controller
         $yearId = $request->input('academic_year_id', $branch?->academic_year_id);
 
         $data = $request->validate([
-            'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
+            'academic_year_id' => ['required', 'integer', Rule::exists('academic_years', 'id')->where('school_id', SchoolScope::id())],
             'name' => [
                 'required', 'string', 'max:10',
                 Rule::unique('branches')->where(fn ($query) => $query->where('academic_year_id', $yearId))->ignore($branch?->id),

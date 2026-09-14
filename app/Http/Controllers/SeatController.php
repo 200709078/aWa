@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
+use App\Support\SchoolScope;
 use App\Models\Seat;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ class SeatController extends Controller
 {
     public function bulk(Request $request, Room $room): RedirectResponse
     {
+        SchoolScope::ensure($room);
         $data = $request->validate([
             'rows' => ['required', 'integer', 'min:1', 'max:50'],
             'columns' => ['required', 'integer', 'min:1', 'max:50'],
@@ -43,6 +45,7 @@ class SeatController extends Controller
 
     public function store(Request $request, Room $room): RedirectResponse
     {
+        SchoolScope::ensure($room);
         $data = $request->validate([
             'row' => ['required', 'integer', 'min:1', 'max:50'],
             'column' => ['required', 'integer', 'min:1', 'max:50'],
@@ -58,6 +61,7 @@ class SeatController extends Controller
 
     public function toggle(Seat $seat): RedirectResponse
     {
+        SchoolScope::ensure($seat);
         $seat->update(['is_active' => ! $seat->is_active]);
 
         return back()->with('success', $seat->is_active ? 'Koltuk aktif edildi.' : 'Koltuk pasife alındı.');
@@ -65,6 +69,7 @@ class SeatController extends Controller
 
     public function destroy(Seat $seat): RedirectResponse
     {
+        SchoolScope::ensure($seat);
         $seat->delete();
 
         return back()->with('success', 'Koltuk silindi.');

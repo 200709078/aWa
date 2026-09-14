@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\ExamWeek;
+use App\Support\SchoolScope;
 use App\Models\Room;
 use App\Models\SeatingPlan;
 use App\Models\Student;
@@ -20,8 +21,9 @@ class DistributionController extends Controller
 
     public function index(): Response
     {
-        $yearId = AcademicYear::where('is_active', true)->orderByDesc('name')->value('id')
-            ?? AcademicYear::orderByDesc('name')->value('id');
+        $schoolId = SchoolScope::id();
+        $yearId = AcademicYear::where('school_id', $schoolId)->where('is_active', true)->orderByDesc('name')->value('id')
+            ?? AcademicYear::where('school_id', $schoolId)->orderByDesc('name')->value('id');
 
         $weeks = ExamWeek::with('academicYear:id,name')
             ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId))
@@ -54,6 +56,8 @@ class DistributionController extends Controller
             'exam_week_id.exists' => 'Seçilen sınav haftası bulunamadı.',
         ]);
 
+        SchoolScope::ensure(ExamWeek::findOrFail($data['exam_week_id']));
+
         try {
             $plan = $this->service->distribute(
                 ExamWeek::findOrFail($data['exam_week_id']),
@@ -69,6 +73,7 @@ class DistributionController extends Controller
 
     public function show(SeatingPlan $plan): Response
     {
+        SchoolScope::ensure($plan);
         $plan->load(['examWeek:id,name', 'creator:id,name']);
 
         $summary = $this->service->summary($plan);
@@ -90,6 +95,7 @@ class DistributionController extends Controller
     }
 
     public function finalize(SeatingPlan $plan): RedirectResponse    {
+        SchoolScope::ensure($plan);
         $plan->update(['status' => 'final']);
 
         return back()->with('success', 'Plan final olarak işaretlendi.');
@@ -97,6 +103,7 @@ class DistributionController extends Controller
 
     public function reopen(SeatingPlan $plan): RedirectResponse
     {
+        SchoolScope::ensure($plan);
         $plan->update(['status' => 'draft']);
 
         return back()->with('success', 'Plan taslağa alındı.');
@@ -104,6 +111,7 @@ class DistributionController extends Controller
 
     public function destroy(SeatingPlan $plan): RedirectResponse
     {
+        SchoolScope::ensure($plan);
         $plan->delete();
 
         return back()->with('success', 'Dağıtım planı silindi.');
@@ -111,6 +119,7 @@ class DistributionController extends Controller
 
     public function move(SeatingPlan $plan): JsonResponse
     {
+        SchoolScope::ensure($plan);
         $data = request()->validate([
             'assignment_id' => ['required', 'integer'],
             'seat_id' => ['required', 'integer'],
@@ -133,6 +142,7 @@ class DistributionController extends Controller
 
     public function swap(SeatingPlan $plan): JsonResponse
     {
+        SchoolScope::ensure($plan);
         $data = request()->validate([
             'assignment_id' => ['required', 'integer'],
             'other_assignment_id' => ['required', 'integer'],

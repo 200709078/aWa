@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Exam;
 use App\Models\ExamWeek;
+use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -11,6 +12,7 @@ class ExamController extends Controller
 {
     public function store(Request $request, ExamWeek $examWeek): RedirectResponse
     {
+        SchoolScope::ensure($examWeek);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'exam_date' => ['nullable', 'date'],
@@ -33,6 +35,7 @@ class ExamController extends Controller
 
     public function destroy(Exam $exam): RedirectResponse
     {
+        SchoolScope::ensure($exam);
         $exam->delete();
 
         return back()->with('success', 'Sınav silindi.');

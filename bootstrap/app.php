@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureSchoolContext;
+use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\NoIndex;
 use Illuminate\Foundation\Application;
@@ -15,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+            'school' => EnsureSchoolContext::class,
+            'superadmin' => EnsureSuperAdmin::class,
+        ]);
         $middleware->web(append: [
             HandleInertiaRequests::class,
             NoIndex::class,
