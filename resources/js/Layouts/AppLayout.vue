@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 defineProps<{ title: string }>();
 
@@ -23,28 +23,58 @@ const nav = [
     { label: 'Dağıtım', href: '/distribution' },
 ];
 
-const flashSuccess = computed(() => {
-    const props = usePage().props as unknown as { flash: { success: string | null } };
-    return props.flash.success;
-});
-
-const toastMessage = ref('');
-const toastVisible = ref(false);
-let toastTimer: ReturnType<typeof setTimeout> | null = null;
-
-function showToast(message: string) {
-    toastMessage.value = message;
-    toastVisible.value = true;
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (toastVisible.value = false), 3000);
+interface Toast {
+    id: number;
+    type: 'success' | 'error';
+    title: string;
+    messages: string[];
 }
 
-watch(flashSuccess, (value) => {
-    if (value) showToast(value);
-});
+const toasts = ref<Toast[]>([]);
+let toastId = 0;
+const toastTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+function pushToast(type: Toast['type'], title: string, messages: string[]) {
+    if (messages.length === 0) return;
+    const id = ++toastId;
+    toasts.value.push({ id, type, title, messages });
+    toastTimers.set(
+        id,
+        setTimeout(() => dismissToast(id), 6000),
+    );
+}
+
+function dismissToast(id: number) {
+    toasts.value = toasts.value.filter((toast) => toast.id !== id);
+    const timer = toastTimers.get(id);
+    if (timer) {
+        clearTimeout(timer);
+        toastTimers.delete(id);
+    }
+}
+
+function collectToasts(props: unknown) {
+    const { flash, errors } = props as {
+        flash?: { success?: string | null; error?: string | null };
+        errors?: Record<string, string>;
+    };
+    if (flash?.success) pushToast('success', '', [flash.success]);
+    if (flash?.error) pushToast('error', '', [flash.error]);
+    const messages = Object.values(errors ?? {});
+    if (messages.length > 0) pushToast('error', 'Hata', messages);
+}
 
 onMounted(() => {
-    if (flashSuccess.value) showToast(flashSuccess.value);
+    collectToasts(usePage().props);
+});
+
+const offRouterSuccess = router.on('success', (event) => {
+    const page = (event as unknown as { detail: { page: { props: unknown } } }).detail.page;
+    collectToasts(page.props);
+});
+
+onUnmounted(() => {
+    offRouterSuccess();
 });
 
 function isActive(href: string): boolean {
@@ -113,11 +143,55 @@ function logout() {
                 <slot />
             </main>
         </div>
-        <div
-            v-if="toastVisible"
-            class="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md bg-gray-900 px-4 py-2 text-sm text-white shadow-lg"
-        >
-            {{ toastMessage }}
+        <div class="fixed bottom-4 right-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-3" aria-live="polite">
+            <div
+                v-for="toast in toasts"
+                :key="toast.id"
+                role="status"
+                class="flex animate-[kelebek-toast-in_250ms_ease] items-start gap-3 rounded-lg border-l-4 bg-white p-4 shadow-xl"
+                :class="toast.type === 'success' ? 'border-green-600' : 'border-red-600'"
+            >
+                <svg
+                    v-if="toast.type === 'success'"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                    class="h-5 w-5 shrink-0 text-green-600"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg
+                    v-else
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                    class="h-5 w-5 shrink-0 text-red-600"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div class="min-w-0 flex-1 text-sm leading-5 text-gray-900">
+                    <div v-if="toast.title" class="font-semibold">{{ toast.title }}</div>
+                    <ul v-if="toast.messages.length > 1" class="list-disc ps-4">
+                        <li v-for="(message, index) in toast.messages" :key="index">{{ message }}</li>
+                    </ul>
+                    <div v-else>{{ toast.messages[0] }}</div>
+                </div>
+                <button
+                    type="button"
+                    title="Kapat"
+                    aria-label="Kapat"
+                    class="shrink-0 p-0.5 leading-none text-gray-400 hover:text-red-600"
+                    @click="dismissToast(toast.id)"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
         </div>
         <div
             class="pointer-events-none fixed bottom-2 right-3 z-50 select-none text-[20px] font-bold tracking-wide text-black"
@@ -126,3 +200,16 @@ function logout() {
         </div>
     </div>
 </template>
+
+<style>
+@keyframes kelebek-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.75rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
