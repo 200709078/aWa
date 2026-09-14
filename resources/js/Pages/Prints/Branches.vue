@@ -15,7 +15,7 @@ defineProps<{
 
 <template>
     <PrintLayout title="Sınıf Bazında Sınav Yeri Listesi" :back-href="`/distribution/plans/${plan.id}`">
-        <h1 class="text-xl font-bold">
+        <h1 class="text-xl font-bold print:text-lg">
             Sınıf Bazında Sınav Yeri Listesi — {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}
         </h1>
 
@@ -23,22 +23,22 @@ defineProps<{
             v-for="(group, index) in groups"
             :key="group.branch"
             :class="index < groups.length - 1 ? 'print:break-after-page' : ''"
-            class="mt-6 print:pb-[8mm]"
+            class="mt-6 print:mt-2 print:break-inside-avoid print:pb-[8mm]"
         >
-            <h2 class="text-lg font-semibold">{{ group.branch }} ({{ group.students.length }} öğrenci)</h2>
-            <table class="mt-2 w-full border-collapse text-sm">
+            <h2 class="text-lg font-semibold print:text-base">{{ group.branch }} ({{ group.students.length }} öğrenci)</h2>
+            <table class="mt-2 w-full border-collapse text-sm print:mt-1 print:text-xs">
                 <thead>
                     <tr class="border-b-2 border-gray-800">
-                        <th class="py-1 pr-4 text-left">Okul No</th>
-                        <th class="py-1 pr-4 text-left">Ad Soyad</th>
-                        <th class="py-1 pr-4 text-left">Salon</th>
+                        <th class="py-1 pr-4 text-left print:py-0.5">Okul No</th>
+                        <th class="py-1 pr-4 text-left print:py-0.5">Ad Soyad</th>
+                        <th class="py-1 pr-4 text-left print:py-0.5">Salon</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="student in group.students" :key="student.school_number" class="border-b border-gray-200">
-                        <td class="py-1 pr-4">{{ student.school_number }}</td>
-                        <td class="py-1 pr-4">{{ student.full_name }}</td>
-                        <td class="py-1 pr-4">{{ student.room }}</td>
+                        <td class="py-1 pr-4 print:py-0.5">{{ student.school_number }}</td>
+                        <td class="py-1 pr-4 print:py-0.5">{{ student.full_name }}</td>
+                        <td class="py-1 pr-4 print:py-0.5">{{ student.room }}</td>
                     </tr>
                 </tbody>
             </table>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
@@ -212,6 +212,24 @@ function openSalonModal(seat: SeatInfo) {
     salonModal.value = true;
 }
 
+function cancelSelection() {
+    if (salonModal.value) {
+        salonModal.value = false;
+        return;
+    }
+    selected.value = null;
+    dragPayload.value = null;
+}
+
+function onKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && editMode.value) {
+        cancelSelection();
+    }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown));
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
+
 function openPrint(url: string) {
     const width = 850;
     const height = 900;
@@ -361,7 +379,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
 
             <p v-if="editMode" class="mt-3 rounded-md bg-indigo-50 px-4 py-2 text-sm text-indigo-800">
                 Düzenleme açık: önce bir öğrenci seçin, sonra boş koltuğa tıklayarak taşıyın veya başka öğrenciye
-                tıklayarak takas edin. Sürükle-bırak da kullanabilirsiniz.
+                tıklayarak takas edin. Sürükle-bırak da kullanabilirsiniz. Seçimi iptal etmek için Esc.
             </p>
 
             <div v-if="notice" class="mt-3 rounded-md px-4 py-2 text-sm"

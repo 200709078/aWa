@@ -24,7 +24,7 @@ class PrintTest extends TestCase
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $branch = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
         $room = Room::create(['name' => 'Salon 1']);
-        $seat = Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 1]);
+        $seat = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 1)->first();
         $student = Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '1', 'full_name' => 'Ali']);
 
         $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);

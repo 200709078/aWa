@@ -25,8 +25,8 @@ class ExamWeekTest extends TestCase
         Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => '2', 'full_name' => 'Veli', 'is_active' => false]);
         Student::create(['academic_year_id' => $year->id, 'branch_id' => $b2->id, 'school_number' => '3', 'full_name' => 'Ayşe']);
         $room = Room::create(['name' => 'Salon 1']);
-        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 1]);
-        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 2, 'is_active' => false]);
+        Seat::where('room_id', $room->id)->update(['is_active' => false]);
+        Seat::where('room_id', $room->id)->where('row', 1)->where('column', 1)->update(['is_active' => true]);
 
         return ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
     }

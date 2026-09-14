@@ -24,9 +24,15 @@ class DistributionTest extends TestCase
     {
         for ($r = 1; $r <= $rows; $r++) {
             for ($c = 1; $c <= $cols; $c++) {
-                Seat::create(['room_id' => $room->id, 'row' => $r, 'column' => $c]);
+                Seat::firstOrCreate(
+                    ['room_id' => $room->id, 'row' => $r, 'column' => $c],
+                    ['is_active' => true]
+                );
             }
         }
+        Seat::where('room_id', $room->id)
+            ->where(fn ($query) => $query->where('row', '>', $rows)->orWhere('column', '>', $cols))
+            ->update(['is_active' => false]);
     }
 
     private function setupWeek(): ExamWeek
@@ -178,8 +184,10 @@ class DistributionTest extends TestCase
 
         // 3. sütun koridor (pasif): 2 ve 4 aktif ama ekranda/fiziken yan yana.
         $room = Room::create(['name' => 'Salon 1']);
-        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 2]);
-        Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 4]);
+        Seat::where('room_id', $room->id)->update(['is_active' => false]);
+        foreach ([[1, 2], [1, 4]] as [$r, $c]) {
+            Seat::where('room_id', $room->id)->where('row', $r)->where('column', $c)->update(['is_active' => true]);
+        }
 
         $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
         $week->branches()->sync([$b1->id, $b2->id]);
@@ -204,9 +212,14 @@ class DistributionTest extends TestCase
 
         // Koridorlu düzen: 3 ve 6 pasif, aktif sütunlar 1,2,4,5,7,8.
         $room = Room::create(['name' => 'Salon 1']);
+        Seat::where('room_id', $room->id)->update(['is_active' => false]);
         foreach ([1, 2, 4, 5, 7, 8] as $col) {
-            Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => $col]);
-            Seat::create(['room_id' => $room->id, 'row' => 2, 'column' => $col]);
+            foreach ([1, 2] as $row) {
+                Seat::updateOrCreate(
+                    ['room_id' => $room->id, 'row' => $row, 'column' => $col],
+                    ['is_active' => true]
+                );
+            }
         }
 
         $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);

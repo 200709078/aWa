@@ -24,8 +24,8 @@ class SeatingViewTest extends TestCase
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $branch = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
         $room = Room::create(['name' => 'Salon 1']);
-        $seat1 = Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 1]);
-        $seat2 = Seat::create(['room_id' => $room->id, 'row' => 1, 'column' => 2]);
+        $seat1 = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 1)->first();
+        $seat2 = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 2)->first();
 
         $withPhoto = Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '1', 'full_name' => 'Fotolu', 'photo_path' => 'students/1.jpg']);
         $withoutPhoto = Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '2', 'full_name' => 'Fotosuz']);
