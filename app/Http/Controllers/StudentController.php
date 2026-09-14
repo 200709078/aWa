@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AcademicYear;
 use App\Models\Branch;
 use App\Models\Student;
+use App\Support\SchoolScope;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class StudentController extends Controller
 {
     public function index(Request $request): Response
     {
-        $years = AcademicYear::orderByDesc('name')->get(['id', 'name', 'is_active']);
+        $years = AcademicYear::where('school_id', SchoolScope::id())->orderByDesc('name')->get(['id', 'name', 'is_active']);
 
         $yearId = $request->integer('academic_year_id')
             ?: $years->firstWhere('is_active', true)?->id
@@ -65,6 +66,7 @@ class StudentController extends Controller
 
     public function update(Request $request, Student $student): RedirectResponse
     {
+        SchoolScope::ensure($student);
         try {
             $student->update($this->validated($request, $student));
         } catch (QueryException $e) {
@@ -76,6 +78,7 @@ class StudentController extends Controller
 
     public function activate(Student $student): RedirectResponse
     {
+        SchoolScope::ensure($student);
         $student->update(['is_active' => true]);
 
         return back()->with('success', $student->full_name.' aktif edildi.');
@@ -83,6 +86,7 @@ class StudentController extends Controller
 
     public function deactivate(Student $student): RedirectResponse
     {
+        SchoolScope::ensure($student);
         $student->update(['is_active' => false]);
 
         return back()->with('success', $student->full_name.' pasife alındı.');
@@ -90,6 +94,7 @@ class StudentController extends Controller
 
     public function destroy(Student $student): RedirectResponse
     {
+        SchoolScope::ensure($student);
         if ($student->seatingAssignments()->exists()) {
             return back()->withErrors(['student' => 'Bu öğrenci bir oturma planında kullanıldığı için silinemez.']);
         }
@@ -111,7 +116,7 @@ class StudentController extends Controller
         $branch = Branch::findOrFail($request->input('branch_id', $student?->branch_id));
 
         $data = $request->validate([
-            'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'branch_id' => ['required', 'integer', Rule::exists('branches', 'id')->whereIn('academic_year_id', SchoolScope::yearIds())],
             'school_number' => [
                 'required', 'string', 'max:20',
                 Rule::unique('students')->where(fn ($query) => $query->where('academic_year_id', $branch->academic_year_id))->ignore($student?->id),

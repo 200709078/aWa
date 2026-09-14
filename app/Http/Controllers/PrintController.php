@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SeatingAssignment;
 use App\Models\SeatingPlan;
 use App\Services\SeatingDistributionService;
+use App\Support\SchoolScope;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,6 +15,7 @@ class PrintController extends Controller
 
     public function seating(SeatingPlan $plan): Response
     {
+        SchoolScope::ensure($plan);
         $plan->load('examWeek:id,name');
 
         return Inertia::render('Prints/Seating', [
@@ -26,6 +28,7 @@ class PrintController extends Controller
 
     public function branches(SeatingPlan $plan): Response
     {
+        SchoolScope::ensure($plan);
         $plan->load('examWeek:id,name');
 
         $assignments = SeatingAssignment::where('seating_plan_id', $plan->id)
@@ -59,6 +62,7 @@ class PrintController extends Controller
 
     public function rooms(SeatingPlan $plan): Response
     {
+        SchoolScope::ensure($plan);
         $plan->load('examWeek:id,name');
 
         $grid = $this->service->seatingGrid($plan);
@@ -86,6 +90,7 @@ class PrintController extends Controller
 
     public function summary(SeatingPlan $plan): Response
     {
+        SchoolScope::ensure($plan);
         $plan->load('examWeek:id,name');
 
         $summary = $this->service->summary($plan);

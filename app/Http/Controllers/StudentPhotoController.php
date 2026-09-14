@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Student;
+use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -28,7 +30,7 @@ class StudentPhotoController extends Controller
 
     public function show(): Response
     {
-        $years = AcademicYear::orderByDesc('name')->get(['id', 'name', 'is_active']);
+        $years = AcademicYear::where('school_id', SchoolScope::id())->orderByDesc('name')->get(['id', 'name', 'is_active']);
         $activeId = $years->firstWhere('is_active', true)?->id ?? $years->first()?->id;
 
         return Inertia::render('Students/Photos', [
@@ -40,7 +42,7 @@ class StudentPhotoController extends Controller
     public function store(): Response|RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $data = request()->validate([
-            'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
+            'academic_year_id' => ['required', 'integer', Rule::exists('academic_years', 'id')->where('school_id', SchoolScope::id())],
             'photos' => ['nullable', 'array', 'max:'.self::MAX_FILES],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp,bmp', 'max:10240'],
             'zip_file' => ['nullable', 'file', 'mimes:zip', 'max:51200'],

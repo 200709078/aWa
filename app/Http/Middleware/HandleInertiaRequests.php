@@ -38,8 +38,23 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => fn () => $request->user()?->only('id', 'name', 'email'),
+                'user' => fn () => $request->user()?->only('id', 'name', 'email', 'role'),
             ],
+            'current_school' => function () use ($request) {
+                $schoolId = $request->session()->get('current_school_id');
+                if (! $schoolId || ! $request->user()) {
+                    return null;
+                }
+
+                return \App\Models\School::find($schoolId)?->only('id', 'name', 'kurum_kodu');
+            },
+            'my_schools' => function () use ($request) {
+                if (! $request->user()) {
+                    return [];
+                }
+
+                return $request->user()->accessibleSchools()->map(fn ($school) => $school->only('id', 'name', 'kurum_kodu'))->all();
+            },
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

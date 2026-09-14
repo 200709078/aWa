@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
+use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +39,7 @@ class AcademicYearController extends Controller
 
     public function update(Request $request, AcademicYear $academicYear): RedirectResponse
     {
+        SchoolScope::ensure($academicYear);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:20'],
         ], [
@@ -52,6 +54,7 @@ class AcademicYearController extends Controller
 
     public function activate(AcademicYear $academicYear): RedirectResponse
     {
+        SchoolScope::ensure($academicYear);
         DB::transaction(function () use ($academicYear) {
             AcademicYear::where('id', '!=', $academicYear->id)->update(['is_active' => false]);
             $academicYear->update(['is_active' => true]);
@@ -62,6 +65,7 @@ class AcademicYearController extends Controller
 
     public function deactivate(AcademicYear $academicYear): RedirectResponse
     {
+        SchoolScope::ensure($academicYear);
         $academicYear->update(['is_active' => false]);
 
         return back()->with('success', $academicYear->name.' pasife alındı.');
@@ -69,6 +73,7 @@ class AcademicYearController extends Controller
 
     public function destroy(AcademicYear $academicYear): RedirectResponse
     {
+        SchoolScope::ensure($academicYear);
         if ($academicYear->branches()->exists() || $academicYear->students()->exists() || $academicYear->examWeeks()->exists()) {
             return back()->withErrors(['year' => 'Bu yıla ait sınıf, öğrenci veya sınav haftası olduğu için silinemez.']);
         }

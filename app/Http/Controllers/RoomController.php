@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
+use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,7 +13,7 @@ class RoomController extends Controller
 {
     public function index(): Response
     {
-        $rooms = Room::withCount([
+        $rooms = Room::where('school_id', SchoolScope::id())->withCount([
             'seats',
             'seats as active_seats_count' => fn ($query) => $query->where('is_active', true),
         ])
@@ -27,6 +28,7 @@ class RoomController extends Controller
 
     public function show(Room $room): Response
     {
+        SchoolScope::ensure($room);
         $seats = $room->seats()->orderBy('row')->orderBy('column')->get();
 
         return Inertia::render('Rooms/Show', [
@@ -61,6 +63,7 @@ class RoomController extends Controller
 
     public function update(Request $request, Room $room): RedirectResponse
     {
+        SchoolScope::ensure($room);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:50'],
             'description' => ['nullable', 'string', 'max:500'],
@@ -82,6 +85,7 @@ class RoomController extends Controller
 
     public function activate(Room $room): RedirectResponse
     {
+        SchoolScope::ensure($room);
         $room->update(['is_active' => true]);
 
         return back()->with('success', $room->name.' aktif edildi.');
@@ -89,6 +93,7 @@ class RoomController extends Controller
 
     public function deactivate(Room $room): RedirectResponse
     {
+        SchoolScope::ensure($room);
         $room->update(['is_active' => false]);
 
         return back()->with('success', $room->name.' pasife alındı.');
@@ -96,6 +101,7 @@ class RoomController extends Controller
 
     public function destroy(Room $room): RedirectResponse
     {
+        SchoolScope::ensure($room);
         // Koltuklar, sınav haftası seçimleri ve dağıtım planlarındaki
         // bu salona ait atamalar FK cascade ile birlikte silinir.
         $room->delete();

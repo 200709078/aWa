@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
+use App\Support\SchoolScope;
 use App\Models\Branch;
 use App\Models\ExamWeek;
 use App\Models\Room;
@@ -39,7 +40,7 @@ class ExamWeekController extends Controller
                 'capacity' => $this->capacity($week),
             ]);
 
-        $years = AcademicYear::orderByDesc('name')->get(['id', 'name', 'is_active']);
+        $years = AcademicYear::where('school_id', SchoolScope::id())->orderByDesc('name')->get(['id', 'name', 'is_active']);
         $activeId = $years->firstWhere('is_active', true)?->id ?? $years->first()?->id;
 
         return Inertia::render('ExamWeeks/Index', [
@@ -51,6 +52,7 @@ class ExamWeekController extends Controller
 
     public function show(ExamWeek $examWeek): Response
     {
+        SchoolScope::ensure($examWeek);
         $examWeek->load(['branches:id', 'rooms:id']);
 
         $branches = Branch::where('academic_year_id', $examWeek->academic_year_id)
@@ -97,6 +99,7 @@ class ExamWeekController extends Controller
 
     public function update(Request $request, ExamWeek $examWeek): RedirectResponse
     {
+        SchoolScope::ensure($examWeek);
         $examWeek->update($this->validated($request));
 
         return back()->with('success', 'Sınav haftası güncellendi.');
@@ -104,6 +107,7 @@ class ExamWeekController extends Controller
 
     public function destroy(ExamWeek $examWeek): RedirectResponse
     {
+        SchoolScope::ensure($examWeek);
         if ($examWeek->seatingPlans()->exists() || $examWeek->exams()->exists()) {
             return back()->withErrors(['week' => 'Bu sınav haftasına ait dağıtım planı veya sınav olduğu için silinemez.']);
         }
@@ -116,6 +120,7 @@ class ExamWeekController extends Controller
 
     public function activate(ExamWeek $examWeek): RedirectResponse
     {
+        SchoolScope::ensure($examWeek);
         $examWeek->update(['is_active' => true]);
 
         return back()->with('success', $examWeek->name.' aktif edildi.');
@@ -123,6 +128,7 @@ class ExamWeekController extends Controller
 
     public function deactivate(ExamWeek $examWeek): RedirectResponse
     {
+        SchoolScope::ensure($examWeek);
         $examWeek->update(['is_active' => false]);
 
         return back()->with('success', $examWeek->name.' pasife alındı.');
@@ -130,6 +136,7 @@ class ExamWeekController extends Controller
 
     public function syncBranches(Request $request, ExamWeek $examWeek): RedirectResponse
     {
+        SchoolScope::ensure($examWeek);
         $data = $request->validate([
             'branch_ids' => ['nullable', 'array'],
             'branch_ids.*' => ['integer', Rule::exists('branches', 'id')->where('academic_year_id', $examWeek->academic_year_id)],
@@ -144,9 +151,10 @@ class ExamWeekController extends Controller
 
     public function syncRooms(Request $request, ExamWeek $examWeek): RedirectResponse
     {
+        SchoolScope::ensure($examWeek);
         $data = $request->validate([
             'room_ids' => ['nullable', 'array'],
-            'room_ids.*' => ['integer', 'exists:rooms,id'],
+            'room_ids.*' => ['integer', Rule::exists('rooms', 'id')->where('school_id', SchoolScope::id())],
         ], [
             'room_ids.*.exists' => 'Seçilen salonlardan biri bulunamadı.',
         ]);
@@ -162,7 +170,7 @@ class ExamWeekController extends Controller
     private function validated(Request $request): array
     {
         $data = $request->validate([
-            'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
+            'academic_year_id' => ['required', 'integer', Rule::exists('academic_years', 'id')->where('school_id', SchoolScope::id())],
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:500'],
             'starts_at' => ['nullable', 'date'],

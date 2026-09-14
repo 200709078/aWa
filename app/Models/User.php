@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -34,5 +35,27 @@ class User extends Authenticatable
     public function createdSeatingPlans(): HasMany
     {
         return $this->hasMany(SeatingPlan::class, 'created_by');
+    }
+
+    public function schools(): BelongsToMany
+    {
+        return $this->belongsToMany(School::class, 'school_user')->withTimestamps();
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, School>
+     */
+    public function accessibleSchools()
+    {
+        if ($this->isSuperAdmin()) {
+            return School::where('is_active', true)->orderBy('name')->get();
+        }
+
+        return $this->schools()->where('schools.is_active', true)->orderBy('name')->get();
     }
 }

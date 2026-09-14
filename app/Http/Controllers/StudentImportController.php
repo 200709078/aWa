@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\AcademicYear;
 use App\Models\Branch;
 use App\Models\Student;
+use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
@@ -31,7 +33,7 @@ class StudentImportController extends Controller
 
     public function show(): Response
     {
-        $years = AcademicYear::orderByDesc('name')->get(['id', 'name', 'is_active']);
+        $years = AcademicYear::where('school_id', SchoolScope::id())->orderByDesc('name')->get(['id', 'name', 'is_active']);
         $activeId = $years->firstWhere('is_active', true)?->id ?? $years->first()?->id;
 
         return Inertia::render('Students/Import', [
@@ -43,6 +45,7 @@ class StudentImportController extends Controller
     public function preview(): Response|RedirectResponse
     {
         $year = AcademicYear::findOrFail(request()->input('academic_year_id', 0));
+        SchoolScope::ensure($year);
 
         if (request()->hasFile('file')) {
             request()->validate([
@@ -89,7 +92,7 @@ class StudentImportController extends Controller
     public function confirm(): Response|RedirectResponse
     {
         $data = request()->validate([
-            'academic_year_id' => ['required', 'integer', 'exists:academic_years,id'],
+            'academic_year_id' => ['required', 'integer', Rule::exists('academic_years', 'id')->where('school_id', SchoolScope::id())],
             'stored_path' => ['required', 'string', 'regex:/^imports\/[A-Za-z0-9\-]+\.(xlsx|xls)$/'],
             'mapping' => ['required', 'array', 'size:3'],
             'mapping.school_number' => ['required', 'integer', 'min:0'],

@@ -26,6 +26,7 @@ class AuthenticationTest extends TestCase
     public function test_giris_ve_cikis_akisi_calisir(): void
     {
         $user = User::factory()->create(['password' => '123456']);
+        $user->schools()->attach(\App\Models\School::first()->id);
 
         $this->post('/login', ['email' => $user->email, 'password' => '123456'])
             ->assertRedirect('/');
