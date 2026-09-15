@@ -2,6 +2,7 @@
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import DropdownSelect from '../../Components/DropdownSelect.vue';
 
 interface Week {
     id: number;
@@ -216,16 +217,14 @@ function dateRange(week: Week): string {
             <form v-if="years.length > 0" class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-6" @submit.prevent="submitCreate">
                 <div>
                     <label for="week-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
-                    <select
-                        id="week-year"
-                        v-model="createForm.academic_year_id"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                        <option :value="null">Seçin</option>
-                        <option v-for="year in years" :key="year.id" :value="year.id">
-                            {{ year.name }}{{ year.is_active ? ' (aktif)' : '' }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="week-year"
+                            v-model="createForm.academic_year_id"
+                            :options="[{ value: null, label: 'Seçin' }, ...years.map((year) => ({ value: year.id, label: `${year.name}${year.is_active ? ' (aktif)' : ''}` }))]"
+                            aria-label="Akademik Yıl"
+                        />
+                    </div>
                     <p v-if="createForm.errors.academic_year_id" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.academic_year_id }}
                     </p>
@@ -309,13 +308,14 @@ function dateRange(week: Week): string {
                     </div>
                     <div>
                         <label for="edit-week-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
-                        <select
-                            id="edit-week-year"
-                            v-model="editForm.academic_year_id"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option v-for="year in years" :key="year.id" :value="year.id">{{ year.name }}</option>
-                        </select>
+                        <div class="mt-1">
+                            <DropdownSelect
+                                id="edit-week-year"
+                                v-model="editForm.academic_year_id"
+                                :options="years.map((year) => ({ value: year.id, label: year.name }))"
+                                aria-label="Akademik Yıl"
+                            />
+                        </div>
                     </div>
                     <div>
                         <label for="edit-week-name" class="block text-sm font-medium text-gray-700">Hafta Adı</label>

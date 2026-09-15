@@ -2,6 +2,7 @@
 import { useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import DropdownSelect from '../../Components/DropdownSelect.vue';
 
 interface Column {
     index: number;
@@ -98,39 +99,36 @@ const actionClass: Record<PreviewRow['action'], string> = {
             <div class="mt-4 grid gap-3 md:grid-cols-3">
                 <div>
                     <label for="map-number" class="block text-sm font-medium text-gray-700">Okul Numarası Sütunu</label>
-                    <select
-                        id="map-number"
-                        v-model.number="form.mapping.school_number"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm"
-                    >
-                        <option v-for="col in columns" :key="col.index" :value="col.index">
-                            {{ col.letter }}: {{ col.header || '(boş başlık)' }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="map-number"
+                            v-model="form.mapping.school_number"
+                            :options="columns.map((col) => ({ value: col.index, label: `${col.letter}: ${col.header || '(boş başlık)'}` }))"
+                            aria-label="Okul Numarası Sütunu"
+                        />
+                    </div>
                 </div>
                 <div>
                     <label for="map-name" class="block text-sm font-medium text-gray-700">Ad Soyad Sütunu</label>
-                    <select
-                        id="map-name"
-                        v-model.number="form.mapping.full_name"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm"
-                    >
-                        <option v-for="col in columns" :key="col.index" :value="col.index">
-                            {{ col.letter }}: {{ col.header || '(boş başlık)' }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="map-name"
+                            v-model="form.mapping.full_name"
+                            :options="columns.map((col) => ({ value: col.index, label: `${col.letter}: ${col.header || '(boş başlık)'}` }))"
+                            aria-label="Ad Soyad Sütunu"
+                        />
+                    </div>
                 </div>
                 <div>
                     <label for="map-branch" class="block text-sm font-medium text-gray-700">Şube Sütunu</label>
-                    <select
-                        id="map-branch"
-                        v-model.number="form.mapping.branch"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm"
-                    >
-                        <option v-for="col in columns" :key="col.index" :value="col.index">
-                            {{ col.letter }}: {{ col.header || '(boş başlık)' }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="map-branch"
+                            v-model="form.mapping.branch"
+                            :options="columns.map((col) => ({ value: col.index, label: `${col.letter}: ${col.header || '(boş başlık)'}` }))"
+                            aria-label="Şube Sütunu"
+                        />
+                    </div>
                 </div>
             </div>
 

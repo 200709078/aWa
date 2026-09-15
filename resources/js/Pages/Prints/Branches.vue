@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import PrintLayout from '../../Layouts/PrintLayout.vue';
+
+const schoolName = computed(() => {
+    const pageProps = usePage().props as unknown as { current_school: { name: string } | null };
+    return pageProps.current_school?.name ?? '';
+});
 
 interface BranchGroup {
     branch: string;
@@ -16,7 +23,7 @@ defineProps<{
 <template>
     <PrintLayout title="Sınıf Bazında Sınav Yeri Listesi" :back-href="`/distribution/plans/${plan.id}`">
         <h1 class="text-xl font-bold print:text-lg">
-            Sınıf Bazında Sınav Yeri Listesi — {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}
+            Sınıf Bazında Sınav Yeri Listesi - {{ schoolName }} - {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}
         </h1>
 
         <div

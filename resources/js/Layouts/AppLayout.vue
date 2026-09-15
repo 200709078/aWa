@@ -5,6 +5,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 defineProps<{ title: string }>();
 
 const menuOpen = ref(false);
+const schoolMenuOpen = ref(false);
 
 interface PageUser {
     name: string;
@@ -40,10 +41,10 @@ const nav = computed(() => {
     const items = [
         { label: 'Giriş', href: '/' },
         { label: 'Akademik Yıllar', href: '/academic-years' },
-        { label: 'Sınav Haftaları', href: '/exam-weeks' },
         { label: 'Salonlar', href: '/rooms' },
         { label: 'Sınıflar', href: '/branches' },
         { label: 'Öğrenciler', href: '/students' },
+        { label: 'Sınav Haftaları', href: '/exam-weeks' },
         { label: 'Dağıtım', href: '/distribution' },
     ];
     if (isSuperAdmin.value) {
@@ -53,6 +54,7 @@ const nav = computed(() => {
 });
 
 function switchSchool(id: number) {
+    schoolMenuOpen.value = false;
     if (currentSchool.value?.id !== id) {
         router.post('/select-school', { school_id: id });
     }
@@ -117,6 +119,10 @@ function isActive(href: string): boolean {
 }
 
 function linkClass(href: string): string {
+    if (href === '/schools' || href === '/users') {
+        const base = 'block rounded-md px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-50';
+        return isActive(href) ? `${base} bg-red-100 text-red-800` : base;
+    }
     const base = 'block rounded-md px-3 py-2 text-sm font-medium';
     return isActive(href)
         ? `${base} bg-indigo-100 text-indigo-800`
@@ -148,21 +154,43 @@ function logout() {
                     </Link>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span v-if="currentSchool" class="hidden rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800 lg:inline">
-                        {{ currentSchool.name }}
-                    </span>
-                    <select
-                        v-if="mySchools.length > 1"
-                        :value="currentSchool?.id ?? ''"
-                        title="Okul değiştir"
-                        aria-label="Okul değiştir"
-                        class="h-9 max-w-44 rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        @change="switchSchool(Number(($event.target as HTMLSelectElement).value))"
-                    >
-                        <option v-for="school in mySchools" :key="school.id" :value="school.id">
-                            {{ school.name }}
-                        </option>
-                    </select>
+                    <div v-if="currentSchool || mySchools.length > 0" class="relative">
+                        <button
+                            type="button"
+                            title="Okul değiştir"
+                            aria-label="Okul değiştir"
+                            class="flex h-9 max-w-52 items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-800 shadow-sm hover:bg-indigo-100 focus:border-indigo-500 focus:ring-indigo-500"
+                            @click="schoolMenuOpen = !schoolMenuOpen"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>
+                            <span class="truncate">{{ currentSchool?.name ?? 'Okul seç' }}</span>
+                            <svg v-if="mySchools.length > 1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                        </button>
+                        <div
+                            v-if="schoolMenuOpen"
+                            class="fixed inset-0 z-40"
+                            @click="schoolMenuOpen = false"
+                        ></div>
+                        <div
+                            v-if="schoolMenuOpen && mySchools.length > 1"
+                            class="absolute right-0 z-50 mt-1 w-60 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl"
+                            @keydown.escape="schoolMenuOpen = false"
+                        >
+                            <button
+                                v-for="school in mySchools"
+                                :key="school.id"
+                                type="button"
+                                class="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-indigo-50"
+                                :class="school.id === currentSchool?.id ? 'font-semibold text-indigo-800' : 'text-gray-700'"
+                                @click="switchSchool(school.id)"
+                            >
+                                <svg v-if="school.id === currentSchool?.id" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                                <span v-else class="h-4 w-4 shrink-0"></span>
+                                <span class="min-w-0 flex-1 truncate">{{ school.name }}</span>
+                                <span class="shrink-0 text-xs text-gray-400">{{ school.kurum_kodu }}</span>
+                            </button>
+                        </div>
+                    </div>
                     <span class="hidden text-sm text-gray-600 sm:inline">{{ user?.name }}</span>
                     <button
                         type="button"
@@ -244,7 +272,7 @@ function logout() {
             </div>
         </div>
         <div
-            class="pointer-events-none fixed bottom-2 right-3 z-50 select-none text-[20px] font-bold tracking-wide text-black"
+            class="pointer-events-none fixed bottom-2 left-3 z-50 select-none text-[20px] font-bold tracking-wide text-black"
         >
             made by <span class="font-bold text-black">m</span><span class="font-bold text-blue-900">ADEM</span><span class="font-bold text-black">atik</span>
         </div>

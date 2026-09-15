@@ -14,7 +14,7 @@ class AcademicYearController extends Controller
 {
     public function index(): Response
     {
-        $years = AcademicYear::withCount(['branches', 'students', 'examWeeks'])
+        $years = AcademicYear::where('school_id', SchoolScope::id())->withCount(['branches', 'students', 'examWeeks'])
             ->orderByDesc('id')
             ->get();
 
@@ -56,7 +56,9 @@ class AcademicYearController extends Controller
     {
         SchoolScope::ensure($academicYear);
         DB::transaction(function () use ($academicYear) {
-            AcademicYear::where('id', '!=', $academicYear->id)->update(['is_active' => false]);
+            AcademicYear::where('school_id', $academicYear->school_id)
+                ->where('id', '!=', $academicYear->id)
+                ->update(['is_active' => false]);
             $academicYear->update(['is_active' => true]);
         });
 

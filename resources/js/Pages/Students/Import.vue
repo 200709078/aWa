@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import DropdownSelect from '../../Components/DropdownSelect.vue';
 
 interface Year {
     id: number;
@@ -34,16 +35,14 @@ function submit() {
             <form class="mt-4 space-y-4" @submit.prevent="submit">
                 <div>
                     <label for="import-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
-                    <select
-                        id="import-year"
-                        v-model="form.academic_year_id"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                        <option :value="null">Seçin</option>
-                        <option v-for="year in years" :key="year.id" :value="year.id">
-                            {{ year.name }}{{ year.is_active ? ' (aktif)' : '' }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="import-year"
+                            v-model="form.academic_year_id"
+                            :options="[{ value: null, label: 'Seçin' }, ...years.map((year) => ({ value: year.id, label: `${year.name}${year.is_active ? ' (aktif)' : ''}` }))]"
+                            aria-label="Akademik Yıl"
+                        />
+                    </div>
                     <p v-if="form.errors.academic_year_id" class="mt-1 text-sm text-red-600">
                         {{ form.errors.academic_year_id }}
                     </p>

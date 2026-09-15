@@ -2,6 +2,7 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import DropdownSelect from '../../Components/DropdownSelect.vue';
 
 interface SchoolOption {
     id: number;
@@ -193,14 +194,14 @@ function confirmDelete() {
                 </div>
                 <div>
                     <label for="user-role" class="block text-sm font-medium text-gray-700">Rol</label>
-                    <select
-                        id="user-role"
-                        v-model="createForm.role"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                        <option value="school_admin">Okul Yöneticisi</option>
-                        <option value="super_admin">Süper Admin</option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="user-role"
+                            v-model="createForm.role"
+                            :options="[{ value: 'school_admin', label: 'Okul Yöneticisi' }, { value: 'super_admin', label: 'Süper Admin' }]"
+                            aria-label="Rol"
+                        />
+                    </div>
                 </div>
                 <div v-if="createForm.role === 'school_admin'" class="col-span-2 md:col-span-4">
                     <span class="block text-sm font-medium text-gray-700">Okullar</span>
@@ -293,14 +294,14 @@ function confirmDelete() {
                     </div>
                     <div>
                         <label for="edit-user-role" class="block text-sm font-medium text-gray-700">Rol</label>
-                        <select
-                            id="edit-user-role"
-                            v-model="editForm.role"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option value="school_admin">Okul Yöneticisi</option>
-                            <option value="super_admin">Süper Admin</option>
-                        </select>
+                        <div class="mt-1">
+                            <DropdownSelect
+                                id="edit-user-role"
+                                v-model="editForm.role"
+                                :options="[{ value: 'school_admin', label: 'Okul Yöneticisi' }, { value: 'super_admin', label: 'Süper Admin' }]"
+                                aria-label="Rol"
+                            />
+                        </div>
                         <p v-if="editForm.errors.role" class="mt-1 text-sm text-red-600">{{ editForm.errors.role }}</p>
                     </div>
                     <div v-if="editForm.role === 'school_admin'">

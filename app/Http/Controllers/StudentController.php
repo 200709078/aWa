@@ -24,16 +24,25 @@ class StudentController extends Controller
             ?: $years->firstWhere('is_active', true)?->id
             ?? $years->first()?->id;
 
+        if ($yearId && ! $years->contains('id', $yearId)) {
+            $yearId = $years->firstWhere('is_active', true)?->id
+                ?? $years->first()?->id;
+        }
+
         $branches = $yearId
             ? Branch::where('academic_year_id', $yearId)->orderBy('name')->get(['id', 'name'])
             : [];
 
         $branchId = $request->integer('branch_id') ?: null;
+
+        if ($branchId && ! $branches->contains('id', $branchId)) {
+            $branchId = null;
+        }
         $search = trim((string) $request->input('q', ''));
 
         $students = Student::with('branch:id,name')
             ->withCount('seatingAssignments')
-            ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId))
+            ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId), fn ($query) => $query->whereRaw('0 = 1'))
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('full_name', 'like', "%{$search}%")
@@ -47,9 +56,11 @@ class StudentController extends Controller
             'years' => $years,
             'yearId' => $yearId,
             'branches' => $branches,
+            'allBranches' => Branch::whereIn('academic_year_id', $years->pluck('id'))->orderBy('name')->get(['id', 'name']),
             'branchId' => $branchId,
             'search' => $search,
             'students' => $students,
+            'totalStudents' => Student::whereIn('academic_year_id', $years->pluck('id'))->count(),
         ]);
     }
 
