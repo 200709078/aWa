@@ -161,7 +161,7 @@ function confirmDelete() {
                         Temizle
                     </button>
                 </div>
-                <div class="flex shrink-0 gap-2">
+                <div class="ml-auto flex shrink-0 gap-2">
                     <Link
                         v-if="totalStudents > 0"
                         href="/students/photos"
@@ -173,7 +173,7 @@ function confirmDelete() {
                         href="/students/import"
                         class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                     >
-                        Excelden İçe Aktar
+                        İçe Aktar
                     </Link>
                 </div>
             </div>
