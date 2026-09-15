@@ -55,7 +55,7 @@ function submit() {
             </form>
         </div>
         <div
-            class="pointer-events-none fixed bottom-2 right-3 z-50 select-none text-[20px] font-bold tracking-wide text-black"
+            class="pointer-events-none fixed bottom-2 left-3 z-50 select-none text-[20px] font-bold tracking-wide text-black"
         >
             made by <span class="font-bold text-black">m</span><span class="font-bold text-blue-900">ADEM</span><span class="font-bold text-black">atik</span>
         </div>

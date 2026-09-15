@@ -2,6 +2,7 @@
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import DropdownSelect from '../../Components/DropdownSelect.vue';
 
 interface Year {
     id: number;
@@ -23,6 +24,7 @@ const props = defineProps<{
     years: Year[];
     selectedYearId: number | null;
     branches: Branch[];
+    totalBranches: number;
 }>();
 
 const filterYear = ref<number | null>(props.selectedYearId);
@@ -96,17 +98,15 @@ function confirmDelete() {
         <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h1 class="text-2xl font-bold text-gray-900">Sınıflar</h1>
-                <div class="flex items-center gap-2">
-                    <select
+                <div v-if="totalBranches > 0" class="flex items-center gap-2">
+                    <label for="year-filter" class="text-sm text-gray-600">Akademik Yıl:</label>
+                    <DropdownSelect
                         id="year-filter"
                         v-model="filterYear"
-                        class="h-9 rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        :options="years.map((year) => ({ value: year.id, label: year.name }))"
+                        aria-label="Akademik Yıl"
                         @change="applyFilter"
-                    >
-                        <option v-for="year in years" :key="year.id" :value="year.id">
-                            {{ year.name }}
-                        </option>
-                    </select>
+                    />
                 </div>
             </div>
 
@@ -298,13 +298,14 @@ function confirmDelete() {
                     </div>
                     <div>
                         <label for="edit-branch-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
-                        <select
-                            id="edit-branch-year"
-                            v-model="editForm.academic_year_id"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option v-for="year in years" :key="year.id" :value="year.id">{{ year.name }}</option>
-                        </select>
+                        <div class="mt-1">
+                            <DropdownSelect
+                                id="edit-branch-year"
+                                v-model="editForm.academic_year_id"
+                                :options="years.map((year) => ({ value: year.id, label: year.name }))"
+                                aria-label="Akademik Yıl"
+                            />
+                        </div>
                     </div>
                     <div>
                         <label for="edit-branch-name" class="block text-sm font-medium text-gray-700">Sınıf Adı</label>

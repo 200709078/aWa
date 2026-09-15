@@ -101,7 +101,9 @@ class LoginController extends Controller
             return back()->withErrors(['school_id' => 'Bu okula giriş yetkiniz yok.']);
         }
 
-        if (! Auth::check()) {
+        $wasAuthenticated = Auth::check();
+
+        if (! $wasAuthenticated) {
             Auth::login($user);
             $request->session()->regenerate();
         }
@@ -109,7 +111,7 @@ class LoginController extends Controller
         $request->session()->put('current_school_id', $data['school_id']);
         $request->session()->forget('pending_login_user_id');
 
-        return redirect()->intended('/');
+        return $wasAuthenticated ? back() : redirect()->intended('/');
     }
 
     public function destroy(Request $request): RedirectResponse

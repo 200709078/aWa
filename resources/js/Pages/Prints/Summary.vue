@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import PrintLayout from '../../Layouts/PrintLayout.vue';
+
+const schoolName = computed(() => {
+    const pageProps = usePage().props as unknown as { current_school: { name: string } | null };
+    return pageProps.current_school?.name ?? '';
+});
 
 defineProps<{
     plan: { id: number; name: string | null };
@@ -20,7 +27,7 @@ defineProps<{
 
 <template>
     <PrintLayout title="Dağılım Özeti" :back-href="`/distribution/plans/${plan.id}`">
-        <h1 class="text-xl font-bold">Dağılım Özeti — {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}</h1>
+        <h1 class="text-xl font-bold">Dağılım Özeti - {{ schoolName }} - {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}</h1>
 
         <h2 class="mt-6 text-lg font-semibold">Genel Özet</h2>
         <table class="mt-2 w-full max-w-xl border-collapse text-sm">

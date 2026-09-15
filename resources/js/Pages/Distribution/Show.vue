@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
@@ -80,6 +80,11 @@ function seatLabel(seat: SeatInfo): string {
 }
 
 const title = computed(() => props.plan.name || `Plan #${props.plan.id}`);
+
+const schoolName = computed(() => {
+    const pageProps = usePage().props as unknown as { current_school: { name: string } | null };
+    return pageProps.current_school?.name ?? '';
+});
 
 function finalize() {
     router.post(`/distribution/plans/${props.plan.id}/finalize`);
@@ -283,7 +288,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        {{ week.name }}
+                        {{ schoolName }} · {{ week.name }}
                         <span v-if="plan.creator"> · {{ plan.creator }}</span>
                         <span v-if="plan.created_at"> · {{ plan.created_at }}</span>
                     </p>

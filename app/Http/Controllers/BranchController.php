@@ -22,6 +22,11 @@ class BranchController extends Controller
             ?: $years->firstWhere('is_active', true)?->id
             ?? $years->first()?->id;
 
+        if ($selectedYearId && ! $years->contains('id', $selectedYearId)) {
+            $selectedYearId = $years->firstWhere('is_active', true)?->id
+                ?? $years->first()?->id;
+        }
+
         $branches = $selectedYearId
             ? Branch::withCount('students')
                 ->where('academic_year_id', $selectedYearId)
@@ -33,6 +38,9 @@ class BranchController extends Controller
             'years' => $years,
             'selectedYearId' => $selectedYearId,
             'branches' => $branches,
+            'totalBranches' => $selectedYearId === null
+                ? 0
+                : Branch::whereIn('academic_year_id', $years->pluck('id'))->count(),
         ]);
     }
 

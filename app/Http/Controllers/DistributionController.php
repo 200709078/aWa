@@ -26,13 +26,18 @@ class DistributionController extends Controller
             ?? AcademicYear::where('school_id', $schoolId)->orderByDesc('name')->value('id');
 
         $weeks = ExamWeek::with('academicYear:id,name')
-            ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId))
+            ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId), fn ($query) => $query->whereRaw('0 = 1'))
             ->orderByDesc('id')
             ->get(['id', 'name', 'academic_year_id', 'is_active']);
 
         $selectedId = request()->integer('exam_week_id')
             ?: $weeks->firstWhere('is_active', true)?->id
             ?? $weeks->first()?->id;
+
+        if ($selectedId && ! $weeks->contains('id', $selectedId)) {
+            $selectedId = $weeks->firstWhere('is_active', true)?->id
+                ?? $weeks->first()?->id;
+        }
 
         $week = $selectedId ? ExamWeek::find($selectedId) : null;
 

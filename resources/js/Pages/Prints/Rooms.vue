@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import PrintLayout from '../../Layouts/PrintLayout.vue';
+
+const schoolName = computed(() => {
+    const pageProps = usePage().props as unknown as { current_school: { name: string } | null };
+    return pageProps.current_school?.name ?? '';
+});
 
 interface RoomList {
     room: { id: number; name: string };
@@ -16,7 +23,7 @@ defineProps<{
 <template>
     <PrintLayout title="Salon Öğrenci Listeleri" :back-href="`/distribution/plans/${plan.id}`">
         <h1 class="text-xl font-bold print:text-lg">
-            Salon Öğrenci Listeleri — {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}
+            Salon Öğrenci Listeleri - {{ schoolName }} - {{ week.name }}{{ plan.name ? ` · ${plan.name}` : '' }}
         </h1>
 
         <div

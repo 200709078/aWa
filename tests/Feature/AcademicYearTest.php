@@ -43,6 +43,22 @@ class AcademicYearTest extends TestCase
         $this->assertFalse($y2->fresh()->is_active);
     }
 
+    public function test_aktif_yil_okul_bazinda_tekil_olur(): void
+    {
+        $user = \App\Models\User::factory()->create();
+        $a = \App\Models\School::create(['name' => 'A Okulu', 'kurum_kodu' => '111111']);
+        $b = \App\Models\School::create(['name' => 'B Okulu', 'kurum_kodu' => '222222']);
+        $ya = AcademicYear::create(['school_id' => $a->id, 'name' => '2026-2027']);
+        $yb = AcademicYear::create(['school_id' => $b->id, 'name' => '2026-2027']);
+        $user->schools()->attach([$a->id, $b->id]);
+
+        $this->actingAs($user)->post("/academic-years/{$ya->id}/activate")->assertRedirect();
+        $this->actingAs($user)->withSession(['current_school_id' => $b->id])->post("/academic-years/{$yb->id}/activate")->assertRedirect();
+
+        $this->assertTrue($ya->fresh()->is_active);
+        $this->assertTrue($yb->fresh()->is_active);
+    }
+
     public function test_yil_adi_zorunlu(): void
     {
         $user = \App\Models\User::factory()->create();

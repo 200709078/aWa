@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
 import PrintLayout from '../../Layouts/PrintLayout.vue';
 
@@ -34,6 +35,11 @@ const props = defineProps<{
 const photos = ref(props.showPhotos);
 const showNumber = ref(true);
 const showBranch = ref(true);
+
+const schoolName = computed(() => {
+    const pageProps = usePage().props as unknown as { current_school: { name: string } | null };
+    return pageProps.current_school?.name ?? '';
+});
 
 function seatMap(room: RoomData): Map<string, SeatInfo> {
     const map = new Map<string, SeatInfo>();
@@ -160,7 +166,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
             :class="index < grid.length - 1 ? 'print:break-after-page' : ''"
             class="mt-6 print:pb-[8mm]"
         >
-            <h2 class="text-lg font-semibold print:text-base">{{ week.name }} - {{ room.room.name }} Oturma Planı</h2>
+            <h2 class="text-lg font-semibold print:text-base">{{ schoolName }} - {{ week.name }} - {{ room.room.name }} Oturma Planı</h2>
             <div class="print:break-inside-avoid">
             <table class="mt-2 w-full table-fixed border-collapse print:mt-1">
                 <tbody>

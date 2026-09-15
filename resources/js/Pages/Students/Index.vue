@@ -2,6 +2,7 @@
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
+import DropdownSelect from '../../Components/DropdownSelect.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface Year {
@@ -38,9 +39,11 @@ const props = defineProps<{
     years: Year[];
     yearId: number | null;
     branches: BranchOption[];
+    allBranches: BranchOption[];
     branchId: number | null;
     search: string;
     students: Paginator;
+    totalStudents: number;
 }>();
 
 const filterYear = ref<number | null>(props.yearId);
@@ -132,7 +135,7 @@ function confirmDelete() {
         <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center gap-3">
                 <h1 class="shrink-0 text-2xl font-bold text-gray-900">Öğrenciler</h1>
-                <div class="flex min-w-52 flex-1 items-center justify-center gap-2">
+                <div v-if="totalStudents > 0" class="flex min-w-52 flex-1 items-center justify-center gap-2">
                     <input
                         id="filter-search"
                         v-model="filterSearch"
@@ -160,6 +163,7 @@ function confirmDelete() {
                 </div>
                 <div class="flex shrink-0 gap-2">
                     <Link
+                        v-if="totalStudents > 0"
                         href="/students/photos"
                         class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                     >
@@ -174,33 +178,30 @@ function confirmDelete() {
                 </div>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 gap-3 md:ml-auto md:max-w-md md:grid-cols-2">
+            <div v-if="totalStudents > 0" class="mt-4 grid grid-cols-2 gap-3 md:ml-auto md:max-w-md md:grid-cols-2">
                 <div>
                     <label for="filter-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
-                    <select
-                        id="filter-year"
-                        v-model="filterYear"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        @change="applyFilters(true)"
-                    >
-                        <option v-for="year in years" :key="year.id" :value="year.id">
-                            {{ year.name }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="filter-year"
+                            v-model="filterYear"
+                            :options="years.map((year) => ({ value: year.id, label: year.name }))"
+                            aria-label="Akademik Yıl"
+                            @change="applyFilters(true)"
+                        />
+                    </div>
                 </div>
                 <div>
                     <label for="filter-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                    <select
-                        id="filter-branch"
-                        v-model="filterBranch"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        @change="applyFilters()"
-                    >
-                        <option :value="null">Tümü</option>
-                        <option v-for="branch in branches" :key="branch.id" :value="branch.id">
-                            {{ branch.name }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="filter-branch"
+                            v-model="filterBranch"
+                            :options="[{ value: null, label: 'Tümü' }, ...branches.map((branch) => ({ value: branch.id, label: branch.name }))]"
+                            aria-label="Sınıf"
+                            @change="applyFilters()"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -341,21 +342,20 @@ function confirmDelete() {
             </div>
         </div>
 
-        <div v-if="branches.length > 0" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+        <div v-if="allBranches.length > 0" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <h2 class="text-lg font-semibold text-gray-900">Yeni Öğrenci Ekle</h2>
 
             <form class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5" @submit.prevent="submitCreate">
                 <div>
                     <label for="student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                    <select
-                        id="student-branch"
-                        v-model="createForm.branch_id"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                        <option v-for="branch in branches" :key="branch.id" :value="branch.id">
-                            {{ branch.name }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="student-branch"
+                            v-model="createForm.branch_id"
+                            :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
+                            aria-label="Sınıf"
+                        />
+                    </div>
                     <p v-if="createForm.errors.branch_id" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.branch_id }}
                     </p>
@@ -430,15 +430,14 @@ function confirmDelete() {
                     </div>
                     <div>
                         <label for="edit-student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                        <select
-                            id="edit-student-branch"
-                            v-model="editForm.branch_id"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option v-for="branch in branches" :key="branch.id" :value="branch.id">
-                                {{ branch.name }}
-                            </option>
-                        </select>
+                        <div class="mt-1">
+                            <DropdownSelect
+                                id="edit-student-branch"
+                                v-model="editForm.branch_id"
+                                :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
+                                aria-label="Sınıf"
+                            />
+                        </div>
                     </div>
                     <div>
                         <label for="edit-student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
@@ -470,6 +469,11 @@ function confirmDelete() {
                     </div>
                 </form>
             </div>
+        </div>
+
+        <div v-if="allBranches.length === 0" class="mt-6 w-full max-w-[80%] rounded-md bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            Öğrenci eklemek için önce sınıf ekleyin.
+            <Link href="/branches" class="font-semibold underline">Sınıflar</Link>
         </div>
 
         <div v-if="deleting" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

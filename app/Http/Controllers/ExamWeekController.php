@@ -20,6 +20,7 @@ class ExamWeekController extends Controller
     public function index(): Response
     {
         $weeks = ExamWeek::with(['academicYear:id,name'])
+            ->whereIn('academic_year_id', SchoolScope::yearIds())
             ->withCount(['branches', 'rooms', 'seatingPlans', 'exams'])
             ->orderByDesc('id')
             ->get()
@@ -60,7 +61,7 @@ class ExamWeekController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $rooms = Room::withCount(['seats as active_seats_count' => fn ($query) => $query->where('is_active', true)])
+        $rooms = Room::where('school_id', SchoolScope::id())->withCount(['seats as active_seats_count' => fn ($query) => $query->where('is_active', true)])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get(['id', 'name', 'is_active']);

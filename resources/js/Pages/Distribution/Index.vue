@@ -2,6 +2,7 @@
 import { Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import DropdownSelect from '../../Components/DropdownSelect.vue';
 
 interface WeekOption {
     id: number;
@@ -54,6 +55,11 @@ function start() {
 
 const pageErrors = computed(() => usePage().props.errors as Record<string, string | undefined>);
 
+const schoolName = computed(() => {
+    const props = usePage().props as unknown as { current_school: { name: string } | null };
+    return props.current_school?.name ?? '';
+});
+
 function planName(plan: Plan): string {
     return plan.name || `Plan #${plan.id}`;
 }
@@ -79,16 +85,15 @@ function confirmDelete() {
                 <h1 class="text-2xl font-bold text-gray-900">Dağıtım</h1>
                 <div v-if="weeks.length > 0" class="ml-auto w-64">
                     <label for="dist-week" class="block text-sm font-medium text-gray-700">Sınav Haftası</label>
-                    <select
-                        id="dist-week"
-                        v-model="selectedWeek"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        @change="changeWeek"
-                    >
-                        <option v-for="week in weeks" :key="week.id" :value="week.id">
-                            {{ week.name }}{{ week.is_active ? ' (aktif)' : '' }}
-                        </option>
-                    </select>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="dist-week"
+                            v-model="selectedWeek"
+                            :options="weeks.map((week) => ({ value: week.id, label: `${week.name}${week.is_active ? ' (aktif)' : ''}` }))"
+                            aria-label="Sınav Haftası"
+                            @change="changeWeek"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -109,7 +114,7 @@ function confirmDelete() {
         </div>
 
         <div v-if="summary" class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="font-semibold text-gray-900">Dağıtım Öncesi Özet — {{ summary.week.name }}</h2>
+            <h2 class="font-semibold text-gray-900">Dağıtım Öncesi Özet - {{ schoolName }} - {{ summary.week.name }}</h2>
             <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.branchCount }}</div>
