@@ -15,9 +15,11 @@ use App\Services\DistributionException;
 use App\Services\SeatingDistributionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\CreatesStudents;
 
 class DistributionTest extends TestCase
 {
+    use CreatesStudents;
     use RefreshDatabase;
 
     private function addSeats(Room $room, int $rows, int $cols): void
@@ -47,7 +49,7 @@ class DistributionTest extends TestCase
         foreach ($branches as $branch) {
             for ($i = 0; $i < 6; $i++) {
                 $no++;
-                Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => (string) $no, 'full_name' => "Öğrenci $no"]);
+                $this->makeStudent($year, $branch, (string) $no, "Öğrenci $no");
             }
         }
 
@@ -88,8 +90,8 @@ class DistributionTest extends TestCase
         $b1 = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
         $b2 = Branch::create(['academic_year_id' => $year->id, 'name' => '10A', 'grade_level' => 10, 'section' => 'A']);
         for ($i = 1; $i <= 5; $i++) {
-            Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => "1$i", 'full_name' => "A $i"]);
-            Student::create(['academic_year_id' => $year->id, 'branch_id' => $b2->id, 'school_number' => "2$i", 'full_name' => "B $i"]);
+            $this->makeStudent($year, $b1, "1$i", "A $i");
+            $this->makeStudent($year, $b2, "2$i", "B $i");
         }
 
         $roomIds = [];
@@ -114,8 +116,8 @@ class DistributionTest extends TestCase
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $b1 = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
         $b2 = Branch::create(['academic_year_id' => $year->id, 'name' => '9B', 'grade_level' => 9, 'section' => 'B']);
-        Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => '1', 'full_name' => 'Ali']);
-        Student::create(['academic_year_id' => $year->id, 'branch_id' => $b2->id, 'school_number' => '2', 'full_name' => 'Veli']);
+        $this->makeStudent($year, $b1, '1', 'Ali');
+        $this->makeStudent($year, $b2, '2', 'Veli');
 
         $room = Room::create(['name' => 'Salon 1']);
         $this->addSeats($room, 1, 2);
@@ -149,7 +151,7 @@ class DistributionTest extends TestCase
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $branch = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
         for ($i = 1; $i <= 5; $i++) {
-            Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => (string) $i, 'full_name' => "Ö $i"]);
+            $this->makeStudent($year, $branch, (string) $i, "Ö $i");
         }
         $room = Room::create(['name' => 'Salon 1']);
         $this->addSeats($room, 1, 2);
@@ -179,8 +181,8 @@ class DistributionTest extends TestCase
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $b1 = Branch::create(['academic_year_id' => $year->id, 'name' => '10A', 'grade_level' => 10, 'section' => 'A']);
         $b2 = Branch::create(['academic_year_id' => $year->id, 'name' => '10B', 'grade_level' => 10, 'section' => 'B']);
-        $s1 = Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => '1', 'full_name' => 'Ali']);
-        $s2 = Student::create(['academic_year_id' => $year->id, 'branch_id' => $b2->id, 'school_number' => '2', 'full_name' => 'Veli']);
+        $this->makeStudent($year, $b1, '1', 'Ali');
+        $this->makeStudent($year, $b2, '2', 'Veli');
 
         // 3. sütun koridor (pasif): 2 ve 4 aktif ama ekranda/fiziken yan yana.
         $room = Room::create(['name' => 'Salon 1']);
@@ -206,7 +208,7 @@ class DistributionTest extends TestCase
         $b10 = Branch::create(['academic_year_id' => $year->id, 'name' => '10A', 'grade_level' => 10, 'section' => 'A']);
         foreach ([$b9, $b10] as $branch) {
             for ($i = 1; $i <= 6; $i++) {
-                Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => $branch->name.$i, 'full_name' => "Ö {$branch->name} $i"]);
+                $this->makeStudent($year, $branch, $branch->name.$i, "Ö {$branch->name} $i");
             }
         }
 

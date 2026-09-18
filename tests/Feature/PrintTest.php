@@ -13,9 +13,11 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\CreatesStudents;
 
 class PrintTest extends TestCase
 {
+    use CreatesStudents;
     use RefreshDatabase;
 
     private function setupPlan(): SeatingPlan
@@ -25,7 +27,7 @@ class PrintTest extends TestCase
         $branch = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
         $room = Room::create(['name' => 'Salon 1']);
         $seat = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 1)->first();
-        $student = Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '1', 'full_name' => 'Ali']);
+        $student = $this->makeStudent($year, $branch, '1', 'Ali');
 
         $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
         $week->branches()->sync([$branch->id]);

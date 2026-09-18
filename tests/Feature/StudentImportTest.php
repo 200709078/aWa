@@ -13,9 +13,11 @@ use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
+use Tests\Traits\CreatesStudents;
 
 class StudentImportTest extends TestCase
 {
+    use CreatesStudents;
     use RefreshDatabase;
 
     private function makeFile(string $ext, array $header, array $rows): string
@@ -39,7 +41,7 @@ class StudentImportTest extends TestCase
         $user = User::factory()->create();
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $branch = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
-        Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '145', 'full_name' => 'Ali Veli']);
+        $this->makeStudent($year, $branch, '145', 'Ali Veli');
 
         $path = $this->makeFile('xlsx', ['Sınıf', 'Okul No', 'Ad Soyad'], [
             ['9/A', 301, 'Yeni Öğrenci'],
@@ -76,9 +78,10 @@ class StudentImportTest extends TestCase
         $this->assertEquals(1, $summary['guncellendi']);
         $this->assertEquals(4, $summary['hatali']);
 
-        $this->assertDatabaseHas('students', ['school_number' => '301', 'full_name' => 'Yeni Öğrenci', 'branch_id' => $branch->id]);
-        $this->assertDatabaseHas('students', ['school_number' => '145', 'full_name' => 'Ali Veli Güncel']);
-        $this->assertDatabaseMissing('students', ['school_number' => '303']);
+        $this->assertDatabaseHas('people', ['full_name' => 'Yeni Öğrenci']);
+        $this->assertDatabaseHas('student_enrollments', ['academic_year_id' => $year->id, 'school_number' => '301', 'branch_id' => $branch->id]);
+        $this->assertDatabaseHas('people', ['full_name' => 'Ali Veli Güncel']);
+        $this->assertDatabaseMissing('student_enrollments', ['academic_year_id' => $year->id, 'school_number' => '303']);
 
         unlink($path);
     }

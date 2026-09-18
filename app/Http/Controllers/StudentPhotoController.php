@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Student;
+use App\Models\StudentEnrollment;
 use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
@@ -101,7 +102,10 @@ class StudentPhotoController extends Controller
         }
 
         $yearId = (int) $data['academic_year_id'];
-        $students = Student::where('academic_year_id', $yearId)->get()->keyBy(fn (Student $s) => $this->normalizeNumber($s->school_number));
+        $enrollments = StudentEnrollment::where('academic_year_id', $yearId)
+            ->with('student.person')
+            ->get()
+            ->keyBy(fn (StudentEnrollment $e) => $this->normalizeNumber($e->school_number));
 
         $manager = new ImageManager(new Driver());
         Storage::disk('public')->makeDirectory('students');
@@ -118,20 +122,20 @@ class StudentPhotoController extends Controller
                 continue;
             }
 
-            if (! isset($students[$number])) {
+            if (! isset($enrollments[$number]) || ! $enrollments[$number]->student || ! $enrollments[$number]->student->person) {
                 $unmatched[] = $candidate['filename'];
                 continue;
             }
 
             try {
-                $student = $students[$number];
+                $student = $enrollments[$number]->student;
                 [$image, $temps] = $this->loadImage($manager, $candidate);
                 try {
                     $absolute = Storage::disk('public')->path("students/{$student->id}.jpg");
                     $image->scaleDown(self::MAX_WIDTH, self::MAX_HEIGHT)
                         ->encode(new JpegEncoder(quality: self::QUALITY))
                         ->save($absolute);
-                    $student->update(['photo_path' => "students/{$student->id}.jpg"]);
+                    $student->person->update(['photo_path' => "students/{$student->id}.jpg"]);
                     $matched++;
                 } finally {
                     foreach ($temps as $temp) {
@@ -143,10 +147,20 @@ class StudentPhotoController extends Controller
             }
         }
 
-        $withoutPhoto = Student::where('academic_year_id', $yearId)
-            ->whereNull('photo_path')
-            ->orderBy('full_name')
-            ->get(['school_number', 'full_name']);
+        $withoutPhoto = Student::whereHas('enrollments', fn ($query) => $query->where('academic_year_id', $yearId))
+            ->whereHas('person', fn ($query) => $query->whereNull('photo_path'))
+            ->with([
+                'person:id,full_name',
+                'enrollments' => fn ($query) => $query->where('academic_year_id', $yearId),
+            ])
+            ->join('people', 'people.id', '=', 'students.person_id')
+            ->orderBy('people.full_name')
+            ->select('students.*')
+            ->get()
+            ->map(fn (Student $student) => [
+                'school_number' => $student->enrollments->first()?->school_number,
+                'full_name' => $student->person?->full_name,
+            ]);
 
         $year = AcademicYear::find($yearId);
 

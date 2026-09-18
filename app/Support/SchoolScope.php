@@ -41,7 +41,7 @@ final class SchoolScope
             $model instanceof AcademicYear => $model->school_id === $schoolId,
             $model instanceof Room => $model->school_id === $schoolId,
             $model instanceof Branch => $model->academicYear?->school_id === $schoolId,
-            $model instanceof Student => $model->academic_year_id && AcademicYear::where('id', $model->academic_year_id)->where('school_id', $schoolId)->exists(),
+            $model instanceof Student => $model->school_id === $schoolId,
             $model instanceof ExamWeek => $model->academic_year_id && AcademicYear::where('id', $model->academic_year_id)->where('school_id', $schoolId)->exists(),
             $model instanceof Exam => $model->examWeek && self::inSchoolWeek($model->examWeek, $schoolId),
             $model instanceof SeatingPlan => $model->examWeek && self::inSchoolWeek($model->examWeek, $schoolId),

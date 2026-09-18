@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable(['school_id', 'name', 'is_active'])]
 class AcademicYear extends Model
@@ -27,9 +28,21 @@ class AcademicYear extends Model
         return $this->hasMany(Branch::class);
     }
 
-    public function students(): HasMany
+    public function enrollments(): HasMany
     {
-        return $this->hasMany(Student::class);
+        return $this->hasMany(StudentEnrollment::class);
+    }
+
+    public function students(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Student::class,
+            StudentEnrollment::class,
+            'academic_year_id',
+            'id',
+            'id',
+            'student_id'
+        );
     }
 
     public function examWeeks(): HasMany

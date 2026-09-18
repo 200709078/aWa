@@ -57,7 +57,7 @@ class ExamWeekController extends Controller
         $examWeek->load(['branches:id', 'rooms:id']);
 
         $branches = Branch::where('academic_year_id', $examWeek->academic_year_id)
-            ->withCount(['students as active_students_count' => fn ($query) => $query->where('is_active', true)])
+            ->withCount(['students as active_students_count' => fn ($query) => $query->where('students.is_active', true)])
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -199,7 +199,11 @@ class ExamWeekController extends Controller
             return 0;
         }
 
-        return Student::whereIn('branch_id', $branchIds)->where('is_active', true)->count();
+        return Student::where('is_active', true)
+            ->whereHas('enrollments', fn ($query) => $query
+                ->where('academic_year_id', $week->academic_year_id)
+                ->whereIn('branch_id', $branchIds))
+            ->count();
     }
 
     private function capacity(ExamWeek $week): int

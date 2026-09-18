@@ -23,9 +23,14 @@ class Branch extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
-    public function students(): HasMany
+    public function enrollments(): HasMany
     {
-        return $this->hasMany(Student::class);
+        return $this->hasMany(StudentEnrollment::class);
+    }
+
+    public function students(): BelongsToMany
+    {
+        return $this->belongsToMany(Student::class, 'student_enrollments', 'branch_id', 'student_id');
     }
 
     public function examWeeks(): BelongsToMany

@@ -13,9 +13,11 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\CreatesStudents;
 
 class SeatingViewTest extends TestCase
 {
+    use CreatesStudents;
     use RefreshDatabase;
 
     public function test_koltukta_fotograf_bilgisi_gosterilir(): void
@@ -27,8 +29,8 @@ class SeatingViewTest extends TestCase
         $seat1 = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 1)->first();
         $seat2 = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 2)->first();
 
-        $withPhoto = Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '1', 'full_name' => 'Fotolu', 'photo_path' => 'students/1.jpg']);
-        $withoutPhoto = Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '2', 'full_name' => 'Fotosuz']);
+        $withPhoto = $this->makeStudent($year, $branch, '1', 'Fotolu', ['photo_path' => 'students/1.jpg']);
+        $withoutPhoto = $this->makeStudent($year, $branch, '2', 'Fotosuz');
 
         $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
         $week->branches()->sync([$branch->id]);
