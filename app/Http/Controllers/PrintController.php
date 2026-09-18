@@ -29,22 +29,23 @@ class PrintController extends Controller
     public function branches(SeatingPlan $plan): Response
     {
         SchoolScope::ensure($plan);
-        $plan->load('examWeek:id,name');
+        $plan->load('examWeek:id,name,academic_year_id');
+        $yearId = (int) $plan->examWeek->academic_year_id;
 
         $assignments = SeatingAssignment::where('seating_plan_id', $plan->id)
-            ->with(['student.branch:id,name', 'seat.room:id,name'])
+            ->with(['student.person:id,full_name', 'student.enrollments.branch:id,name', 'seat.room:id,name'])
             ->get();
 
         $groups = $assignments
-            ->groupBy(fn ($a) => $a->student->branch_id)
-            ->map(fn ($items, $branchId) => [
-                'branch' => $items->first()->student->branch?->name ?? '—',
+            ->groupBy(fn ($a) => $a->student->enrollmentForYear($yearId)?->branch_id ?? 0)
+            ->map(fn ($items) => [
+                'branch' => $items->first()->student->enrollmentForYear($yearId)?->branch?->name ?? '—',
                 'students' => $items
-                    ->sortBy([['student.school_number', 'asc']])
+                    ->sortBy(fn ($a) => $a->student->enrollmentForYear($yearId)?->school_number)
                     ->values()
                     ->map(fn ($a) => [
-                        'school_number' => $a->student->school_number,
-                        'full_name' => $a->student->full_name,
+                        'school_number' => $a->student->enrollmentForYear($yearId)?->school_number,
+                        'full_name' => $a->student->person?->full_name,
                         'room' => $a->seat->room->name,
                         'seat' => ($a->seat->label ?: $a->seat->row.'-'.$a->seat->column),
                     ])->all(),
@@ -91,16 +92,17 @@ class PrintController extends Controller
     public function summary(SeatingPlan $plan): Response
     {
         SchoolScope::ensure($plan);
-        $plan->load('examWeek:id,name');
+        $plan->load('examWeek:id,name,academic_year_id');
+        $yearId = (int) $plan->examWeek->academic_year_id;
 
         $summary = $this->service->summary($plan);
 
         $assignments = SeatingAssignment::where('seating_plan_id', $plan->id)
-            ->with(['student.branch:id,name', 'seat.room:id,name,sort_order'])
+            ->with(['student.enrollments.branch:id,name', 'seat.room:id,name,sort_order'])
             ->get();
 
         $branches = $assignments
-            ->map(fn ($a) => $a->student->branch)
+            ->map(fn ($a) => $a->student->enrollmentForYear($yearId)?->branch)
             ->filter()
             ->unique('id')
             ->sortBy('name')
@@ -121,7 +123,7 @@ class PrintController extends Controller
                 'total' => 0,
             ];
             foreach ($branches as $branch) {
-                $n = $assignments->filter(fn ($a) => $a->seat->room_id === $room->id && $a->student->branch_id === $branch->id)->count();
+                $n = $assignments->filter(fn ($a) => $a->seat->room_id === $room->id && $a->student->enrollmentForYear($yearId)?->branch_id === $branch->id)->count();
                 $row['cells'][] = $n;
                 $row['total'] += $n;
             }
@@ -130,7 +132,7 @@ class PrintController extends Controller
 
         $branchTotals = [];
         foreach ($branches as $branch) {
-            $branchTotals[] = $assignments->filter(fn ($a) => $a->student->branch_id === $branch->id)->count();
+            $branchTotals[] = $assignments->filter(fn ($a) => $a->student->enrollmentForYear($yearId)?->branch_id === $branch->id)->count();
         }
 
         return Inertia::render('Prints/Summary', [

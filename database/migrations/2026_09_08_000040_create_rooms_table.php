@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('school_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);

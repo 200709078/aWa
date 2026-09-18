@@ -196,12 +196,14 @@ class DistributionController extends Controller
     private function preSummary(ExamWeek $examWeek): array
     {
         $branches = $examWeek->branches()
-            ->withCount(['students as active_students_count' => fn ($query) => $query->where('is_active', true)])
+            ->withCount(['students as active_students_count' => fn ($query) => $query->where('students.is_active', true)])
             ->orderBy('name')
             ->get(['branches.id', 'branches.name']);
 
-        $studentCount = Student::whereIn('branch_id', $branches->pluck('id'))
-            ->where('is_active', true)
+        $studentCount = Student::where('is_active', true)
+            ->whereHas('enrollments', fn ($query) => $query
+                ->where('academic_year_id', $examWeek->academic_year_id)
+                ->whereIn('branch_id', $branches->pluck('id')))
             ->count();
 
         $rooms = $examWeek->rooms()

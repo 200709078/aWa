@@ -13,9 +13,11 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\CreatesStudents;
 
 class PlanEditTest extends TestCase
 {
+    use CreatesStudents;
     use RefreshDatabase;
 
     private function setupPlan(): SeatingPlan
@@ -30,9 +32,9 @@ class PlanEditTest extends TestCase
             $seats[$c] = Seat::where('room_id', $room->id)->where('row', 1)->where('column', $c)->first();
         }
 
-        $sx1 = Student::create(['academic_year_id' => $year->id, 'branch_id' => $bx->id, 'school_number' => '1', 'full_name' => 'X1']);
-        $sy = Student::create(['academic_year_id' => $year->id, 'branch_id' => $by->id, 'school_number' => '2', 'full_name' => 'Y']);
-        $sx2 = Student::create(['academic_year_id' => $year->id, 'branch_id' => $bx->id, 'school_number' => '3', 'full_name' => 'X2']);
+        $sx1 = $this->makeStudent($year, $bx, '1', 'X1');
+        $sy = $this->makeStudent($year, $by, '2', 'Y');
+        $sx2 = $this->makeStudent($year, $bx, '3', 'X2');
 
         $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
         $week->branches()->sync([$bx->id, $by->id]);
@@ -50,7 +52,7 @@ class PlanEditTest extends TestCase
     {
         $user = User::factory()->create();
         $plan = $this->setupPlan();
-        $moving = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '3'))->first();
+        $moving = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student.enrollments', fn ($q) => $q->where('school_number', '3'))->first();
         $target = Seat::where('column', 4)->first();
 
         $response = $this->actingAs($user)->postJson("/distribution/plans/{$plan->id}/move", [
@@ -68,8 +70,8 @@ class PlanEditTest extends TestCase
         $user = User::factory()->create();
         $plan = $this->setupPlan();
         // col3'teki X2 ile col2'deki Y takas edilirse X2, col1'deki X1 ile yan yana gelir.
-        $x2 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '3'))->first();
-        $y = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '2'))->first();
+        $x2 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student.enrollments', fn ($q) => $q->where('school_number', '3'))->first();
+        $y = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student.enrollments', fn ($q) => $q->where('school_number', '2'))->first();
 
         $preview = $this->actingAs($user)->postJson("/distribution/plans/{$plan->id}/swap", [
             'assignment_id' => $x2->id,
@@ -98,8 +100,8 @@ class PlanEditTest extends TestCase
         $user = User::factory()->create();
         $plan = $this->setupPlan();
         // col1'deki X1 ile col3'teki X2 takası ihlal oluşturmaz.
-        $x1 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '1'))->first();
-        $x2 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '3'))->first();
+        $x1 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student.enrollments', fn ($q) => $q->where('school_number', '1'))->first();
+        $x2 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student.enrollments', fn ($q) => $q->where('school_number', '3'))->first();
         $seatOfX2 = $x2->seat_id;
 
         $response = $this->actingAs($user)->postJson("/distribution/plans/{$plan->id}/swap", [
@@ -116,8 +118,8 @@ class PlanEditTest extends TestCase
     {
         $user = User::factory()->create();
         $plan = $this->setupPlan();
-        $x1 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '1'))->first();
-        $occupiedSeat = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '2'))->first()->seat_id;
+        $x1 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student.enrollments', fn ($q) => $q->where('school_number', '1'))->first();
+        $occupiedSeat = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student.enrollments', fn ($q) => $q->where('school_number', '2'))->first()->seat_id;
 
         $response = $this->actingAs($user)->postJson("/distribution/plans/{$plan->id}/move", [
             'assignment_id' => $x1->id,
@@ -136,7 +138,7 @@ class PlanEditTest extends TestCase
         $target = Seat::where('room_id', $room2->id)->where('row', 1)->where('column', 1)->first();
         $plan->examWeek->rooms()->attach($room2->id);
 
-        $x1 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student', fn ($q) => $q->where('school_number', '1'))->first();
+        $x1 = SeatingAssignment::where('seating_plan_id', $plan->id)->whereHas('student.enrollments', fn ($q) => $q->where('school_number', '1'))->first();
 
         $response = $this->actingAs($user)->postJson("/distribution/plans/{$plan->id}/move", [
             'assignment_id' => $x1->id,

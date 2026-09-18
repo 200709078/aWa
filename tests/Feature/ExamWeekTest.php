@@ -11,9 +11,11 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\CreatesStudents;
 
 class ExamWeekTest extends TestCase
 {
+    use CreatesStudents;
     use RefreshDatabase;
 
     private function setupData(): ExamWeek
@@ -21,9 +23,9 @@ class ExamWeekTest extends TestCase
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $b1 = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
         $b2 = Branch::create(['academic_year_id' => $year->id, 'name' => '9B', 'grade_level' => 9, 'section' => 'B']);
-        Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => '1', 'full_name' => 'Ali']);
-        Student::create(['academic_year_id' => $year->id, 'branch_id' => $b1->id, 'school_number' => '2', 'full_name' => 'Veli', 'is_active' => false]);
-        Student::create(['academic_year_id' => $year->id, 'branch_id' => $b2->id, 'school_number' => '3', 'full_name' => 'Ayşe']);
+        $this->makeStudent($year, $b1, '1', 'Ali');
+        $this->makeStudent($year, $b1, '2', 'Veli', ['is_active' => false]);
+        $this->makeStudent($year, $b2, '3', 'Ayşe');
         $room = Room::create(['name' => 'Salon 1']);
         Seat::where('room_id', $room->id)->update(['is_active' => false]);
         Seat::where('room_id', $room->id)->where('row', 1)->where('column', 1)->update(['is_active' => true]);

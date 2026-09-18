@@ -1,27 +1,28 @@
-# AGENTS.md — AVA Kelebek
+# AGENTS.md — OAL Kelebek
 
-Bu dosya, `~/Belgeler/ava_kelebek` projesinin geliştirme planıdır.
+Bu dosya `~/Belgeler/OAL_Kelebek` projesinin ana geliştirme rehberidir.
 
-Amaç: OpenCode / Muse benzeri bir kodlama ajanına yalnızca örneğin:
+Amaç, OpenCode / Muse gibi bir kodlama ajanına yalnızca örneğin:
 
-> `AGENTS.md içindeki 1. adımı tamamen uygula. Sonraki adıma geçme.`
+> `AGENTS.md içindeki 2. adımı tamamen uygula. Sonraki adıma geçme.`
 
-demek ve ilgili adımın eksiksiz uygulanmasını sağlamaktır.
+demek ve ilgili adımı eksiksiz uygulatmaktır.
 
 ---
 
-# 0. Genel kurallar
+# 0. GENEL KURALLAR
 
 ## Proje
 
-- Proje kökü: `~/Belgeler/ava_kelebek`
+- Proje kökü: `~/Belgeler/OAL_Kelebek`
 - Uygulama adı: `Kelebek`
 - Production adresi: `https://kelebek.madematik.com`
 - Uygulama kurum içi kullanılacaktır.
 - Başlangıçta yalnızca 1–2 yetkili yönetici kullanacaktır.
 - Öğrenci, veli veya öğretmen portalı yapılmayacaktır.
-- Öğrencilere veya velilere web üzerinden sınav yeri duyurusu yapılmayacaktır.
-- Temel amaç: sınav oturma planını hazırlamak, gerekirse elle düzenlemek ve gerekli çıktıları almaktır.
+- Öğrenci/veli tarafında web üzerinden sınav yeri duyurusu yapılmayacaktır.
+- Temel amaç: sınav oturma planını hazırlamak, gerektiğinde elle düzenlemek ve gerekli çıktıları almaktır.
+- İleride mezun rehberi, SMS export ve kişi yönetimi genişletilecektir.
 
 ## Teknoloji
 
@@ -41,9 +42,9 @@ Ayrı frontend, ayrı REST API, NestJS, Next.js, Docker, microservice veya gerek
 
 ## Dil ve zaman dilimi
 
-- Uygulama dili doğrudan Türkçe olacaktır.
-- Locale: `tr`
-- Fallback locale: `tr`
+- Uygulama dili: Türkçe
+- `APP_LOCALE=tr`
+- `APP_FALLBACK_LOCALE=tr`
 - Timezone: `Europe/Istanbul`
 
 ## Tasarım yaklaşımı
@@ -52,10 +53,9 @@ Tasarım sade, modern, temiz ve yönetim uygulamasına uygun olsun.
 
 - Masaüstü kullanımına öncelik ver.
 - Tablet ve mobilde bozulmayan responsive yapı kur.
-- Kullanıcı arayüzünü gereksiz detaylarla kalabalıklaştırma.
-- Butonların, tabloların, formların veya kontrollerin yerlerini bu dosyada tarif edilenlerden daha fazla katılaştırma.
-- İşlevi doğru sağlayan modern tasarımı kendin oluştur.
-- Gereksiz animasyon kullanma.
+- Gereksiz görsel karmaşa ve animasyon kullanma.
+- Belirli buton, combobox, sidebar veya piksel yerleşimlerini zorunlu kılma.
+- İşlevi doğru sağlayan modern arayüzü kendin tasarla.
 - Büyük UI frameworkleri ekleme; ihtiyaç yoksa Tailwind yeterlidir.
 
 ## Kod yaklaşımı
@@ -64,8 +64,9 @@ Tasarım sade, modern, temiz ve yönetim uygulamasına uygun olsun.
 - Overengineering yapma.
 - Gerekmiyorsa Repository, Domain, DTO, Action, Module gibi katmanlar ekleme.
 - Laravel ve Vue standartlarına uygun, sade ve okunabilir kod yaz.
-- İleride genişletmeye açık ol ama bugünden çok okullu SaaS karmaşıklığı kurma.
-- Yine de veri modeli gelecekte başka okul/kullanıcı eklenmesini tamamen engellemesin.
+- İleride genişletmeye açık ol.
+- Bugünden gereksiz SaaS karmaşıklığı kurma.
+- Mevcut çalışan Kelebek özelliklerini yeni veri modeline uyarlarken kırma.
 
 ## Test yaklaşımı
 
@@ -75,12 +76,12 @@ Her adımda yalnızca kritik kontrolleri yap:
 
 - Migration çalışıyor mu?
 - Build başarılı mı?
-- İlgili temel CRUD / akış gerçekten çalışıyor mu?
+- İlgili temel CRUD / akış çalışıyor mu?
 - Dağıtım algoritmasının kritik kuralları korunuyor mu?
 - Import işlemi temel hataları yakalıyor mu?
 - Çıktı ekranı yazdırılabiliyor mu?
 
-Her küçük metoda ayrı unit test yazma.
+Her küçük metoda ayrı test yazma.
 Gereksiz mock, fixture, test factory veya kapsamlı test matrisi oluşturma.
 
 Kritik iş mantığı olan dağıtım algoritması için sınırlı ama anlamlı otomatik testler yazılabilir.
@@ -95,26 +96,24 @@ Kritik iş mantığı olan dağıtım algoritması için sınırlı ama anlamlı
 
 ---
 
-# 1. Proje temelini hazırla
+# 1. PROJE TEMELİNİ HAZIRLA
 
-`~/Belgeler/ava_kelebek` klasörü Laravel projesinin doğrudan kökü olacak.
+`~/Belgeler/OAL_Kelebek` Laravel projesinin doğrudan kökü olacak.
 
-Ek bir `kelebek/` alt klasörü oluşturma.
+Ek `kelebek/` alt klasörü oluşturma.
 
 Laravel 13 + Vue 3 + TypeScript + Inertia + Tailwind + Vite kur.
 
 Frontend için pnpm kullan.
 
-`.env` dosyasını local geliştirme için hazırla.
+`.env` local geliştirme için hazır olsun.
 
 MySQL kullan:
 
 - `DB_CONNECTION=mysql`
 - `DB_HOST=127.0.0.1`
 - `DB_PORT=3306`
-- `DB_DATABASE=ava_kelebek`
-
-Yerel kullanıcı adı/şifre mevcut sisteme göre ayarlanabiliyorsa ayarla; production bilgisi ekleme.
+- `DB_DATABASE=oal_kelebek`
 
 Locale ve timezone:
 
@@ -135,7 +134,6 @@ olarak kopyala ve favicon olarak kullan.
 Başlangıç ekranı yalnızca sade bir kurulum doğrulama ekranı olabilir.
 
 Bu adımda:
-
 - özel veritabanı tabloları oluşturma
 - authentication geliştirme
 - öğrenci/salon sistemi yapma
@@ -146,344 +144,498 @@ Bu adımda:
 - deployment yapma
 
 Kritik kontrol:
-
 - `php artisan about`
 - `pnpm build`
 
-Başarılı olmalı.
-
 ---
 
-# 2. Veritabanını ve temel veri modelini oluştur
+# 2. VERİTABANI MİMARİSİNİ NİHAİ HALE GETİR VE MEVCUT KELEBEK BAĞLANTILARINI UYARLA
 
-MySQL içinde:
+Bu adımda mevcut proje production'da olmadığı için eski migration'ları parça parça `add_*` migration'larıyla büyütme.
 
-`ava_kelebek`
+Mevcut create migration'larını nihai şemaya göre düzenle.
+Yeni tablolar için temiz create migration'ları oluştur.
+Sonunda `php artisan migrate:fresh` ile sıfırdan kurulabilsin.
 
-isimli veritabanını kullan.
+Mevcut Kelebek tablolarında bulunan alanları tekrar oluşturma.
+Mevcut migration ve modelleri önce incele, sonra nihai şemayı uygula.
 
-Aşağıdaki ana tabloları oluştur.
+## 2.1 Mevcut Kelebek tabloları korunacak
 
-## users
+Aşağıdaki yapıların ana amacı korunmalı:
 
-Laravel kullanıcı tablosunu sade yönetici girişine uygun kullan.
+- `schools`
+- `users`
+- `school_user`
+- `academic_years`
+- `branches`
+- `rooms`
+- `seats`
+- `exam_weeks`
+- `exam_week_branches`
+- `exam_week_rooms`
+- `seating_plans`
+- `seating_assignments`
+- `exams`
 
-Temel alanlar:
+Bu tabloları gereksiz yere yeniden tasarlama.
 
-- id
-- name
-- username veya email
-- password
-- timestamps
+Ancak mevcut migration'larda sonradan eklenmiş `school_id`, `role` vb. alanlar varsa, temiz mimari için doğrudan ilgili create migration içine taşı.
 
-Register sistemi gerekmeyecek.
+## 2.2 Ortak kişi tablosu: `people`
 
-## academic_years
+Yeni tablo:
 
-- id
-- name — örn. `2026-2027`
-- is_active
-- timestamps
+```text
+people
+------
+id
+school_id
+first_name nullable
+last_name nullable
+full_name
+phone nullable
+email nullable
+address nullable
+photo_path nullable
+timestamps
+```
 
-## branches
+Kurallar:
+- `school_id` mevcut `schools` tablosuna bağlı olacak.
+- `full_name` zorunlu.
+- `first_name` ve `last_name` nullable.
+- `phone`, `email`, `address`, `photo_path` nullable.
+- Telefon ve e-posta unique OLMAYACAK.
+- Aynı kişi birden fazla role sahip olabilir.
+- İletişim ve fotoğraf bilgisi kişi düzeyinde tutulacak.
 
-Öğrencinin gerçek şubesi.
+## 2.3 `students`
 
-Örn: `9A`, `9B`, `10C`
+Mevcut `students` tablosunu yeni yapıya göre düzenle.
 
-Alanlar:
+Nihai temel yapı:
 
-- id
-- academic_year_id
-- name
-- grade_level
-- section
-- is_active
-- timestamps
+```text
+students
+--------
+id
+school_id
+person_id
+is_active
+timestamps
+```
 
-Aynı academic year içinde branch adı unique olmalı.
+Buradan kaldır:
+- `full_name`
+- `photo_path`
+- `academic_year_id`
+- `branch_id`
+- `school_number`
 
-## students
+Çünkü:
+- ad/fotoğraf -> `people`
+- akademik yıl/şube/okul numarası -> `student_enrollments`
 
-- id
-- academic_year_id
-- branch_id
-- school_number
-- full_name
-- photo_path nullable
-- is_active
-- timestamps
+`person_id` -> `people.id`
 
-`school_number` aynı academic year içinde unique olmalı.
+## 2.4 `student_enrollments`
 
-## rooms
+Yeni tablo:
 
-Sınav salonları.
+```text
+student_enrollments
+-------------------
+id
+student_id
+academic_year_id
+branch_id
+school_number
+status
+timestamps
+```
 
-- id
-- name
-- description nullable
-- is_active
-- sort_order
-- timestamps
+Amaç:
+Bir öğrencinin yıllara göre şube ve okul numarası geçmişini tutmak.
 
-## seats
+Örnek:
+- 2026-2027 -> 9A -> 145
+- 2027-2028 -> 10B -> 145 veya farklı numara
+- daha sonraki bir yılda 145 başka öğrenciye verilebilir
 
-Salon içindeki fiziksel koltuklar.
+Kritik unique kural:
 
-- id
-- room_id
-- row
-- column
-- label nullable
-- is_active
-- sort_order nullable
-- timestamps
+```text
+UNIQUE (academic_year_id, school_number)
+```
 
-Koltuk, herhangi bir sınıf seviyesi veya renkle ilişkili olmayacak.
+Okul numarası global unique OLMAYACAK.
 
-Aynı room içinde `row + column` unique olmalı.
+Aynı öğrenci aynı akademik yılda birden fazla enrollment kaydına sahip olmamalı:
 
-## exam_weeks
+```text
+UNIQUE (student_id, academic_year_id)
+```
 
-- id
-- academic_year_id
-- name
-- description nullable
-- starts_at nullable
-- ends_at nullable
-- is_active
-- timestamps
+`status` sade tutulabilir:
+- active
+- transferred
+- graduated
+- inactive
 
-Sınav tarihleri şu an zorunlu değildir; ancak sonradan entegre edilebilmesi için yapı buna uygun olsun.
+## 2.5 `guardians`
 
-## exam_week_branches
+Yeni tablo:
 
-Bir sınav haftasına hangi şubelerin dahil olduğunu tut.
+```text
+guardians
+---------
+id
+person_id
+timestamps
+```
 
-- exam_week_id
-- branch_id
+Kişisel bilgiler `people` üzerinden gelir.
 
-Composite unique kullan.
+## 2.6 `student_guardian`
 
-## exam_week_rooms
+Yeni pivot tablo:
 
-Bir sınav haftasında algoritmanın kullanmasına izin verilen salonları tut.
+```text
+student_guardian
+----------------
+student_id
+guardian_id
+relationship
+is_primary
+timestamps
+```
 
-- exam_week_id
-- room_id
+`relationship` örnekleri:
+- anne
+- baba
+- veli
+- vasi
 
-Composite unique kullan.
+Bir öğrenci birden fazla veli/ebeveyn kaydına sahip olabilir.
+Bir kişi birden fazla öğrencinin velisi olabilir.
 
-Bu tablo “mutlaka kullanılacak salon” anlamına gelmez; yalnızca kullanılmasına izin verilen salonları belirtir.
+## 2.7 `teachers`
 
-## seating_plans
+Yeni tablo:
 
-Bir sınav haftasında oluşturulan dağıtımı temsil eder.
+```text
+teachers
+--------
+id
+person_id
+is_active
+timestamps
+```
 
-- id
-- exam_week_id
-- name nullable
-- status
-- total_students
-- used_room_count
-- notes nullable
-- created_by nullable
-- timestamps
+Öğretmenin:
+- adı
+- telefon
+- e-posta
+- adres
+- fotoğraf
 
-Status sade tutulabilir:
-- draft
-- final
+bilgileri `people` üzerinden gelir.
 
-## seating_assignments
+Henüz öğretmen admin ekranı yapma.
 
-- id
-- seating_plan_id
-- student_id
-- seat_id
-- timestamps
+## 2.8 `graduates`
 
-Aynı seating plan içinde:
-- student bir kez atanmalı
-- seat bir kez kullanılmalı
+Yeni tablo:
 
-## exams
+```text
+graduates
+---------
+id
+person_id
+student_id nullable
+graduation_year
+graduation_number
+notes nullable
+timestamps
+```
 
-İleride sınav tarihleri / programı kullanılabilsin diye temel tablo oluştur.
+Kurallar:
+- `student_id` nullable.
+- Eski mezunlar için `student_id` NULL olabilir.
+- Mevcut öğrenci ileride mezun olduğunda ilgili student kaydına bağlanabilir.
+- Üniversite/fakülte/bölüm burada tutulmayacak.
+- İş bilgisi burada tutulmayacak.
 
-Şimdilik uygulama bu tabloya bağımlı olmayacak.
+Unique:
+```text
+UNIQUE (graduation_year, graduation_number)
+```
 
-Alanlar sade olsun:
+## 2.9 `person_educations`
 
-- id
-- exam_week_id
-- name
-- exam_date nullable
-- start_time nullable
-- description nullable
-- timestamps
+Yeni tablo:
 
-Bu yapıyı aktif ürün akışına bağlama.
+```text
+person_educations
+-----------------
+id
+person_id
+institution_name
+faculty nullable
+department nullable
+degree_level nullable
+start_year nullable
+graduation_year nullable
+notes nullable
+timestamps
+```
 
-Migration'ları çalıştır.
+Bir kişi birden fazla eğitim kaydına sahip olabilir.
 
-İlişkili Eloquent modellerini oluştur.
+Bu sadece mezunlar için değil, öğretmen ve diğer kişi türleri için de kullanılabilir.
 
-Gereksiz repository veya service katmanı oluşturma.
+## 2.10 `person_employments`
 
-Kritik kontrol:
+Yeni tablo:
+
+```text
+person_employments
+------------------
+id
+person_id
+company_name
+job_title
+city nullable
+start_year nullable
+end_year nullable
+is_current
+notes nullable
+timestamps
+```
+
+Bir kişinin birden fazla iş geçmişi olabilir.
+
+Bu tablo V1 çekirdek mimarisine dahildir; erteleme.
+
+## 2.11 Mevcut Kelebek modellerini yeni yapıya uyarla
+
+İlişkileri düzgün kur:
+
+- School -> People
+- Person -> Student
+- Person -> Guardian
+- Person -> Teacher
+- Person -> Graduate
+- Person -> Educations
+- Person -> Employments
+- Student -> Person
+- Student -> Enrollments
+- Student -> Guardians
+- Enrollment -> AcademicYear
+- Enrollment -> Branch
+- Graduate -> Person
+- Graduate -> Student nullable
+
+## 2.12 Mevcut Kelebek kod bağlantılarını güncelle
+
+Mevcut çalışan Kelebek admin ve iş mantığı yeni yapıya uyarlanacak.
+
+Özellikle incele ve güncelle:
+
+- `Student.php`
+- `AcademicYear.php`
+- `Branch.php`
+- `StudentController.php`
+- `StudentImportController.php`
+- `StudentPhotoController.php`
+- `SchoolScope.php`
+- `SeatingDistributionService.php`
+- `DistributionController.php`
+- `PrintController.php`
+- ilgili Vue öğrenci/import/çıktı ekranları
+
+Mevcut kodda doğrudan:
+
+```text
+student.branch_id
+student.academic_year_id
+student.school_number
+student.full_name
+student.photo_path
+```
+
+kullanımları varsa yeni ilişkilere göre değiştir.
+
+Yeni erişim mantığı:
+
+```text
+student -> person -> full_name
+student -> person -> photo_path
+student -> active/current enrollment -> branch
+student -> active/current enrollment -> academic_year
+student -> active/current enrollment -> school_number
+```
+
+Sınav haftasının akademik yılına göre doğru enrollment seçilmeli.
+
+Dağıtım motoru öğrencinin şubesini artık `student_enrollments` üzerinden bulmalı.
+
+Fotoğraf erişimi:
+
+```text
+student -> person -> photo_path
+```
+
+üzerinden çalışmalı.
+
+## 2.13 Bu adımda YAPMA
+
+Henüz:
+- Mezunlar admin ekranı yapma
+- VCF oluşturma ekranı yapma
+- SMS/VeraSMS export ekranı yapma
+- Veli yönetim ekranı yapma
+- Öğretmen yönetim ekranı yapma
+- Mezun eğitim/iş geçmişi admin ekranı yapma
+- Public rehber yapma
+
+Bu adım sadece:
+1. veri tabanı mimarisi
+2. model ilişkileri
+3. mevcut Kelebek sisteminin yeni modele uyarlanması
+
+içindir.
+
+## 2.14 Kritik kontrol
 
 - `php artisan migrate:fresh`
-- ilişkiler ve unique constraint'ler doğru çalışmalı.
+- mevcut login çalışmalı
+- mevcut öğrenci listesi ekranı çalışmalı
+- öğrenci import akışı çalışmalı
+- fotoğraf import/gösterim akışı çalışmalı
+- dağıtım motoru çalışmalı
+- çıktı ekranları çalışmalı
+- `pnpm build` başarılı olmalı
+
+Gereksiz test paketi oluşturma.
 
 Sonraki adıma geçme.
 
 ---
 
-# 3. Basit yönetici girişi oluştur
+# 3. BASİT YÖNETİCİ GİRİŞİ
 
 Uygulama yalnızca yetkili kullanıcılar tarafından kullanılacak.
 
-Basit authentication sistemi oluştur.
-
 Gereksinimler:
-
-- Login ekranı
+- Login
 - Logout
 - Register kapalı
 - Şifre sıfırlama zorunlu değil
 - Sosyal login yok
-- Rol/yetki sistemi yok
-- Bütün uygulama sayfaları auth ile korunmalı
-- Login dışında public yönetim ekranı olmasın
+- Gereksiz rol sistemi yok
+- Bütün yönetim sayfaları auth ile korunmalı
 
-Başlangıçta tek admin kullanıcı oluşturmak için uygun seeder oluştur.
+Başlangıçta 1–2 kullanıcı yeterli.
 
-Default admin bilgilerini production için hard-code etme.
-
-Local geliştirme için `.env` veya seeder üzerinden kolay değiştirilebilir yaklaşım kullan.
-
-Kritik kontrol:
-
-- giriş yapılmadan korumalı sayfaya erişilememeli
-- giriş sonrası ana sayfa açılmalı
-- logout çalışmalı
-
-Sonraki adıma geçme.
+Mevcut projede bu özellik zaten varsa yeniden oluşturma; yalnızca çalıştığını doğrula.
 
 ---
 
-# 4. Ana yönetim arayüzünü oluştur
+# 4. ANA YÖNETİM ARAYÜZÜ
 
-Sade ve modern bir yönetim arayüzü oluştur.
+Sade ve modern admin arayüzü.
 
-İşlevsel ana bölümler şunlara erişim sağlamalı:
-
+Ana bölümler:
 - Öğrenciler
 - Şubeler
 - Salonlar
 - Sınav Haftaları
 - Dağıtım
 - Çıktılar / Raporlar
-- Ayarlar gerekirse sınırlı
 
-Tasarımda belirli buton veya combobox yerleşimlerini zorunlu kılma.
+İleride:
+- Mezunlar
+- Rehber / Kişiler
+- SMS Export
 
-Masaüstünde verimli, mobil/tablette bozulmayan responsive yapı oluştur.
+eklenebilir.
 
-Bu adımda gerçek modüllerin tamamını geliştirme; navigasyon ve temel layout yeterli.
-
-Sonraki adıma geçme.
+Bu adımda tasarım ayrıntılarını katılaştırma.
 
 ---
 
-# 5. Akademik yıl ve şube yönetimini oluştur
+# 5. AKADEMİK YIL VE ŞUBE YÖNETİMİ
 
-Academic year CRUD oluştur.
+Academic year CRUD.
+
+Branch CRUD.
 
 Gereksinimler:
-
 - ekleme
 - düzenleme
 - aktif/pasif
 - aktif akademik yılı seçebilme
 
-Branch CRUD oluştur.
-
-Gereksinimler:
-
-- şube adı
-- sınıf seviyesi
-- şube harfi/bölümü
-- academic year ilişkisi
-- aktif/pasif
-
-Örn:
+Şube örnekleri:
 - 9A
 - 9B
 - 10C
 - 12D
 
-Aynı academic year içinde aynı şube iki kez oluşturulmasın.
-
-Kritik kontrol:
-- temel CRUD çalışmalı
-- unique constraint hatası kullanıcıya anlaşılır gösterilmeli
+Aynı academic year içinde duplicate şube olmasın.
 
 ---
 
-# 6. Öğrenci yönetimini oluştur
+# 6. ÖĞRENCİ YÖNETİMİ
 
-Öğrenciler için yönetim ekranı oluştur.
+Öğrenci yönetimi yeni person-centric modele göre çalışmalı.
 
-Gereksinimler:
+Admin kullanıcı tek form görmeli; backend gerekli tabloları yönetmeli.
 
-- listeleme
-- arama
-- şubeye göre filtreleme
-- ekleme
-- düzenleme
-- pasife alma veya silme
-- okul numarası
+Gerekli bilgiler:
+- ad
+- soyad
 - ad soyad
+- telefon
+- e-posta
+- adres
+- fotoğraf
+- okul numarası
 - şube
-- fotoğraf durumu
+- akademik yıl
+- aktif/pasif
 
-Fotoğraf yoksa arayüzde:
+Arayüz kullanıcıya tablo yapısını hissettirmesin.
 
+Fotoğraf yoksa:
 `Foto yok`
 
 göster.
 
-Öğrenci sayfalarında büyük görsel galeri tasarımı yapma.
-
-Toplu import bir sonraki adımda yapılacak.
-
 ---
 
-# 7. Excel öğrenci içe aktarmayı oluştur
+# 7. EXCEL ÖĞRENCİ İÇE AKTARMA
 
-Excel öğrenci listesi içe aktarma V1 için zorunludur.
+Excel import V1 için zorunlu.
 
 `.xlsx` ve mümkünse `.xls` destekle.
 
-Gerekli paketi seç ve kur.
+Import artık yalnız öğrenci değil, kişi ve enrollment yapısını da günceller.
 
-Akış:
+Temel alanlar:
+- şube
+- okul no
+- ad soyad
+- öğrenci telefon
+- öğrenci e-posta
+- adres
+- veli adı soyadı
+- veli telefon
+- veli e-posta
 
-1. Kullanıcı Excel dosyasını yükler.
-2. Sistem başlıkları okumaya çalışır.
-3. Temel alanları otomatik eşleştirmeye çalışır:
-   - okul numarası
-   - ad soyad
-   - şube
-4. Gerekirse kullanıcı sütun eşleştirmesi yapabilir.
-5. Önizleme göster.
-6. Hatalı satırları açıkça göster.
-7. Kullanıcı onayından sonra aktar.
-
-Şu tip sütun isimlerini normalize etmeye çalış:
-
+Başlık örneklerini normalize et:
 - Okul No
 - Öğrenci No
 - Numara
@@ -493,313 +645,196 @@ Akış:
 - Şube
 - Sınıfı
 
-Şube yazımlarını mümkün olduğunca normalize et:
-
+Şube formatlarını normalize et:
 - `9A`
 - `9/A`
 - `9-A`
 - `9 A`
 
-gibi değerleri aynı şubeye dönüştür.
+Import sırasında oluştur/güncelle:
+- `people` öğrenci kaydı
+- `students`
+- `student_enrollments`
+- gerekiyorsa veli için `people`
+- `guardians`
+- `student_guardian`
 
-İçe aktarma sırasında:
-
+Kurallar:
+- okul numarası o akademik yıl içinde unique
+- boş okul no hata
+- boş ad soyad hata
+- bulunamayan şube hata
 - boş satırları atla
-- okul numarası boşsa hata ver
-- ad soyad boşsa hata ver
-- şube bulunamazsa hata ver veya açıkça raporla
-- duplicate okul numarasını kontrol et
 
-Import sonunda özet göster:
-
-- toplam satır
+Sonuç özeti:
+- toplam
 - eklendi
 - güncellendi
 - atlandı
 - hatalı
 
-Mevcut öğrenciyi güncelleme davranışı açık ve güvenli olsun.
-
-Gereksiz gelişmiş import geçmişi sistemi kurma.
-
-Kritik kontrol:
-- küçük örnek dosyada import çalışmalı
-- duplicate ve eksik alan hataları yakalanmalı
-
 ---
 
-# 8. Toplu öğrenci fotoğrafı yüklemeyi oluştur
+# 8. TOPLU ÖĞRENCİ FOTOĞRAFI YÜKLEME
 
-Öğrenci fotoğrafları çoğunlukla mevcuttur.
-
-Dosya adları öğrenci numarasıdır:
+Fotoğraf dosya adı öğrenci numarasıdır:
 
 - `145.jpg`
 - `111.jpg`
 - `1024.jpg`
 
-Toplu yükleme destekle.
+Fotoğraf eşleştirme ilgili akademik yıl enrollment'ındaki okul numarasına göre yapılmalı.
 
-Mümkünse:
+Fotoğraf `people.photo_path` alanına yazılmalı.
+
+Destek:
 - çoklu dosya seçimi
-- ZIP yükleme
+- mümkünse ZIP
 
-desteklenebilir.
+Büyük görseller:
+- resize
+- compress
 
-Dosya adından öğrenci numarasını bul.
+Orijinal dev dosyaları saklama.
 
-Öğrenci ile eşleştir.
-
-Büyük fotoğrafları yükleme sırasında otomatik küçült ve sıkıştır.
-
-Orijinal çok büyük dosyaları olduğu gibi saklama.
-
-Web ve A4 çıktı için yeterli kaliteyi koru.
-
-Dosya formatlarını güvenli biçimde sınırla.
-
-Fotoğraf bulunmayan öğrencilerde:
+Fotoğraf yoksa:
 `Foto yok`
 
-göster.
+---
 
-Yükleme sonunda özet göster:
+# 9. SALON VE KOLTUK DÜZENİ
 
-- eşleşen fotoğraf
-- eşleşmeyen dosya
-- fotoğrafı olmayan öğrenci
-- hatalı dosya
+Salon CRUD.
 
-Fotoğraf işleme işlemi çok sayıda dosyada zaman alıyorsa Laravel queue kullanabilirsin.
-Başlangıçta Redis kurmak zorunlu değildir; database queue yeterlidir.
+Seat:
+- room_id
+- row
+- column
+- label nullable
+- is_active
+- sort_order nullable
 
-Gereksiz karmaşık medya sistemi kurma.
+Koltuk hiçbir şube veya sınıf seviyesiyle ilişkili olmayacak.
+
+Salon kapasitesi aktif koltuk sayısından hesaplanmalı.
 
 ---
 
-# 9. Salon ve koltuk düzeni yönetimini oluştur
-
-Salon CRUD oluştur.
-
-Her salonun fiziksel koltuk düzeni tanımlanabilsin.
-
-Seat verisi `row` ve `column` üzerinden tutulacak.
-
-Amaç:
-- yatay komşuluk hesaplanabilsin
-- salon planı görsel olarak çizilebilsin
-- aktif olmayan koltuklar kullanılmasın
-
-Salon için:
-
-- ad
-- açıklama
-- aktif/pasif
-- sıralama
-
-Koltuk düzeni için sade bir editör oluştur.
-
-Örn. 5 satır × 6 sütun gibi düzenler kolay eklenebilsin.
-
-Tek tek bazı koltukları pasif yapabilmek mümkün olsun.
-
-Koltuk numaralandırması kullanıcıya anlaşılır gösterilsin.
-
-Koltuk herhangi bir şube veya sınıf seviyesine bağlı olmayacak.
-
-Kritik kontrol:
-- salon kapasitesi aktif koltuk sayısından hesaplanmalı
-- aynı row+column duplicate olamamalı
-
----
-
-# 10. Sınav haftası yönetimini oluştur
-
-Exam week CRUD oluştur.
+# 10. SINAV HAFTASI
 
 Bir sınav haftasında kullanıcı:
 
-- dağıtıma dahil olacak şubeleri seçebilmeli
+- dağıtıma dahil şubeleri seçebilmeli
 - kullanılmasına izin verilen salonları seçebilmeli
 
-Bazı şubeler belirli sınav haftalarında hiç dağıtıma dahil olmayabilir.
+Bazı şubeler o hafta hariç tutulabilir.
+Bazı salonlar o hafta hariç tutulabilir.
 
-Bazı salonlar belirli sınav haftalarında hiç kullanılmayabilir.
-
-Kullanıcıya özet göster:
-
+Özet:
 - dahil öğrenci sayısı
 - izin verilen salon sayısı
-- toplam aktif koltuk kapasitesi
-
-Sınav tarihi/programı alanları şu aşamada ana akışa zorunlu bağlanmasın.
+- toplam kapasite
 
 ---
 
-# 11. Dağıtım motorunu oluştur
+# 11. DAĞITIM MOTORU
 
-Bu projenin en kritik iş mantığıdır.
+Backend service içinde tutulmalı.
 
-Dağıtım motorunu backend tarafında ayrı ve temiz bir service sınıfında tut.
-
-Örn:
-`app/Services/SeatingDistributionService.php`
-
-Dağıtım kuralları:
+Kritik kurallar:
 
 ## Kesin kural
-
-Aynı seviyeden iki öğrenci yatay olarak yan yana oturmamalı.
-
-Örn. `9A` ve `9B` öğrencileri aynı satırda komşu iki koltukta olamaz.
+Aynı seviyeden iki öğrenci yatay yan yana oturmamalı.
 
 Yatay komşu:
 - aynı row
 - column farkı 1
 
-## İzin verilen durum
-
-Aynı seviyeden öğrenciler gerekirse arka arkaya oturabilir.
-
-Yani dikey komşuluk yasak değildir.
+## Serbest durum
+Aynı şubeden öğrenciler gerekirse arka arkaya oturabilir.
 
 ## Yumuşak tercih
-
-Mümkünse bir salonda aynı şubeden en az iki öğrenci bulunması tercih edilir.
-
-Bu zorunlu değildir.
+Mümkünse aynı salonda aynı şubeden en az iki öğrenci bulunsun.
 
 ## Salon minimizasyonu
-
-Sistem mümkün olan en az sayıda salonu kullanmaya çalışmalıdır.
+Mümkün olan en az sayıda salon kullanılmalı.
 
 Örnek:
-
 - 300 öğrenci
 - 12 salon
-- her biri 30 kişilik
+- her biri 30 kişi
 
-Önce 10 salonla geçerli çözüm ara.
-
-10 salonla kurallar sağlanamıyorsa 11 salon dene.
-
-11 ile olmazsa 12 salon dene.
+Önce 10 salon dene.
+Olmazsa 11.
+Olmazsa 12.
 
 Salon kapasiteleri farklıysa:
-- mümkün olan en az salon
+- minimum salon sayısı
 - mümkün olduğunca az boş koltuk
 
 hedeflenmeli.
 
-Yalnızca exam week içinde izin verilen salonlar kullanılabilir.
+Sadece exam week içinde izin verilen salonlar kullanılabilir.
 
-## Kapasite kontrolü
+Kapasite yetersizse dağıtımı başlatma.
 
-Dağıtım öncesinde:
-- aktif öğrenci sayısı
-- kullanılabilir aktif koltuk sayısı
+Kontrolsüz sonsuz döngü kullanma.
 
-kontrol edilmeli.
-
-Toplam kapasite yetersizse dağıtımı başlatma.
-
-## Sonuç
-
-Dağıtım sonucu `seating_plans` ve `seating_assignments` içine kaydedilmeli.
-
-Özet üret:
-
-- toplam öğrenci
-- kullanılan salon
-- boş bırakılan salon
-- kullanılan koltuk
-- boş koltuk
-- yatay aynı şube ihlali sayısı
-
-İdeal durumda ihlal sayısı 0 olmalıdır.
-
-Geçerli çözüm bulunamazsa açık hata ver; sonsuz döngü oluşturma.
-
-`while(true)` / kontrolsüz tekrar kullanma.
-
-Dağıtım algoritması için yalnızca kritik otomatik testler yaz:
-
+Kritik testler:
 - aynı seviye yatay yan yana gelmiyor
 - kapasite yetersizken hata
 - minimum salon yaklaşımı
-- bütün öğrenciler tam bir kez atanıyor
-- hiçbir koltuk iki kez kullanılmıyor
-
-Gereksiz geniş test paketi yazma.
+- her öğrenci bir kez
+- her koltuk bir kez
 
 ---
 
-# 12. Dağıtım oluşturma ekranını yap
+# 12. DAĞITIM EKRANI
 
-Kullanıcı seçili sınav haftası için dağıtım başlatabilsin.
-
-Dağıtım öncesinde anlamlı bir özet göster:
-
+Dağıtım öncesi özet:
 - katılan şubeler
 - öğrenci sayısı
-- kullanılabilir salonlar
+- salonlar
 - kapasite
 - tahmini minimum salon
 
-Dağıtım oluşturulduğunda sonucu salon bazında göster.
+Dağıtım sonucu salon bazında göster.
 
-Kullanıcı aynı sınav haftası için yeniden dağıtım oluşturabilsin.
+Aynı sınav haftası için yeniden dağıtım yapılabilsin.
 
-Eski planı yanlışlıkla ezmek yerine yeni plan kaydı oluşturmak veya kontrollü şekilde değiştirmek daha güvenlidir.
-
-Plan draft/final durumu kullanılabilir.
+Draft/final yaklaşımı kullanılabilir.
 
 ---
 
-# 13. Salon planı manuel düzenlemeyi oluştur
-
-Otomatik dağıtımdan sonra kullanıcı planı elle değiştirebilmeli.
+# 13. MANUEL SALON/KOLTUK DÜZENLEME
 
 Destekle:
 
-## Aynı salon içinde
-
-- öğrenciyi boş koltuğa taşıma
-- iki öğrencinin yerini değiştirme
+## Aynı salon
+- boş koltuğa taşıma
+- öğrenci takası
 - drag & drop
 
-## Salonlar arasında
+## Salonlar arası
+- öğrenci taşıma
+- salon değiştirme
+- takas
 
-- öğrenciyi başka salona taşıma
-- hedef salondaki boş koltuğu seçme
-- gerekirse iki öğrenciyi salonlar arasında takas etme
+Aynı şube yan yana gelirse uyarı göster.
 
-Arayüzde bu işlem “Salon Değiştir” gibi anlaşılır bir adla sunulabilir.
-
-Manuel işlem sonunda aynı şubenin yatay yan yana gelmesi oluşuyorsa kullanıcıya uyarı göster.
-
-Manuel düzenlemede bu kuralı kesin bloklamak zorunlu değildir.
-
-Kullanıcı bilinçli olarak:
+Kullanıcı:
 `Yine de uygula`
 
 diyebilsin.
 
-Ancak ihlal görünür olmalı.
-
-Değişiklikler backend'e kaydedilmeli.
-
-Mobilde temel kullanım bozulmasın; ancak sürükle-bırak masaüstü/tablet öncelikli olabilir.
-
 ---
 
-# 14. Oturma planı görünümünü geliştir
+# 14. OTURMA PLANI
 
-Salon bazında oturma planını anlaşılır biçimde göster.
+Salon bazında göster.
 
-Her koltukta gerekli bilgiler görüntülenebilsin:
-
-- öğrenci numarası
+Her koltukta:
+- okul no
 - ad soyad
 - şube
 - fotoğraf varsa fotoğraf
@@ -807,284 +842,317 @@ Her koltukta gerekli bilgiler görüntülenebilsin:
 Fotoğraf yoksa:
 `Foto yok`
 
-göster.
-
-Fotoğraf göster/gizle seçeneği olmalı.
-
-Bu seçenek veriyi değiştirmemeli; yalnızca görünüm/çıktı tercihi olmalı.
+Fotoğraf göster/gizle seçeneği veri değiştirmemeli.
 
 ---
 
-# 15. Yazdırılabilir çıktıları oluştur
+# 15. YAZDIRILABİLİR ÇIKTILAR
 
-Uygulamanın ana kullanım amaçlarından biri çıktı almaktır.
+A4 uyumlu.
 
-A4 yazdırmaya uygun temiz görünümler oluştur.
+En az:
+- salon oturma planı
+- şube bazında sınav yeri listesi
+- salon öğrenci listesi
+- dağılım özeti
+- genel özet
 
-En az şu çıktıları destekle:
+Fotoğraflı/fotoğrafsız seçenek.
 
-## Salon oturma planı
-
-Salon bazında.
-
-Fotoğraflı veya fotoğrafsız seçilebilsin.
-
-## Şube bazında sınav yeri listesi
-
-Öğrencilerin kendi gerçek şubelerine göre listesi.
-
-Örn. 9A öğrencilerinin hangi salonlarda olduğu.
-
-## Salon öğrenci listesi
-
-Bir salondaki öğrencilerin listesi.
-
-## Dağılım özeti
-
-Her salonda hangi şubeden kaç öğrenci olduğunu göster.
-
-## Genel özet
-
-- toplam öğrenci
-- kullanılan salonlar
-- salon kapasiteleri
-- boş koltuk
-- şube dağılımları
-
-İlk aşamada tarayıcı yazdırma görünümü yeterlidir.
-
-Kullanıcı:
-`Yazdır -> PDF olarak kaydet`
-
-kullanabilsin.
+İlk aşamada browser print yeterlidir.
 
 Gereksiz server-side PDF paketi ekleme.
 
-İleride ihtiyaç olursa eklenebilir.
+---
+
+# 16. SINAV TARİHLERİ / PROGRAMI
+
+Mevcut eski Excel uygulamasında sınav tarihleri yalnız duyuru amaçlıydı.
+
+V1 ana işlevi değildir.
+
+Mevcut:
+- `exam_weeks`
+- `exams`
+
+yapısı ileride tarih/saat/açıklama destekleyecek şekilde hazır kalmalı.
+
+Dağıtım motoru sınav tarihine bağımlı olmasın.
 
 ---
 
-# 16. Fotoğraflı / fotoğrafsız çıktı seçeneklerini tamamla
+# 17. MEZUN / SMS / VCF ALTYAPISI
 
-Oturma planı ve uygun listelerde kullanıcı:
+Bu bölümde SADECE veri mimarisi hazırdır.
 
-- Fotoğrafları göster
-- Fotoğrafları gizle
+Henüz admin ekranı veya export yapma.
 
-seçeneğini kullanabilsin.
+Mevcut tablolar:
+- `people`
+- `guardians`
+- `teachers`
+- `graduates`
+- `person_educations`
+- `person_employments`
 
-Fotoğraf gizliyken daha kompakt yazdırma düzeni kullanılabilir.
+Bu yapı ileride şu özellikleri destekleyecek:
 
-Öğrenci numarası ve şube gibi temel bilgileri gösterme seçenekleri gerekiyorsa sade biçimde eklenebilir.
+## SMS
+Öğrenci ve veli iletişim bilgileri:
+- `people.phone`
+- `people.email`
+
+üzerinden alınacak.
+
+VeraSMS export ileride anlık üretilecek.
+Şimdilik `sms_exports` veya `sms_logs` tablosu oluşturma.
+
+## VCF / Mezun rehberi
+Mezun VCF çıktısı ileride:
+- `graduates`
+- `people`
+- `person_educations`
+- `person_employments`
+
+üzerinden anlık üretilecek.
+
+Şimdilik `vcf_exports` tablosu oluşturma.
+VCF ekranı yapma.
 
 ---
 
-# 17. Sınav tarihleri / sınav programı için temel entegrasyonu tamamla
+# 18. ESKİ EXCEL DEMO VERİSİ AKTARIMI
 
-Mevcut eski Excel uygulamasında sınav tarihleri yalnızca duyuru amaçlıydı ve daha sonra kapatıldı.
+Masaüstünde:
 
-Bu özellik V1 için ana işlev değildir.
+`~/Masaüstü/kelebek.xls`
 
-Ancak mevcut `exams` ve `exam_weeks` yapısını kullanarak sistem ileride:
+bulunuyor.
 
-- sınav adı
-- tarih
-- saat
-- açıklama
+Yeni sistem tamamlandıktan sonra uygun verileri demo/başlangıç verisi olarak aktar.
 
-bilgilerini destekleyebilecek durumda olsun.
+Önce dosyayı analiz et.
 
-Şu aşamada kapsamı büyütme.
+Uygun veriler:
+- şubeler
+- öğrenciler
+- okul numaraları
+- ad soyad
+- salonlar
+- salon kapasiteleri
+- koltuk düzenleri
+- uygun sabit referans verileri
 
-Dağıtım motorunu sınav tarihine bağımlı hale getirme.
+Yeni person-centric modele uygun şekilde aktar:
+- people
+- students
+- student_enrollments
 
-Sade bir opsiyonel yönetim ekranı eklenebilir veya veri modeli hazır bırakılabilir.
+Eski VBA renk mantığını taşıma.
+Eski Sınav Yeri dağıtımlarını zorunlu olarak import etme.
+SınavTarihleri zorunlu değildir.
+
+Tek seferlik importer/command/seeder olabilir.
+Tekrar çalıştırıldığında duplicate oluşturmamalı.
 
 ---
 
-# 20. Kullanılabilirlik ve hata mesajlarını gözden geçir
+# 19. MEVCUT FOTOĞRAFLARI BAĞLAMA
 
-Ana akışlarda kullanıcı dostu Türkçe hata ve başarı mesajları kullan.
+Fotoğraf klasörü varsa öğrenci numarası üzerinden eşleştir.
+
+Örnek:
+- `145.jpg`
+- `111.jpg`
+
+Fotoğraf ilgili `people.photo_path` alanına bağlanmalı.
+
+Fotoğraf yoksa hata verme.
+
+---
+
+# 20. KULLANILABİLİRLİK VE HATA MESAJLARI
+
+Türkçe ve anlaşılır mesajlar kullan.
 
 Özellikle:
-
 - Excel import hatası
 - duplicate öğrenci
 - bulunamayan şube
 - kapasite yetersiz
 - dağıtım çözümsüz
 - fotoğraf eşleşmedi
-- manuel yer değiştirmede kural ihlali
+- manuel kural ihlali
 - kayıt başarısız
-- yazdırma durumu
 
-gibi durumlar anlaşılır olmalı.
-
-Teknik exception metinlerini doğrudan kullanıcıya gösterme.
-
-Gereksiz toast yağmuru oluşturma.
+Teknik exception'ı doğrudan kullanıcıya gösterme.
 
 ---
 
-# 21. Responsive ve son arayüz düzenlemelerini yap
-
-Uygulamanın tüm ana ekranlarını gözden geçir.
+# 21. RESPONSIVE SON KONTROL
 
 Öncelik:
 1. Masaüstü
 2. Tablet
 3. Mobil
 
-Mobilde tüm yönetim fonksiyonlarının mükemmel olması zorunlu değildir; ancak uygulama kullanılabilir olmalı.
-
-Özellikle:
-- tablolar
-- form alanları
-- salon planı
-- modallar
-- navigasyon
-
-taşmamalı veya bozulmamalı.
-
-Tasarım sade ve modern kalsın.
+Mobilde tüm yönetim fonksiyonları kusursuz olmak zorunda değil, ama bozulmamalı.
 
 ---
 
-# 22. Production hazırlığını yap
+# 22. PRODUCTION HAZIRLIK
 
-Production hedefi:
+Hedef:
 
 `https://kelebek.madematik.com`
 
-Hosting Laravel 13 destekliyor.
+Subdomain document root Laravel `public` klasörünü göstermeli.
 
-Subdomain document root Laravel projesinin:
-
-`public`
-
-klasörünü göstermeli.
-
-Production için:
-
-- `.env` ayarlarını örnek olarak dokümante et
+Production:
 - `APP_ENV=production`
 - `APP_DEBUG=false`
 - doğru `APP_URL`
 - MySQL production bağlantısı
 - storage link gerekiyorsa belirt
-- cache/config optimize komutlarını belirt
-- queue kullanılıyorsa production worker gereksinimini belirt
+- optimize komutlarını belirt
+- queue varsa worker gereksinimini belirt
 
-Projeyi hosting'e kendiliğinden yükleme; yalnızca kullanıcı açıkça isterse deployment yap.
-
-Production'da `.env` veya hassas dosyaların web üzerinden erişilebilir olmadığını doğrula.
+Kullanıcı istemeden deploy yapma.
 
 ---
 
-# 23. Son kritik kontrol
+# 23. SON KRİTİK KONTROL
 
-Projeyi gereksiz test turuna sokma.
-
-Yalnızca aşağıdaki kritik akışları kontrol et:
+Sadece kritik akışları kontrol et:
 
 1. Login
-2. Academic year / branch oluşturma
-3. Excel öğrenci import
+2. Academic year / branch
+3. Öğrenci import
 4. Fotoğraf import
-5. Salon ve koltuk oluşturma
-6. Exam week oluşturma
-7. Şube ve salon seçimi
-8. Dağıtım oluşturma
+5. Salon/koltuk
+6. Exam week
+7. Şube/salon seçimi
+8. Dağıtım
 9. Aynı şube yatay yan yana gelmiyor
-10. Minimum salon yaklaşımı çalışıyor
+10. Minimum salon
 11. Manuel koltuk değişimi
 12. Salon değiştirme
 13. Fotoğraflı/fotoğrafsız görünüm
-14. Yazdırma görünümü
+14. Yazdırma
 15. `pnpm build`
-16. Laravel production için temel hata bırakmıyor
-
-Bulunan kritik hataları düzelt.
 
 Yeni özellik ekleme.
 
 ---
 
-# 24. Git / GitHub başlangıcı
+# 24. GIT / GITHUB
 
 Bu adımı yalnızca kullanıcı isterse uygula.
 
-Projede git başlat.
+- git init
+- ilk temiz çalışan commit
+- kullanıcı isterse GitHub private repository
+- önerilen repo adı: `OAL_Kelebek`
 
-İlk temiz çalışan hali commit et.
+Commit etme:
+- `.env`
+- `vendor`
+- `node_modules`
+- hassas dosyalar
 
-GitHub CLI mevcut ve login yapılmışsa kullanıcı onayıyla private repository oluştur.
-
-Önerilen repository adı:
-
-`ava_kelebek`
-
-Private repository kullan.
-
-`.env`, `vendor`, `node_modules` ve hassas dosyaların commit edilmediğini doğrula.
-
-Remote oluşturma veya push işlemini kullanıcı istemeden yapma.
+Kullanıcı istemeden remote oluşturma veya push yapma.
 
 ---
 
-# Temel iş kuralları — kısa referans
-
-Bu bölüm tüm geliştirme boyunca korunmalıdır.
+# TEMEL İŞ KURALLARI — KISA REFERANS
 
 ## Terimler
 
 - Şube = öğrencinin gerçek sınıfı (`9A`, `10C`)
-- Salon = öğrencinin sınava girdiği fiziksel oda
-- Koltuk = salon içindeki oturma yeri
+- Salon = sınava girdiği oda
+- Koltuk = salon içindeki fiziksel oturma yeri
+
+## Kişiler
+
+Tüm kişi tipleri ortak `people` kaydına dayanır.
+
+Ortak bilgiler:
+- first_name
+- last_name
+- full_name
+- phone
+- email
+- address
+- photo_path
+
+Rol örnekleri:
+- öğrenci
+- anne
+- baba
+- veli
+- vasi
+- öğretmen
+- mezun
+
+Aynı kişi birden fazla role sahip olabilir.
+
+## Öğrenci kayıt geçmişi
+
+Okul numarası öğrencinin kalıcı kimliği değildir.
+
+Okul numarası yalnız o akademik yıl içinde unique'tir.
+
+Bu yüzden:
+- okul numarası `student_enrollments` içinde tutulur
+- unique `(academic_year_id, school_number)`
 
 ## Dağıtım
 
-- Her öğrenci her uygun salonda/koltukta oturabilir.
-- Sınıf seviyesi veya renk tabanlı koltuk kısıtı yoktur.
-- Aynı seviyeden öğrenciler yatay yan yana oturmamalıdır.
-- Aynı seviyeden öğrenciler gerekirse arka arkaya oturabilir.
-- Mümkünse bir salonda aynı şubeden en az iki öğrenci bulunması tercih edilir.
-- Mümkün olan en az sayıda salon kullanılmalıdır.
-- Kullanıcı bazı şubeleri sınav haftasından hariç tutabilir.
-- Kullanıcı bazı salonları kullanım dışı bırakabilir.
-- Sistem yalnızca izin verilen salonlar arasından minimum sayıda salon seçmeye çalışır.
+- Her öğrenci her uygun salonda oturabilir.
+- Renk/seviye tabanlı koltuk kısıtı yoktur.
+- Aynı şube yatay yan yana gelmemelidir.
+- Aynı şube arka arkaya oturabilir.
+- Mümkünse aynı salonda aynı şubeden en az iki öğrenci olsun.
+- Mümkün olan en az salon kullanılsın.
+- Bazı şubeler exam week dışında bırakılabilir.
+- Bazı salonlar exam week dışında bırakılabilir.
 
 ## Manuel düzenleme
 
-- Aynı salon içinde drag & drop
-- Boş koltuğa taşıma
-- Öğrenci takası
-- Salonlar arası taşıma
-- Salonlar arası takas
-- Kural ihlalinde uyarı
-- Kullanıcı isterse manuel olarak ihlali kabul edebilir
+- aynı salon içinde drag & drop
+- boş koltuğa taşıma
+- öğrenci takası
+- salonlar arası taşıma
+- salonlar arası takas
+- kural ihlalinde uyarı
+- kullanıcı isterse ihlali kabul edebilir
 
-## Öğrenciler
+## Fotoğraflar
 
-- Excel import zorunlu temel özelliktir.
-- Öğrenci fotoğrafları toplu yüklenir.
-- Fotoğraf dosya adı öğrenci numarasıdır.
-- Büyük fotoğraflar küçültülür/sıkıştırılır.
-- Fotoğraf yoksa `Foto yok` gösterilir.
+- dosya adı öğrenci numarası
+- büyük fotoğraf resize/compress
+- kişi fotoğrafı `people.photo_path`
+- fotoğraf yoksa `Foto yok`
 
 ## Çıktılar
 
-- Fotoğraflı veya fotoğrafsız oturma planı
-- Salon listesi
-- Şube bazında sınav yeri listesi
-- Dağılım özeti
-- Genel özet
-- Yazdırılabilir A4 görünüm
+- fotoğraflı/fotoğrafsız oturma planı
+- salon listesi
+- şube bazında sınav yeri listesi
+- dağılım özeti
+- genel özet
+- A4 yazdırma
 
-## Kullanıcılar
+## Mezun sistemi
 
-- Başlangıçta 1–2 yönetici
-- Öğrenci/veli/öğretmen portalı yok
-- Public sınav yeri sorgulama yok
-- Register yok
+- graduate temel mezuniyet kaydı
+- birden fazla eğitim -> `person_educations`
+- birden fazla iş geçmişi -> `person_employments`
+- VCF ileride anlık üretilecek
+- şu aşamada VCF ekranı yok
 
+## SMS
+
+- öğrenci/veli telefon ve e-posta `people` üzerinden
+- VeraSMS export ileride anlık üretilecek
+- şu aşamada SMS admin/export ekranı yok

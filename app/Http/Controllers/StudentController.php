@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Branch;
+use App\Models\Person;
 use App\Models\Student;
+use App\Models\StudentEnrollment;
 use App\Support\SchoolScope;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -40,17 +43,39 @@ class StudentController extends Controller
         }
         $search = trim((string) $request->input('q', ''));
 
-        $students = Student::with('branch:id,name')
+        $paginator = Student::with([
+            'person:id,full_name,photo_path',
+            'enrollments' => fn ($query) => $query->where('academic_year_id', $yearId)->with('branch:id,name'),
+        ])
             ->withCount('seatingAssignments')
-            ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId), fn ($query) => $query->whereRaw('0 = 1'))
-            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
-                $query->where('full_name', 'like', "%{$search}%")
-                    ->orWhere('school_number', 'like', "%{$search}%");
+            ->join('people', 'people.id', '=', 'students.person_id')
+            ->when($yearId, fn ($query) => $query->whereHas('enrollments', fn ($query) => $query
+                ->where('academic_year_id', $yearId)
+                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ), fn ($query) => $query->whereRaw('0 = 1'))
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search, $yearId) {
+                $query->where('people.full_name', 'like', "%{$search}%")
+                    ->orWhereHas('enrollments', fn ($query) => $query
+                        ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId))
+                        ->where('school_number', 'like', "%{$search}%"));
             }))
-            ->orderBy('full_name')
+            ->orderBy('people.full_name')
+            ->select('students.*')
             ->paginate(30)
             ->withQueryString();
+
+        $paginator->setCollection($paginator->getCollection()->map(fn (Student $student) => [
+            'id' => $student->id,
+            'school_number' => $student->enrollments->first()?->school_number ?? '—',
+            'full_name' => $student->person?->full_name ?? '—',
+            'photo_path' => $student->person?->photo_path,
+            'is_active' => $student->is_active,
+            'seating_assignments_count' => $student->seating_assignments_count,
+            'branch' => [
+                'id' => $student->enrollments->first()?->branch?->id,
+                'name' => $student->enrollments->first()?->branch?->name ?? '—',
+            ],
+        ]));
 
         return Inertia::render('Students/Index', [
             'years' => $years,
@@ -59,15 +84,38 @@ class StudentController extends Controller
             'allBranches' => Branch::whereIn('academic_year_id', $years->pluck('id'))->orderBy('name')->get(['id', 'name']),
             'branchId' => $branchId,
             'search' => $search,
-            'students' => $students,
-            'totalStudents' => Student::whereIn('academic_year_id', $years->pluck('id'))->count(),
+            'students' => $paginator,
+            'totalStudents' => Student::whereHas('enrollments', fn ($query) => $query->whereIn('academic_year_id', $years->pluck('id')))->count(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $validated = $this->validated($request);
+
         try {
-            Student::create($this->validated($request));
+            DB::transaction(function () use ($validated) {
+                $schoolId = $validated['branch']->academicYear->school_id;
+
+                $person = Person::create([
+                    'school_id' => $schoolId,
+                    'full_name' => $validated['full_name'],
+                ]);
+
+                $student = Student::create([
+                    'school_id' => $schoolId,
+                    'person_id' => $person->id,
+                    'is_active' => $validated['is_active'],
+                ]);
+
+                StudentEnrollment::create([
+                    'student_id' => $student->id,
+                    'academic_year_id' => $validated['branch']->academic_year_id,
+                    'branch_id' => $validated['branch']->id,
+                    'school_number' => $validated['school_number'],
+                    'status' => 'active',
+                ]);
+            });
         } catch (QueryException $e) {
             return back()->withErrors(['school_number' => 'Bu okul numarası bu akademik yılda zaten kayıtlı.'])->withInput();
         }
@@ -78,8 +126,28 @@ class StudentController extends Controller
     public function update(Request $request, Student $student): RedirectResponse
     {
         SchoolScope::ensure($student);
+        $validated = $this->validated($request, $student);
+
         try {
-            $student->update($this->validated($request, $student));
+            DB::transaction(function () use ($student, $validated) {
+                if ($validated['enrollment']) {
+                    $validated['enrollment']->update([
+                        'branch_id' => $validated['branch']->id,
+                        'school_number' => $validated['school_number'],
+                    ]);
+                } else {
+                    StudentEnrollment::create([
+                        'student_id' => $student->id,
+                        'academic_year_id' => $validated['branch']->academic_year_id,
+                        'branch_id' => $validated['branch']->id,
+                        'school_number' => $validated['school_number'],
+                        'status' => 'active',
+                    ]);
+                }
+
+                $student->person?->update(['full_name' => $validated['full_name']]);
+                $student->update(['is_active' => $validated['is_active']]);
+            });
         } catch (QueryException $e) {
             return back()->withErrors(['school_number' => 'Bu okul numarası bu akademik yılda zaten kayıtlı.'])->withInput();
         }
@@ -92,7 +160,7 @@ class StudentController extends Controller
         SchoolScope::ensure($student);
         $student->update(['is_active' => true]);
 
-        return back()->with('success', $student->full_name.' aktif edildi.');
+        return back()->with('success', $student->person?->full_name.' aktif edildi.');
     }
 
     public function deactivate(Student $student): RedirectResponse
@@ -100,7 +168,7 @@ class StudentController extends Controller
         SchoolScope::ensure($student);
         $student->update(['is_active' => false]);
 
-        return back()->with('success', $student->full_name.' pasife alındı.');
+        return back()->with('success', $student->person?->full_name.' pasife alındı.');
     }
 
     public function destroy(Student $student): RedirectResponse
@@ -110,27 +178,32 @@ class StudentController extends Controller
             return back()->withErrors(['student' => 'Bu öğrenci bir oturma planında kullanıldığı için silinemez.']);
         }
 
-        if ($student->photo_path) {
-            Storage::disk('public')->delete($student->photo_path);
+        $name = $student->person?->full_name ?? 'Öğrenci';
+
+        if ($student->person?->photo_path) {
+            Storage::disk('public')->delete($student->person->photo_path);
+            $student->person->update(['photo_path' => null]);
         }
 
         $student->delete();
 
-        return back()->with('success', $student->full_name.' silindi.');
+        return back()->with('success', $name.' silindi.');
     }
 
     /**
-     * @return array{academic_year_id: int, branch_id: int, school_number: string, full_name: string, is_active: bool}
+     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, full_name: string, is_active: bool}
      */
     private function validated(Request $request, ?Student $student = null): array
     {
-        $branch = Branch::findOrFail($request->input('branch_id', $student?->branch_id));
+        $branch = Branch::findOrFail($request->input('branch_id', $student?->enrollments()->first()?->branch_id));
+
+        $enrollment = $student?->enrollmentForYear($branch->academic_year_id);
 
         $data = $request->validate([
             'branch_id' => ['required', 'integer', Rule::exists('branches', 'id')->whereIn('academic_year_id', SchoolScope::yearIds())],
             'school_number' => [
                 'required', 'string', 'max:20',
-                Rule::unique('students')->where(fn ($query) => $query->where('academic_year_id', $branch->academic_year_id))->ignore($student?->id),
+                Rule::unique('student_enrollments')->where(fn ($query) => $query->where('academic_year_id', $branch->academic_year_id))->ignore($enrollment?->id),
             ],
             'full_name' => ['required', 'string', 'max:100'],
             'is_active' => ['sometimes', 'boolean'],
@@ -143,8 +216,8 @@ class StudentController extends Controller
         ]);
 
         return [
-            'academic_year_id' => $branch->academic_year_id,
-            'branch_id' => $branch->id,
+            'branch' => $branch,
+            'enrollment' => $enrollment,
             'school_number' => trim($data['school_number']),
             'full_name' => trim($data['full_name']),
             'is_active' => $request->boolean('is_active', $student?->is_active ?? true),

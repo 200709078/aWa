@@ -8,9 +8,11 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\CreatesStudents;
 
 class StudentTest extends TestCase
 {
+    use CreatesStudents;
     use RefreshDatabase;
 
     private function setupYear(): AcademicYear
@@ -34,10 +36,13 @@ class StudentTest extends TestCase
             'full_name' => 'Ali Veli',
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('students', [
-            'academic_year_id' => $year->id,
-            'school_number' => '145',
+        $this->assertDatabaseHas('people', [
             'full_name' => 'Ali Veli',
+        ]);
+        $this->assertDatabaseHas('student_enrollments', [
+            'academic_year_id' => $year->id,
+            'branch_id' => $branch->id,
+            'school_number' => '145',
         ]);
 
         $response = $this->actingAs($user)->get('/students');
@@ -48,11 +53,11 @@ class StudentTest extends TestCase
     public function test_arama_ve_sube_filtresi(): void
     {
         $user = User::factory()->create();
-        $this->setupYear();
+        $year = $this->setupYear();
         $b9a = Branch::where('name', '9A')->first();
         $b9b = Branch::where('name', '9B')->first();
-        Student::create(['academic_year_id' => $b9a->academic_year_id, 'branch_id' => $b9a->id, 'school_number' => '145', 'full_name' => 'Ali Veli']);
-        Student::create(['academic_year_id' => $b9b->academic_year_id, 'branch_id' => $b9b->id, 'school_number' => '146', 'full_name' => 'Ayşe Yılmaz']);
+        $this->makeStudent($year, $b9a, '145', 'Ali Veli');
+        $this->makeStudent($year, $b9b, '146', 'Ayşe Yılmaz');
 
         $response = $this->actingAs($user)->get('/students?q=145');
         $response->assertInertia(fn ($page) => $page->where('students.total', 1));
@@ -67,9 +72,9 @@ class StudentTest extends TestCase
     public function test_ayni_yilda_mukerrer_numara_engellenir(): void
     {
         $user = User::factory()->create();
-        $this->setupYear();
+        $year = $this->setupYear();
         $branch = Branch::where('name', '9A')->first();
-        Student::create(['academic_year_id' => $branch->academic_year_id, 'branch_id' => $branch->id, 'school_number' => '145', 'full_name' => 'Ali Veli']);
+        $this->makeStudent($year, $branch, '145', 'Ali Veli');
 
         $this->actingAs($user)->post('/students', [
             'branch_id' => $branch->id,
@@ -81,10 +86,10 @@ class StudentTest extends TestCase
     public function test_ogrenci_guncelleme_ve_pasife_alma(): void
     {
         $user = User::factory()->create();
-        $this->setupYear();
+        $year = $this->setupYear();
         $b9a = Branch::where('name', '9A')->first();
         $b9b = Branch::where('name', '9B')->first();
-        $student = Student::create(['academic_year_id' => $b9a->academic_year_id, 'branch_id' => $b9a->id, 'school_number' => '145', 'full_name' => 'Ali Veli']);
+        $student = $this->makeStudent($year, $b9a, '145', 'Ali Veli');
 
         $this->actingAs($user)->put("/students/{$student->id}", [
             'branch_id' => $b9b->id,
@@ -93,7 +98,8 @@ class StudentTest extends TestCase
             'is_active' => true,
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('students', ['id' => $student->id, 'branch_id' => $b9b->id, 'full_name' => 'Ali Veli Güncel']);
+        $this->assertDatabaseHas('student_enrollments', ['student_id' => $student->id, 'branch_id' => $b9b->id, 'school_number' => '145']);
+        $this->assertDatabaseHas('people', ['id' => $student->person_id, 'full_name' => 'Ali Veli Güncel']);
 
         $this->actingAs($user)->post("/students/{$student->id}/deactivate")->assertRedirect();
         $this->assertFalse($student->fresh()->is_active);

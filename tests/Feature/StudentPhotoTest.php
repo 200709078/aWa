@@ -5,15 +5,18 @@ namespace Tests\Feature;
 use App\Models\AcademicYear;
 use App\Models\Branch;
 use App\Models\Student;
+use App\Models\StudentEnrollment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
+use Tests\Traits\CreatesStudents;
 use ZipArchive;
 
 class StudentPhotoTest extends TestCase
 {
+    use CreatesStudents;
     use RefreshDatabase;
 
     private function makeJpg(string $filename, int $w = 1200, int $h = 900): string
@@ -31,10 +34,15 @@ class StudentPhotoTest extends TestCase
     {
         $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
         $branch = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
-        Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '145', 'full_name' => 'Ali Veli']);
-        Student::create(['academic_year_id' => $year->id, 'branch_id' => $branch->id, 'school_number' => '146', 'full_name' => 'Ayşe Yılmaz']);
+        $this->makeStudent($year, $branch, '145', 'Ali Veli');
+        $this->makeStudent($year, $branch, '146', 'Ayşe Yılmaz');
 
         return $year;
+    }
+
+    private function studentByNumber(string $number): Student
+    {
+        return StudentEnrollment::where('school_number', $number)->firstOrFail()->student;
     }
 
     public function test_coklu_fotograf_yukleme_ve_eslestirme(): void
@@ -58,13 +66,13 @@ class StudentPhotoTest extends TestCase
         $this->assertEquals(['eslesen' => 1, 'eslesmeyen' => 1, 'fotografsiz' => 1, 'hatali' => 0], $props['summary']);
         $this->assertEquals(['999.jpg'], $props['unmatched']);
 
-        $student = Student::where('school_number', '145')->first();
-        $this->assertEquals("students/{$student->id}.jpg", $student->photo_path);
-        Storage::disk('public')->assertExists($student->photo_path);
-        [$width] = getimagesize(Storage::disk('public')->path($student->photo_path));
+        $student = $this->studentByNumber('145');
+        $this->assertEquals("students/{$student->id}.jpg", $student->person->photo_path);
+        Storage::disk('public')->assertExists($student->person->photo_path);
+        [$width] = getimagesize(Storage::disk('public')->path($student->person->photo_path));
         $this->assertLessThanOrEqual(800, $width);
 
-        Storage::disk('public')->delete($student->photo_path);
+        Storage::disk('public')->delete($student->person->photo_path);
         unlink($p1);
         unlink($p2);
     }
@@ -92,10 +100,10 @@ class StudentPhotoTest extends TestCase
         $this->assertEquals(1, $props['summary']['eslesen']);
         $this->assertEquals(1, $props['summary']['fotografsiz']);
 
-        $student = Student::where('school_number', '146')->first();
-        $this->assertEquals("students/{$student->id}.jpg", $student->photo_path);
+        $student = $this->studentByNumber('146');
+        $this->assertEquals("students/{$student->id}.jpg", $student->person->photo_path);
 
-        Storage::disk('public')->delete($student->photo_path);
+        Storage::disk('public')->delete($student->person->photo_path);
         unlink($img);
         unlink($zipPath);
     }
@@ -121,10 +129,10 @@ class StudentPhotoTest extends TestCase
         $props = $response->viewData('page')['props'];
         $this->assertEquals(1, $props['summary']['eslesen']);
 
-        $student = Student::where('school_number', '145')->first();
-        $this->assertEquals('image/jpeg', finfo_file(finfo_open(FILEINFO_MIME_TYPE), Storage::disk('public')->path($student->photo_path)));
+        $student = $this->studentByNumber('145');
+        $this->assertEquals('image/jpeg', finfo_file(finfo_open(FILEINFO_MIME_TYPE), Storage::disk('public')->path($student->person->photo_path)));
 
-        Storage::disk('public')->delete($student->photo_path);
+        Storage::disk('public')->delete($student->person->photo_path);
         unlink($bmpPath);
     }
 

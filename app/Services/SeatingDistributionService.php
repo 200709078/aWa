@@ -22,12 +22,18 @@ class SeatingDistributionService
 
     public function distribute(ExamWeek $examWeek, ?string $name = null, ?int $createdBy = null): SeatingPlan
     {
+        $yearId = (int) $examWeek->academic_year_id;
         $branchIds = $examWeek->branches()->pluck('branches.id');
         $levels = Branch::whereIn('id', $branchIds)->pluck('grade_level', 'id');
 
-        $students = Student::whereIn('branch_id', $branchIds)
-            ->where('is_active', true)
-            ->get(['id', 'branch_id']);
+        $students = Student::where('is_active', true)
+            ->whereHas('enrollments', fn ($query) => $query
+                ->where('academic_year_id', $yearId)
+                ->whereIn('branch_id', $branchIds))
+            ->with(['enrollments' => fn ($query) => $query
+                ->where('academic_year_id', $yearId)
+                ->with('branch:id,grade_level')])
+            ->get(['id']);
 
         if ($students->isEmpty()) {
             throw new DistributionException('Dağıtıma dahil aktif öğrenci bulunamadı. Sınav haftasına sınıf ekleyin.');
@@ -54,7 +60,7 @@ class SeatingDistributionService
 
         $ordered = $this->interleaveByBranch($students)->values();
         $studentIds = $ordered->map(fn (Student $s) => $s->id)->all();
-        $studentLevels = $ordered->map(fn (Student $s) => $levels[$s->branch_id] ?? null)->all();
+        $studentLevels = $ordered->map(fn (Student $s) => $levels[$s->enrollments->first()?->branch_id] ?? null)->all();
 
         $caps = $rooms->map(fn (Room $room) => $room->seats->count())->all();
         $count = $rooms->count();
@@ -94,8 +100,10 @@ class SeatingDistributionService
 
     public function estimateMinRooms(ExamWeek $examWeek): ?int
     {
-        $need = Student::whereIn('branch_id', $examWeek->branches()->pluck('branches.id'))
-            ->where('is_active', true)
+        $need = Student::where('is_active', true)
+            ->whereHas('enrollments', fn ($query) => $query
+                ->where('academic_year_id', $examWeek->academic_year_id)
+                ->whereIn('branch_id', $examWeek->branches()->pluck('branches.id')))
             ->count();
 
         if ($need === 0) {
@@ -127,7 +135,7 @@ class SeatingDistributionService
      */
     public function summary(SeatingPlan $plan): array
     {
-        $plan->loadMissing(['examWeek.rooms', 'assignments.seat.room', 'assignments.student']);
+        $plan->loadMissing(['examWeek.rooms', 'assignments.seat.room']);
 
         $usedRoomIds = $plan->assignments
             ->map(fn (SeatingAssignment $a) => $a->seat->room_id)
@@ -173,7 +181,8 @@ class SeatingDistributionService
      */
     public function seatingGrid(SeatingPlan $plan): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name,grade_level']);
+        $this->loadPlanStudents($plan);
+        $yearId = (int) $plan->examWeek->academic_year_id;
 
         $assignedBySeat = $plan->assignments->keyBy(fn ($a) => $a->seat_id);
         $roomIds = $assignedBySeat->map(fn ($a) => $a->seat->room_id)->unique()->values()->all();
@@ -187,22 +196,38 @@ class SeatingDistributionService
                 'room' => ['id' => $room->id, 'name' => $room->name],
                 'maxRow' => $room->seats->max('row') ?? 0,
                 'maxColumn' => $room->seats->max('column') ?? 0,
-                'seats' => $room->seats->map(fn ($seat) => [
-                    'id' => $seat->id,
-                    'row' => $seat->row,
-                    'column' => $seat->column,
-                    'label' => $seat->label,
-                    'assignment_id' => $assignedBySeat[$seat->id]->id ?? null,
-                    'student' => isset($assignedBySeat[$seat->id]) ? [
-                        'school_number' => $assignedBySeat[$seat->id]->student->school_number,
-                        'full_name' => $assignedBySeat[$seat->id]->student->full_name,
-                        'branch' => $assignedBySeat[$seat->id]->student->branch?->name,
-                        'grade_level' => $assignedBySeat[$seat->id]->student->branch?->grade_level,
-                        'photo_url' => $assignedBySeat[$seat->id]->student->photo_path
-                            ? asset('storage/'.$assignedBySeat[$seat->id]->student->photo_path)
-                            : null,
-                    ] : null,
-                ])->all(),
+                'seats' => $room->seats->map(function ($seat) use ($assignedBySeat, $yearId) {
+                    $assignment = $assignedBySeat[$seat->id] ?? null;
+                    if (! $assignment) {
+                        return [
+                            'id' => $seat->id,
+                            'row' => $seat->row,
+                            'column' => $seat->column,
+                            'label' => $seat->label,
+                            'assignment_id' => null,
+                            'student' => null,
+                        ];
+                    }
+
+                    $enrollment = $assignment->student->enrollmentForYear($yearId);
+
+                    return [
+                        'id' => $seat->id,
+                        'row' => $seat->row,
+                        'column' => $seat->column,
+                        'label' => $seat->label,
+                        'assignment_id' => $assignment->id,
+                        'student' => [
+                            'school_number' => $enrollment?->school_number,
+                            'full_name' => $assignment->student->person?->full_name,
+                            'branch' => $enrollment?->branch?->name,
+                            'grade_level' => $enrollment?->branch?->grade_level,
+                            'photo_url' => $assignment->student->person?->photo_path
+                                ? asset('storage/'.$assignment->student->person->photo_path)
+                                : null,
+                        ],
+                    ];
+                })->all(),
             ])->all();
     }
 
@@ -211,9 +236,22 @@ class SeatingDistributionService
      */
     public function countPlanViolations(SeatingPlan $plan): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name,grade_level']);
+        $this->loadPlanStudents($plan);
 
         return $this->computeViolations($this->placements($plan));
+    }
+
+    /**
+     * Planın öğrenciye ait kişi/kayıt/şube verisini tek seferde yükler.
+     */
+    private function loadPlanStudents(SeatingPlan $plan): void
+    {
+        $plan->loadMissing([
+            'examWeek:id,academic_year_id',
+            'assignments.seat',
+            'assignments.student.person:id,full_name,photo_path',
+            'assignments.student.enrollments.branch:id,name,grade_level',
+        ]);
     }
 
     /**
@@ -223,7 +261,8 @@ class SeatingDistributionService
      */
     public function moveAssignment(SeatingPlan $plan, int $assignmentId, int $toSeatId, bool $force = false): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name,grade_level', 'examWeek.rooms']);
+        $this->loadPlanStudents($plan);
+        $plan->loadMissing('examWeek.rooms');
 
         $assignment = $plan->assignments->firstWhere('id', $assignmentId);
         if (! $assignment) {
@@ -292,7 +331,7 @@ class SeatingDistributionService
      */
     public function swapAssignments(SeatingPlan $plan, int $assignmentId, int $otherAssignmentId, bool $force = false): array
     {
-        $plan->loadMissing(['assignments.seat', 'assignments.student.branch:id,name,grade_level']);
+        $this->loadPlanStudents($plan);
 
         $first = $plan->assignments->firstWhere('id', $assignmentId);
         $second = $plan->assignments->firstWhere('id', $otherAssignmentId);
@@ -371,13 +410,14 @@ class SeatingDistributionService
      */
     private function placements(SeatingPlan $plan): array
     {
+        $yearId = (int) $plan->examWeek->academic_year_id;
         $out = [];
         foreach ($plan->assignments as $assignment) {
             $out[$assignment->seat_id] = [
                 'room_id' => $assignment->seat->room_id,
                 'row' => $assignment->seat->row,
                 'col' => $assignment->seat->column,
-                'level' => $assignment->student->branch?->grade_level,
+                'level' => $assignment->student->enrollmentForYear($yearId)?->branch?->grade_level,
                 'seat_id' => $assignment->seat_id,
             ];
         }
@@ -445,7 +485,7 @@ class SeatingDistributionService
      */
     private function interleaveByBranch(Collection $students): Collection
     {
-        $groups = $students->groupBy('branch_id')->map(fn (Collection $g) => $g->shuffle()->values())->values();
+        $groups = $students->groupBy(fn (Student $s) => $s->enrollments->first()?->branch_id)->map(fn (Collection $g) => $g->shuffle()->values())->values();
 
         $ordered = collect();
         $total = $students->count();

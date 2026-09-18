@@ -5,9 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['academic_year_id', 'branch_id', 'school_number', 'full_name', 'photo_path', 'is_active'])]
+#[Fillable(['school_id', 'person_id', 'is_active'])]
 class Student extends Model
 {
     protected function casts(): array
@@ -17,18 +18,42 @@ class Student extends Model
         ];
     }
 
-    public function academicYear(): BelongsTo
+    public function school(): BelongsTo
     {
-        return $this->belongsTo(AcademicYear::class);
+        return $this->belongsTo(School::class);
     }
 
-    public function branch(): BelongsTo
+    public function person(): BelongsTo
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsTo(Person::class);
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(StudentEnrollment::class);
+    }
+
+    public function guardians(): BelongsToMany
+    {
+        return $this->belongsToMany(Guardian::class, 'student_guardian')
+            ->withPivot('relationship', 'is_primary')
+            ->withTimestamps();
     }
 
     public function seatingAssignments(): HasMany
     {
         return $this->hasMany(SeatingAssignment::class);
+    }
+
+    /**
+     * Öğrencinin verilen akademik yıldaki kaydı.
+     */
+    public function enrollmentForYear(int $academicYearId): ?StudentEnrollment
+    {
+        if ($this->relationLoaded('enrollments')) {
+            return $this->enrollments->firstWhere('academic_year_id', $academicYearId);
+        }
+
+        return $this->enrollments()->where('academic_year_id', $academicYearId)->first();
     }
 }

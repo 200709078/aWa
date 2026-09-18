@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('academic_years', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('school_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->boolean('is_active')->default(false);
             $table->timestamps();

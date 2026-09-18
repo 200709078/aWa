@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Branch;
+use App\Models\Person;
 use App\Models\Student;
+use App\Models\StudentEnrollment;
 use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -136,21 +139,41 @@ class StudentImportController extends Controller
 
         $added = 0;
         $updated = 0;
+        $yearId = (int) $data['academic_year_id'];
+        $schoolId = AcademicYear::whereKey($yearId)->value('school_id');
+
         foreach ($result['rows'] as $row) {
             if ($row['action'] === 'add') {
-                Student::create([
-                    'academic_year_id' => (int) $data['academic_year_id'],
-                    'branch_id' => $row['branch_id'],
-                    'school_number' => $row['school_number'],
-                    'full_name' => $row['full_name'],
-                    'is_active' => true,
-                ]);
+                DB::transaction(function () use ($row, $yearId, $schoolId) {
+                    $person = Person::create([
+                        'school_id' => $schoolId,
+                        'full_name' => $row['full_name'],
+                    ]);
+
+                    $student = Student::create([
+                        'school_id' => $schoolId,
+                        'person_id' => $person->id,
+                        'is_active' => true,
+                    ]);
+
+                    StudentEnrollment::create([
+                        'student_id' => $student->id,
+                        'academic_year_id' => $yearId,
+                        'branch_id' => $row['branch_id'],
+                        'school_number' => $row['school_number'],
+                        'status' => 'active',
+                    ]);
+                });
                 $added++;
             } elseif ($row['action'] === 'update') {
-                Student::where('academic_year_id', (int) $data['academic_year_id'])
-                    ->where('school_number', $row['school_number'])
-                    ->first()
-                    ?->update(['full_name' => $row['full_name'], 'branch_id' => $row['branch_id']]);
+                DB::transaction(function () use ($row, $yearId) {
+                    $enrollment = StudentEnrollment::where('academic_year_id', $yearId)
+                        ->where('school_number', $row['school_number'])
+                        ->first();
+
+                    $enrollment?->update(['branch_id' => $row['branch_id']]);
+                    $enrollment?->student?->person?->update(['full_name' => $row['full_name']]);
+                });
                 $updated++;
             }
         }
@@ -295,7 +318,7 @@ class StudentImportController extends Controller
         $branchMap = Branch::where('academic_year_id', $yearId)->get()
             ->keyBy(fn (Branch $branch) => self::normalizeBranch($branch->name));
 
-        $existing = Student::where('academic_year_id', $yearId)->pluck('id', 'school_number');
+        $existing = StudentEnrollment::where('academic_year_id', $yearId)->pluck('student_id', 'school_number');
 
         $result = [];
         $seen = [];
