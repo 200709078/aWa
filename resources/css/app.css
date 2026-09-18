@@ -13,6 +13,21 @@
     margin: 12mm;
 }
 
+@layer base {
+    input[type='text'],
+    input[type='number'],
+    input[type='email'],
+    input[type='tel'],
+    input[type='password'],
+    input[type='search'],
+    input[type='url'],
+    input[type='date'],
+    input[type='time'] {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+}
+
 @media print {
     .no-print {
         display: none !important;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import DropdownSelect from '../../Components/DropdownSelect.vue';
 
@@ -12,6 +12,18 @@ interface Year {
 interface FailedFile {
     filename: string;
     message: string;
+}
+
+interface MatchFile {
+    filename: string;
+    matched: boolean;
+    school_number?: string;
+    full_name?: string | null;
+}
+
+interface MatchPreview {
+    token: string;
+    files: MatchFile[];
 }
 
 interface BareStudent {
@@ -45,19 +57,37 @@ const BATCH_MAX_BYTES = 6 * 1024 * 1024;
 
 const academicYearId = ref<number | null>(props.activeYearId ?? null);
 const photoFiles = ref<File[]>([]);
-const zipFile = ref<File | null>(null);
+const photoInput = ref<HTMLInputElement | null>(null);
+
+function openPhotoDialog() {
+    photoInput.value?.click();
+}
+
+function onPhotoChange(e: Event) {
+    photoFiles.value = Array.from((e.target as HTMLInputElement).files ?? []);
+}
 
 const uploading = ref(false);
 const doneCount = ref(0);
 const totalCount = ref(0);
 const statusText = ref('');
 const errorMessages = ref<string[]>([]);
+const preview = ref<MatchPreview | null>(null);
 const result = ref<BatchPayload | null>(null);
 
 const progressPct = computed(() => {
     if (totalCount.value === 0) return 0;
     return Math.round((doneCount.value / totalCount.value) * 100);
 });
+
+const matchedFiles = computed(() => (preview.value?.files ?? []).filter((f) => f.matched));
+const unmatchedFiles = computed(() => (preview.value?.files ?? []).filter((f) => !f.matched));
+
+function resetPreview() {
+    preview.value = null;
+}
+
+watch([photoFiles, academicYearId], resetPreview);
 
 function getXsrfToken(): string {
     const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
@@ -98,8 +128,8 @@ function extractMessages(data: unknown, fallback: string): string[] {
     return [fallback];
 }
 
-async function postBatch(formData: FormData): Promise<BatchPayload> {
-    const response = await fetch('/students/photos', {
+async function postBatch(url: string, formData: FormData): Promise<unknown> {
+    const response = await fetch(url, {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -139,86 +169,86 @@ async function postBatch(formData: FormData): Promise<BatchPayload> {
         throw new Error(extractMessages(data, 'Yükleme başarısız. Tekrar deneyin.')[0]);
     }
 
-    return (await response.json()) as BatchPayload;
+    return (await response.json()) as unknown;
+}
+
+interface MatchResponse {
+    token: string;
+    files: MatchFile[];
 }
 
 async function submit() {
+    if (preview.value) {
+        await confirmUpload();
+        return;
+    }
+    await matchFiles();
+}
+
+async function matchFiles() {
     errorMessages.value = [];
     result.value = null;
+    preview.value = null;
 
     if (!academicYearId.value) {
         errorMessages.value = ['Akademik Yıl seçin.'];
         return;
     }
-    if (photoFiles.value.length === 0 && !zipFile.value) {
-        errorMessages.value = ['Fotoğraf dosyası veya ZIP seçin.'];
+    if (photoFiles.value.length === 0) {
+        errorMessages.value = ['Fotoğraf dosyası seçin.'];
         return;
     }
 
     uploading.value = true;
     doneCount.value = 0;
+    totalCount.value = photoFiles.value.length;
     statusText.value = 'Hazırlanıyor…';
 
     try {
-        let eslesen = 0;
-        const unmatched: string[] = [];
-        const failed: FailedFile[] = [];
-        let last: BatchPayload | null = null;
-
-        // Önce ZIP varsa tek istekte yükle.
-        if (zipFile.value) {
-            totalCount.value = photoFiles.value.length + 1;
-            statusText.value = 'ZIP yükleniyor…';
-            const fd = new FormData();
-            fd.append('academic_year_id', String(academicYearId.value));
-            fd.append('zip_file', zipFile.value);
-            last = await postBatch(fd);
-            eslesen += last.summary.eslesen;
-            unmatched.push(...last.unmatched);
-            failed.push(...last.failed);
-            doneCount.value = 1;
-        }
-
+        const token = crypto.randomUUID();
+        const files: MatchFile[] = [];
         const chunks = chunkFiles(photoFiles.value);
-        if (photoFiles.value.length > 0 && totalCount.value === 0) {
-            totalCount.value = photoFiles.value.length;
-        } else if (photoFiles.value.length > 0) {
-            // ZIP + fotoğraf birlikte seçildiyse toplam zaten ayarlandı.
-        } else {
-            totalCount.value = 1;
-        }
 
         for (let i = 0; i < chunks.length; i++) {
-            statusText.value = `Fotoğraflar yükleniyor (${i + 1}/${chunks.length})…`;
+            statusText.value = `Eşleştiriliyor (${i + 1}/${chunks.length})…`;
             const fd = new FormData();
             fd.append('academic_year_id', String(academicYearId.value));
+            fd.append('token', token);
             for (const file of chunks[i]) {
                 fd.append('photos[]', file);
             }
-            const payload = await postBatch(fd);
-            eslesen += payload.summary.eslesen;
-            unmatched.push(...payload.unmatched);
-            failed.push(...payload.failed);
-            last = payload;
+            const data = (await postBatch('/students/photos/match', fd)) as MatchResponse;
+            files.push(...data.files);
             doneCount.value += chunks[i].length;
         }
 
-        if (!last) throw new Error('Yükleme sonucu alınamadı.');
+        preview.value = { token, files };
+        statusText.value = 'Eşleşme tamamlandı.';
+    } catch (e) {
+        errorMessages.value = [e instanceof Error ? e.message : 'Eşleştirme başarısız.'];
+    } finally {
+        uploading.value = false;
+    }
+}
 
-        result.value = {
-            year: last.year,
-            summary: {
-                eslesen,
-                eslesmeyen: unmatched.length,
-                fotografsiz: last.summary.fotografsiz,
-                hatali: failed.length,
-            },
-            unmatched,
-            failed,
-            withoutPhoto: last.withoutPhoto,
-            withoutPhotoTruncated: last.withoutPhotoTruncated,
-        };
+async function confirmUpload() {
+    if (!preview.value || !academicYearId.value) return;
+
+    errorMessages.value = [];
+    uploading.value = true;
+    statusText.value = 'Yükleniyor…';
+
+    try {
+        const fd = new FormData();
+        fd.append('academic_year_id', String(academicYearId.value));
+        fd.append('token', preview.value.token);
+        result.value = (await postBatch('/students/photos/confirm', fd)) as BatchPayload;
+        preview.value = null;
+        photoFiles.value = [];
         statusText.value = 'Tamamlandı.';
+        requestAnimationFrame(() => {
+            document.getElementById('photo-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
     } catch (e) {
         errorMessages.value = [e instanceof Error ? e.message : 'Yükleme başarısız.'];
     } finally {
@@ -233,8 +263,8 @@ async function submit() {
             <h1 class="text-2xl font-bold text-gray-900">Toplu Fotoğraf Yükle</h1>
             <p class="mt-2 text-sm text-gray-600">
                 Dosya adı okul numarası olmalı (örn. 145.jpg). Büyük fotoğraflar otomatik küçültülür.
-                Çoklu dosya seçimi veya ZIP yükleyebilirsiniz. Çok sayıda dosya otomatik olarak küçük
-                gruplar halinde yüklenir.
+                Birden fazla dosya seçebilirsiniz. Önce Eşleştir ile önizleyin, sonra Yükle ile kaydedin.
+                Çok sayıda dosya otomatik olarak küçük gruplar halinde yüklenir.
             </p>
 
             <form class="mt-4 space-y-4" @submit.prevent="submit">
@@ -256,26 +286,23 @@ async function submit() {
                     </label>
                     <input
                         id="photo-files"
+                        ref="photoInput"
                         type="file"
                         multiple
                         accept=".jpg,.jpeg,.png,.webp,.bmp"
-                        class="mt-1 block w-full text-sm text-gray-600"
-                        @change="(e) => (photoFiles = Array.from((e.target as HTMLInputElement).files ?? []))"
+                        class="hidden"
+                        @change="onPhotoChange"
                     />
-                    <p v-if="photoFiles.length > 0" class="mt-1 text-sm text-gray-500">
-                        {{ photoFiles.length }} dosya seçildi
-                    </p>
-                </div>
-
-                <div>
-                    <label for="photo-zip" class="block text-sm font-medium text-gray-700">Veya ZIP Dosyası</label>
-                    <input
-                        id="photo-zip"
-                        type="file"
-                        accept=".zip"
-                        class="mt-1 block w-full text-sm text-gray-600"
-                        @change="(e) => (zipFile = (e.target as HTMLInputElement).files?.[0] ?? null)"
-                    />
+                    <button
+                        type="button"
+                        class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                        @click="openPhotoDialog"
+                    >
+                        <span class="truncate">{{
+                            photoFiles.length > 0 ? `${photoFiles.length} dosya seçildi` : 'Fotoğraf seçin (jpg, jpeg, png, webp, bmp)'
+                        }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                    </button>
                 </div>
 
                 <div v-if="errorMessages.length > 0" class="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
@@ -291,16 +318,51 @@ async function submit() {
 
                 <button
                     type="submit"
-                    :disabled="uploading"
+                    :disabled="uploading || (photoFiles.length === 0 && !preview)"
                     class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
-                    {{ uploading ? 'Yükleniyor…' : 'Yükle ve eşleştir' }}
+                    {{ uploading ? 'Yükleniyor…' : preview ? 'Yükle' : 'Eşleştir' }}
                 </button>
             </form>
         </div>
 
-        <div v-if="result" class="mt-6 max-w-2xl rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="text-xl font-bold text-gray-900">Fotoğraf Yükleme Sonucu</h2>
+        <div v-if="preview" class="mt-6 max-w-2xl rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-900">Eşleşme Önizleme</h2>
+            <p class="mt-1 text-sm text-gray-600">Henüz kaydedilmedi. Yükle ile kaydedin.</p>
+
+            <dl class="mt-4 divide-y divide-gray-200">
+                <div class="flex justify-between py-2">
+                    <dt class="text-gray-600">Eşleşen Fotoğraf</dt>
+                    <dd class="font-semibold text-green-700">{{ matchedFiles.length }}</dd>
+                </div>
+                <div class="flex justify-between py-2">
+                    <dt class="text-gray-600">Eşleşmeyen Dosya</dt>
+                    <dd class="font-semibold text-yellow-700">{{ unmatchedFiles.length }}</dd>
+                </div>
+            </dl>
+
+            <div v-if="matchedFiles.length > 0" class="mt-4">
+                <h3 class="font-semibold text-gray-900">Eşleşenler</h3>
+                <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                    <li v-for="file in matchedFiles" :key="file.filename">
+                        {{ file.filename }} — {{ file.school_number }} / {{ file.full_name }}
+                    </li>
+                </ul>
+            </div>
+
+            <div v-if="unmatchedFiles.length > 0" class="mt-4">
+                <h3 class="font-semibold text-gray-900">Eşleşmeyenler</h3>
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
+                    <li v-for="file in unmatchedFiles" :key="file.filename">{{ file.filename }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <div v-if="result" id="photo-result" class="mt-6 max-w-2xl rounded-lg bg-white p-6 shadow-sm">
+            <div class="rounded-md bg-green-50 px-4 py-3 text-sm font-semibold text-green-800">
+                Yükleme tamamlandı — {{ result.summary.eslesen }} fotoğraf kaydedildi.
+            </div>
+            <h2 class="mt-4 text-xl font-bold text-gray-900">Fotoğraf Yükleme Sonucu</h2>
             <p v-if="result.year" class="mt-1 text-sm text-gray-600">Akademik Yıl: {{ result.year.name }}</p>
 
             <dl class="mt-4 divide-y divide-gray-200">

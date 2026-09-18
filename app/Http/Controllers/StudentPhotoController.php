@@ -6,7 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Support\SchoolScope;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -15,12 +15,9 @@ use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\ImageManager;
 use Throwable;
-use ZipArchive;
 
 class StudentPhotoController extends Controller
 {
-    private const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp'];
-
     private const MAX_WIDTH = 800;
 
     private const MAX_HEIGHT = 800;
@@ -40,68 +37,107 @@ class StudentPhotoController extends Controller
         ]);
     }
 
-    public function store(): Response|RedirectResponse|\Illuminate\Http\JsonResponse
+    /**
+     * Dosyaları geçici alana alıp öğrenciyle eşleştirir, kaydetmez.
+     */
+    public function match(): JsonResponse
     {
         $data = request()->validate([
             'academic_year_id' => ['required', 'integer', Rule::exists('academic_years', 'id')->where('school_id', SchoolScope::id())],
+            'token' => ['required', 'string', 'uuid'],
             'photos' => ['nullable', 'array', 'max:'.self::MAX_FILES],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp,bmp', 'max:10240'],
-            'zip_file' => ['nullable', 'file', 'mimes:zip', 'max:51200'],
         ], [
             'academic_year_id.required' => 'Akademik yıl seçin.',
+            'token.required' => 'Eşleştirme anahtarı gerekli.',
+            'token.uuid' => 'Eşleştirme anahtarı geçersiz.',
             'photos.array' => 'Fotoğraflar geçersiz.',
             'photos.*.image' => 'Yalnızca resim dosyası yükleyin.',
             'photos.*.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp, bmp.',
             'photos.*.max' => 'Her dosya en fazla 10 MB olabilir.',
-            'zip_file.mimes' => 'Yalnızca .zip dosyası yükleyin.',
-            'zip_file.max' => 'ZIP dosyası en fazla 50 MB olabilir.',
         ]);
 
         $uploads = request()->file('photos', []);
-        $zipFile = request()->file('zip_file');
 
-        if ($uploads === [] && ! $zipFile) {
-            return back()->withErrors(['photos' => 'Fotoğraf dosyası veya ZIP seçin.']);
+        if ($uploads === []) {
+            return response()->json(['message' => 'Fotoğraf dosyası seçin.'], 422);
         }
 
-        /** @var array<string, array{filename: string, source: mixed}> $candidates */
-        $candidates = [];
+        $dir = "photo_match/{$data['token']}";
+        $stored = Storage::disk('local')->exists($dir) ? Storage::disk('local')->files($dir) : [];
 
-        foreach ($uploads as $file) {
-            $candidates[] = ['filename' => $file->getClientOriginalName(), 'source' => $file->getRealPath()];
-        }
-
-        if ($zipFile) {
-            $zip = new ZipArchive();
-            if ($zip->open($zipFile->getRealPath()) !== true) {
-                return back()->withErrors(['zip_file' => 'ZIP dosyası açılamadı.']);
-            }
-
-            for ($i = 0; $i < $zip->numFiles; $i++) {
-                $name = $zip->getNameIndex($i);
-                if ($name === false || str_ends_with($name, '/')) {
-                    continue;
-                }
-                $basename = basename($name);
-                if ($basename === '' || str_starts_with($basename, '.')) {
-                    continue;
-                }
-                $ext = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
-                if (! in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
-                    $candidates[] = ['filename' => $basename, 'source' => null, 'note' => 'Desteklenmeyen dosya türü.'];
-                    continue;
-                }
-                $contents = $zip->getFromIndex($i);
-                $candidates[] = ['filename' => $basename, 'source' => $contents === false ? null : $contents];
-            }
-            $zip->close();
-        }
-
-        if (count($candidates) > self::MAX_FILES) {
-            return back()->withErrors(['photos' => 'Tek seferde en fazla '.self::MAX_FILES.' dosya yükleyin.']);
+        if (count($stored) + count($uploads) > self::MAX_FILES) {
+            return response()->json(['message' => 'Tek seferde en fazla '.self::MAX_FILES.' dosya eşleştirin.'], 422);
         }
 
         $yearId = (int) $data['academic_year_id'];
+        $enrollments = StudentEnrollment::where('academic_year_id', $yearId)
+            ->with('student.person:id,full_name')
+            ->get()
+            ->keyBy(fn (StudentEnrollment $e) => $this->normalizeNumber($e->school_number));
+
+        Storage::disk('local')->makeDirectory($dir);
+
+        $files = [];
+        foreach ($uploads as $file) {
+            $filename = basename($file->getClientOriginalName());
+            $file->storeAs($dir, $filename, 'local');
+
+            $number = $this->normalizeNumber(pathinfo($filename, PATHINFO_FILENAME));
+            $enrollment = $enrollments[$number] ?? null;
+
+            if ($enrollment?->student) {
+                $files[] = [
+                    'filename' => $filename,
+                    'matched' => true,
+                    'school_number' => $number,
+                    'full_name' => $enrollment->student->person?->full_name,
+                ];
+            } else {
+                $files[] = ['filename' => $filename, 'matched' => false];
+            }
+        }
+
+        return response()->json(['token' => $data['token'], 'files' => $files]);
+    }
+
+    /**
+     * Eşleştirilen dosyaları işleyip kaydeder.
+     */
+    public function confirm(): JsonResponse
+    {
+        $data = request()->validate([
+            'academic_year_id' => ['required', 'integer', Rule::exists('academic_years', 'id')->where('school_id', SchoolScope::id())],
+            'token' => ['required', 'string', 'uuid'],
+        ], [
+            'academic_year_id.required' => 'Akademik yıl seçin.',
+            'token.required' => 'Eşleştirme anahtarı gerekli.',
+            'token.uuid' => 'Eşleştirme anahtarı geçersiz.',
+        ]);
+
+        $dir = "photo_match/{$data['token']}";
+
+        if (! Storage::disk('local')->exists($dir)) {
+            return response()->json(['message' => 'Eşleştirme bulunamadı. Yeniden eşleştirin.'], 422);
+        }
+
+        $candidates = array_map(
+            fn ($path) => ['filename' => basename($path), 'source' => Storage::disk('local')->path($path)],
+            Storage::disk('local')->files($dir)
+        );
+
+        $payload = $this->processCandidates($candidates, (int) $data['academic_year_id']);
+
+        Storage::disk('local')->deleteDirectory($dir);
+
+        return response()->json($payload);
+    }
+
+    /**
+     * @param  array<int, array{filename: string, source: mixed}>  $candidates
+     */
+    private function processCandidates(array $candidates, int $yearId): array
+    {
         $enrollments = StudentEnrollment::where('academic_year_id', $yearId)
             ->with('student.person')
             ->get()
@@ -118,7 +154,7 @@ class StudentPhotoController extends Controller
             $number = $this->normalizeNumber(pathinfo($candidate['filename'], PATHINFO_FILENAME));
 
             if ($candidate['source'] === null || $candidate['source'] === '') {
-                $failed[] = ['filename' => $candidate['filename'], 'message' => $candidate['note'] ?? 'Dosya okunamadı.'];
+                $failed[] = ['filename' => $candidate['filename'], 'message' => 'Dosya okunamadı.'];
                 continue;
             }
 
@@ -164,7 +200,7 @@ class StudentPhotoController extends Controller
 
         $year = AcademicYear::find($yearId);
 
-        $payload = [
+        return [
             'year' => $year?->only('id', 'name'),
             'summary' => [
                 'eslesen' => $matched,
@@ -177,13 +213,6 @@ class StudentPhotoController extends Controller
             'withoutPhoto' => $withoutPhoto->take(100)->values(),
             'withoutPhotoTruncated' => $withoutPhoto->count() > 100,
         ];
-
-        // Partili (batch) yüklemede frontend fetch ile JSON bekler.
-        if (request()->wantsJson() || request()->expectsJson() || request()->header('X-Batch-Upload')) {
-            return response()->json($payload);
-        }
-
-        return Inertia::render('Students/PhotosResult', $payload);
     }
 
     /**

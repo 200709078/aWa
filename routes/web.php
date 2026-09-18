@@ -56,7 +56,8 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::post('/students/import/confirm', [StudentImportController::class, 'confirm'])->name('students.import.confirm');
 
     Route::get('/students/photos', [StudentPhotoController::class, 'show'])->name('students.photos');
-    Route::post('/students/photos', [StudentPhotoController::class, 'store'])->name('students.photos.store');
+    Route::post('/students/photos/match', [StudentPhotoController::class, 'match'])->name('students.photos.match');
+    Route::post('/students/photos/confirm', [StudentPhotoController::class, 'confirm'])->name('students.photos.confirm');
 
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
     Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');
