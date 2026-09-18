@@ -51,6 +51,7 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
 
     Route::get('/students/import', [StudentImportController::class, 'show'])->name('students.import');
+    Route::get('/students/import/template', [StudentImportController::class, 'template'])->name('students.import.template');
     Route::post('/students/import/preview', [StudentImportController::class, 'preview'])->name('students.import.preview');
     Route::post('/students/import/confirm', [StudentImportController::class, 'confirm'])->name('students.import.confirm');
 

@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
@@ -103,5 +104,30 @@ class StudentImportTest extends TestCase
         $this->assertEquals(1, $props['summary']['eklenecek']);
 
         unlink($path);
+    }
+
+    public function test_sablon_indirilir_ve_icerigi_dogrudur(): void
+    {
+        $user = User::factory()->create();
+        $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
+        Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
+
+        $response = $this->actingAs($user)->get('/students/import/template');
+        $response->assertOk();
+        $response->assertDownload('ogrenci-aktarim-sablonu.xlsx');
+
+        $path = $response->baseResponse->getFile()->getPathname();
+        $data = (new XlsxReader())->load($path)->getActiveSheet()->toArray(null, true, true, false);
+        $this->assertSame(['Okul No', 'Ad Soyad', 'Şube'], array_values($data[0]));
+
+        $preview = $this->actingAs($user)->post('/students/import/preview', [
+            'academic_year_id' => $year->id,
+            'file' => $this->upload($path, 'ogrenci-aktarim-sablonu.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+        ]);
+        $preview->assertOk();
+
+        $props = $preview->viewData('page')['props'];
+        $this->assertEquals(['school_number' => 0, 'full_name' => 1, 'branch' => 2], $props['mapping']);
+        $this->assertEquals(0, $props['summary']['toplam']);
     }
 }
