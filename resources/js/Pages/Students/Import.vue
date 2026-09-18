@@ -30,6 +30,7 @@ function submit() {
             <h1 class="text-2xl font-bold text-gray-900">Excel'den Öğrenci Aktar</h1>
             <p class="mt-2 text-sm text-gray-600">
                 .xlsx veya .xls dosyası yükleyin. Sütunlar otomatik eşleştirilir, önizlemede düzeltip onaylarsınız.
+                Numara, ad soyad ve sınıf zorunludur; telefon, e-posta, adres ve veli bilgileri opsiyoneldir.
                 Dilerseniz boş şablonu indirip doldurun:
                 <a href="/students/import/template" class="font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">Excel şablonunu indir</a>.
             </p>

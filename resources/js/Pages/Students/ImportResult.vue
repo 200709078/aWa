@@ -16,6 +16,8 @@ defineProps<{
         toplam: number;
         eklendi: number;
         guncellendi: number;
+        eklenen_veli: number;
+        guncellenen_veli: number;
         atlandi: number;
         hatali: number;
     };
@@ -41,6 +43,14 @@ defineProps<{
                 <div class="flex justify-between py-2">
                     <dt class="text-gray-600">Güncellendi</dt>
                     <dd class="font-semibold text-blue-700">{{ summary.guncellendi }}</dd>
+                </div>
+                <div class="flex justify-between py-2">
+                    <dt class="text-gray-600">Eklenen Veli</dt>
+                    <dd class="font-semibold text-green-700">{{ summary.eklenen_veli }}</dd>
+                </div>
+                <div class="flex justify-between py-2">
+                    <dt class="text-gray-600">Güncellenen Veli</dt>
+                    <dd class="font-semibold text-blue-700">{{ summary.guncellenen_veli }}</dd>
                 </div>
                 <div class="flex justify-between py-2">
                     <dt class="text-gray-600">Atlandı</dt>

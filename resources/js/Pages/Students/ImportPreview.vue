@@ -15,6 +15,12 @@ interface PreviewRow {
     school_number: string;
     full_name: string;
     branch: string;
+    student_phone: string;
+    student_email: string;
+    address: string;
+    guardian_name: string;
+    guardian_phone: string;
+    guardian_email: string;
     action: 'add' | 'update' | 'skip' | 'error';
     message?: string;
 }
@@ -23,15 +29,29 @@ interface Summary {
     toplam: number;
     eklenecek: number;
     guncellenecek: number;
+    eklenecek_veli: number;
+    guncellenecek_veli: number;
     atlandi: number;
     hatali: number;
+}
+
+interface Mapping {
+    school_number: number;
+    full_name: number;
+    branch: number;
+    student_phone: number | null;
+    student_email: number | null;
+    address: number | null;
+    guardian_name: number | null;
+    guardian_phone: number | null;
+    guardian_email: number | null;
 }
 
 const props = defineProps<{
     year: { id: number; name: string };
     storedPath: string;
     columns: Column[];
-    mapping: { school_number: number; full_name: number; branch: number };
+    mapping: Mapping;
     rows: PreviewRow[];
     summary: Summary;
 }>();
@@ -51,6 +71,17 @@ function confirmImport() {
 }
 
 const extraErrors = computed(() => form.errors as Record<string, string | undefined>);
+
+const columnOptions = computed(() => props.columns.map((col) => ({ value: col.index, label: `${col.letter}: ${col.header || '(boş başlık)'}` })));
+
+const optionalFields: { key: Exclude<keyof Mapping, 'school_number' | 'full_name' | 'branch'>; label: string; id: string }[] = [
+    { key: 'student_phone', label: 'Öğrenci Telefonu Sütunu', id: 'map-student-phone' },
+    { key: 'student_email', label: 'Öğrenci E-postası Sütunu', id: 'map-student-email' },
+    { key: 'address', label: 'Adres Sütunu', id: 'map-address' },
+    { key: 'guardian_name', label: 'Veli Adı Sütunu', id: 'map-guardian-name' },
+    { key: 'guardian_phone', label: 'Veli Telefonu Sütunu', id: 'map-guardian-phone' },
+    { key: 'guardian_email', label: 'Veli E-postası Sütunu', id: 'map-guardian-email' },
+];
 
 const actionLabel: Record<PreviewRow['action'], string> = {
     add: 'Eklenecek',
@@ -85,6 +116,14 @@ const actionClass: Record<PreviewRow['action'], string> = {
                 <div class="rounded-md bg-blue-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold text-blue-800">{{ summary.guncellenecek }}</div>
                     <div class="text-xs text-gray-500">Güncellenecek</div>
+                </div>
+                <div class="rounded-md bg-green-50 px-3 py-2 text-center">
+                    <div class="text-xl font-bold text-green-800">{{ summary.eklenecek_veli }}</div>
+                    <div class="text-xs text-gray-500">Eklenecek Veli</div>
+                </div>
+                <div class="rounded-md bg-blue-50 px-3 py-2 text-center">
+                    <div class="text-xl font-bold text-blue-800">{{ summary.guncellenecek_veli }}</div>
+                    <div class="text-xs text-gray-500">Güncellenecek Veli</div>
                 </div>
                 <div class="rounded-md bg-gray-50 px-3 py-2 text-center">
                     <div class="text-xl font-bold">{{ summary.atlandi }}</div>
@@ -130,6 +169,17 @@ const actionClass: Record<PreviewRow['action'], string> = {
                         />
                     </div>
                 </div>
+                <div v-for="field in optionalFields" :key="field.key">
+                    <label :for="field.id" class="block text-sm font-medium text-gray-700">{{ field.label }} (opsiyonel)</label>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            :id="field.id"
+                            v-model="form.mapping[field.key]"
+                            :options="[{ value: null, label: 'Eşleştirme' }, ...columnOptions]"
+                            :aria-label="field.label"
+                        />
+                    </div>
+                </div>
             </div>
 
             <div class="mt-4 flex flex-wrap gap-2">
@@ -161,6 +211,10 @@ const actionClass: Record<PreviewRow['action'], string> = {
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Okul No</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ad Soyad</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Şube</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Öğr. Tel</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Öğr. E-posta</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Veli</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Veli Tel</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Durum</th>
                     </tr>
                 </thead>
@@ -170,6 +224,10 @@ const actionClass: Record<PreviewRow['action'], string> = {
                         <td class="whitespace-nowrap px-4 py-2 text-gray-900">{{ row.school_number }}</td>
                         <td class="whitespace-nowrap px-4 py-2 text-gray-900">{{ row.full_name }}</td>
                         <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.branch }}</td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.student_phone }}</td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.student_email }}</td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-900">{{ row.guardian_name }}</td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.guardian_phone }}</td>
                         <td class="px-4 py-2">
                             <span
                                 class="rounded-full px-2 py-1 text-xs font-semibold"
