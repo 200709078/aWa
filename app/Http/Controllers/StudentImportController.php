@@ -14,6 +14,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class StudentImportController extends Controller
 {
@@ -40,6 +43,27 @@ class StudentImportController extends Controller
             'years' => $years,
             'activeYearId' => $activeId,
         ]);
+    }
+
+    public function template(): BinaryFileResponse
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Öğrenciler');
+        $sheet->fromArray([['Okul No', 'Ad Soyad', 'Şube']], null, 'A1', true);
+        $sheet->getStyle('A1:C1')->getFont()->setBold(true);
+        $sheet->getColumnDimension('A')->setWidth(15);
+        $sheet->getColumnDimension('B')->setWidth(35);
+        $sheet->getColumnDimension('C')->setWidth(12);
+        $sheet->freezePane('A2');
+
+        $path = tempnam(sys_get_temp_dir(), 'sablon').'.xlsx';
+        (new XlsxWriter($spreadsheet))->save($path);
+        $spreadsheet->disconnectWorksheets();
+
+        return response()->download($path, 'ogrenci-aktarim-sablonu.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend();
     }
 
     public function preview(): Response|RedirectResponse
