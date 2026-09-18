@@ -109,7 +109,7 @@ class BranchController extends Controller
                 'required', 'string', 'max:10',
                 Rule::unique('branches')->where(fn ($query) => $query->where('academic_year_id', $yearId))->ignore($branch?->id),
             ],
-            'grade_level' => ['required', 'integer', 'min:1', 'max:12'],
+            'grade_level' => ['required', 'integer', 'min:5', 'max:12'],
             'section' => ['required', 'string', 'max:10'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
@@ -119,8 +119,8 @@ class BranchController extends Controller
             'name.unique' => 'Bu akademik yılda bu sınıf zaten kayıtlı.',
             'grade_level.required' => 'Seviye gerekli.',
             'grade_level.integer' => 'Seviye sayı olmalı.',
-            'grade_level.min' => 'Seviye 1-12 arasında olmalı.',
-            'grade_level.max' => 'Seviye 1-12 arasında olmalı.',
+            'grade_level.min' => 'Seviye 5-12 arasında olmalı.',
+            'grade_level.max' => 'Seviye 5-12 arasında olmalı.',
             'section.required' => 'Şube gerekli.',
         ]);
 

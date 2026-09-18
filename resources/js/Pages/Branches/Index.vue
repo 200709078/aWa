@@ -229,7 +229,7 @@ function confirmDelete() {
                         v-model.number="createForm.grade_level"
                         type="number"
                         required
-                        min="1"
+                        min="5"
                         max="12"
                         placeholder="9"
                         class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -327,7 +327,7 @@ function confirmDelete() {
                                 v-model.number="editForm.grade_level"
                                 type="number"
                                 required
-                                min="1"
+                                min="5"
                                 max="12"
                                 class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />

@@ -69,6 +69,8 @@ interface Toast {
 
 const toasts = ref<Toast[]>([]);
 let toastId = 0;
+let lastToastKey = '';
+let lastToastAt = 0;
 const toastTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
 function pushToast(type: Toast['type'], title: string, messages: string[]) {
@@ -95,10 +97,21 @@ function collectToasts(props: unknown) {
         flash?: { success?: string | null; error?: string | null };
         errors?: Record<string, string>;
     };
-    if (flash?.success) pushToast('success', '', [flash.success]);
-    if (flash?.error) pushToast('error', '', [flash.error]);
+    const items: { type: Toast['type']; title: string; messages: string[] }[] = [];
+    if (flash?.success) items.push({ type: 'success', title: '', messages: [flash.success] });
+    if (flash?.error) items.push({ type: 'error', title: '', messages: [flash.error] });
     const messages = Object.values(errors ?? {});
-    if (messages.length > 0) pushToast('error', 'Hata', messages);
+    if (messages.length > 0) items.push({ type: 'error', title: 'Hata', messages });
+
+    for (const item of items) {
+        const key = `${item.type}|${item.title}|${item.messages.join('\n')}`;
+        const now = Date.now();
+        // Aynı ziyaret mount + router success'i art arda tetikler; çift gösterimi engelle.
+        if (key === lastToastKey && now - lastToastAt < 500) continue;
+        lastToastKey = key;
+        lastToastAt = now;
+        pushToast(item.type, item.title, item.messages);
+    }
 }
 
 onMounted(() => {
