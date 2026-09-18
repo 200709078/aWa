@@ -41,9 +41,9 @@ const nav = computed(() => {
     const items = [
         { label: 'Giriş', href: '/' },
         { label: 'Akademik Yıllar', href: '/academic-years' },
-        { label: 'Salonlar', href: '/rooms' },
         { label: 'Sınıflar', href: '/branches' },
         { label: 'Öğrenciler', href: '/students' },
+        { label: 'Salonlar', href: '/rooms' },
         { label: 'Sınav Haftaları', href: '/exam-weeks' },
         { label: 'Dağıtım', href: '/distribution' },
     ];
