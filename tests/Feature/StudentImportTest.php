@@ -118,7 +118,7 @@ class StudentImportTest extends TestCase
 
         $path = $response->baseResponse->getFile()->getPathname();
         $data = (new XlsxReader())->load($path)->getActiveSheet()->toArray(null, true, true, false);
-        $this->assertSame(['Okul No', 'Ad Soyad', 'Şube'], array_values($data[0]));
+        $this->assertSame(['Okul No', 'Ad Soyad', 'Sınıf'], array_values($data[0]));
 
         $preview = $this->actingAs($user)->post('/students/import/preview', [
             'academic_year_id' => $year->id,

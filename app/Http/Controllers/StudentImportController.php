@@ -50,7 +50,7 @@ class StudentImportController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Öğrenciler');
-        $sheet->fromArray([['Okul No', 'Ad Soyad', 'Şube']], null, 'A1', true);
+        $sheet->fromArray([['Okul No', 'Ad Soyad', 'Sınıf']], null, 'A1', true);
         $sheet->getStyle('A1:C1')->getFont()->setBold(true);
         $sheet->getColumnDimension('A')->setWidth(15);
         $sheet->getColumnDimension('B')->setWidth(35);
