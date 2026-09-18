@@ -23,6 +23,7 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => env('ADMIN_NAME', 'Yönetici'),
                 'password' => $password,
+                'role' => 'super_admin',
             ]
         );
     }

@@ -1,6 +1,6 @@
-# AGENTS.md — OAL Kelebek
+# AGENTS.md — AVA Kelebek
 
-Bu dosya, `~/Belgeler/OAL_Kelebek` projesinin geliştirme planıdır.
+Bu dosya, `~/Belgeler/ava_kelebek` projesinin geliştirme planıdır.
 
 Amaç: OpenCode / Muse benzeri bir kodlama ajanına yalnızca örneğin:
 
@@ -14,7 +14,7 @@ demek ve ilgili adımın eksiksiz uygulanmasını sağlamaktır.
 
 ## Proje
 
-- Proje kökü: `~/Belgeler/OAL_Kelebek`
+- Proje kökü: `~/Belgeler/ava_kelebek`
 - Uygulama adı: `Kelebek`
 - Production adresi: `https://kelebek.madematik.com`
 - Uygulama kurum içi kullanılacaktır.
@@ -97,7 +97,7 @@ Kritik iş mantığı olan dağıtım algoritması için sınırlı ama anlamlı
 
 # 1. Proje temelini hazırla
 
-`~/Belgeler/OAL_Kelebek` klasörü Laravel projesinin doğrudan kökü olacak.
+`~/Belgeler/ava_kelebek` klasörü Laravel projesinin doğrudan kökü olacak.
 
 Ek bir `kelebek/` alt klasörü oluşturma.
 
@@ -112,7 +112,7 @@ MySQL kullan:
 - `DB_CONNECTION=mysql`
 - `DB_HOST=127.0.0.1`
 - `DB_PORT=3306`
-- `DB_DATABASE=oal_kelebek`
+- `DB_DATABASE=ava_kelebek`
 
 Yerel kullanıcı adı/şifre mevcut sisteme göre ayarlanabiliyorsa ayarla; production bilgisi ekleme.
 
@@ -158,7 +158,7 @@ Başarılı olmalı.
 
 MySQL içinde:
 
-`oal_kelebek`
+`ava_kelebek`
 
 isimli veritabanını kullan.
 
@@ -1022,7 +1022,7 @@ GitHub CLI mevcut ve login yapılmışsa kullanıcı onayıyla private repositor
 
 Önerilen repository adı:
 
-`OAL_Kelebek`
+`ava_kelebek`
 
 Private repository kullan.
 
