@@ -407,20 +407,22 @@ class StudentImportController extends Controller
     }
 
     /**
-     * "Ahmet Bayram Gün" -> ["Ahmet", "Bayram Gün"].
+     * "Ahmet Bayram Gün" -> ["Ahmet Bayram", "Gün"].
+     * Türkçe düzen gereği soyadı her zaman en sondaki kelimedir.
      * Tek kelimede güvenli ayrım yapılamaz, [null, null] döner.
      *
      * @return array{0: ?string, 1: ?string}
      */
     public static function splitName(string $fullName): array
     {
-        $parts = preg_split('/\s+/u', trim($fullName)) ?: [];
+        $fullName = preg_replace('/\s+/u', ' ', trim($fullName)) ?? '';
+        $pos = mb_strrpos($fullName, ' ');
 
-        if (count($parts) < 2) {
+        if ($pos === false || $fullName === '') {
             return [null, null];
         }
 
-        return [$parts[0], implode(' ', array_slice($parts, 1))];
+        return [mb_substr($fullName, 0, $pos), mb_substr($fullName, $pos + 1)];
     }
 
     private function normalizeNameKey(?string $value): string

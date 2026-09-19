@@ -69,7 +69,7 @@ const nav = computed<NavEntry[]>(() => {
                 { label: 'Akademik Yıllar', href: '/academic-years', icon: 'calendar' },
                 { label: 'Sınıflar', href: '/branches', icon: 'users' },
                 { label: 'Öğrenciler', href: '/students', icon: 'user' },
-                { label: 'Rehber Aktarma', href: '#', icon: 'book', disabled: true },
+                { label: 'Rehber Aktarma', href: '/rehber-aktarma', icon: 'book' },
                 { label: 'Mezunlar', href: '#', icon: 'cap', disabled: true },
             ],
         },
