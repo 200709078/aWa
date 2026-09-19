@@ -86,7 +86,7 @@ function onFileChange(e: Event) {
                 <button
                     type="submit"
                     :disabled="form.processing || !form.file"
-                    class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                    class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-100"
                 >
                     Önizlemeye Devam Et
                 </button>

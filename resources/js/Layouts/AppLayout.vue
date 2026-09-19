@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import NavIcon from '../Components/NavIcon.vue';
 
 defineProps<{ title: string }>();
 
@@ -37,21 +38,84 @@ const isSuperAdmin = computed(() => user.value?.role === 'super_admin');
 
 const currentUrl = computed(() => usePage().url);
 
-const nav = computed(() => {
-    const items = [
-        { label: 'Giriş', href: '/' },
-        { label: 'Akademik Yıllar', href: '/academic-years' },
-        { label: 'Sınıflar', href: '/branches' },
-        { label: 'Öğrenciler', href: '/students' },
-        { label: 'Salonlar', href: '/rooms' },
-        { label: 'Sınav Haftaları', href: '/exam-weeks' },
-        { label: 'Dağıtım', href: '/distribution' },
+interface NavLink {
+    label: string;
+    href: string;
+    icon: string;
+    disabled?: boolean;
+}
+
+interface NavGroup {
+    label: string;
+    href?: string;
+    icon: string;
+    danger?: boolean;
+    children: NavLink[];
+}
+
+type NavEntry = NavLink | NavGroup;
+
+function isGroup(entry: NavEntry): entry is NavGroup {
+    return (entry as NavGroup).children !== undefined;
+}
+
+const nav = computed<NavEntry[]>(() => {
+    const items: NavEntry[] = [
+        { label: 'Giriş', href: '/', icon: 'home' },
+        {
+            label: 'Kurum',
+            icon: 'folder',
+            children: [
+                { label: 'Akademik Yıllar', href: '/academic-years', icon: 'calendar' },
+                { label: 'Sınıflar', href: '/branches', icon: 'users' },
+                { label: 'Öğrenciler', href: '/students', icon: 'user' },
+                { label: 'Rehber Aktarma', href: '#', icon: 'book', disabled: true },
+                { label: 'Mezunlar', href: '#', icon: 'cap', disabled: true },
+            ],
+        },
+        {
+            label: 'Kelebek',
+            icon: 'logo',
+            children: [
+                { label: 'Salonlar', href: '/rooms', icon: 'grid' },
+                { label: 'Sınav Haftaları', href: '/exam-weeks', icon: 'calendarDays' },
+                { label: 'Dağıtım', href: '/distribution', icon: 'arrows' },
+            ],
+        },
     ];
     if (isSuperAdmin.value) {
-        items.push({ label: 'Okullar', href: '/schools' }, { label: 'Kullanıcılar', href: '/users' });
+        items.push({
+            label: 'Yönetim',
+            icon: 'shield',
+            danger: true,
+            children: [
+                { label: 'Okullar', href: '/schools', icon: 'building' },
+                { label: 'Kullanıcılar', href: '/users', icon: 'user' },
+            ],
+        });
     }
     return items;
 });
+
+function isActive(href: string): boolean {
+    return href === '/' ? currentUrl.value === '/' : currentUrl.value.startsWith(href);
+}
+
+function isGroupActive(group: NavGroup): boolean {
+    return (group.href ? isActive(group.href) : false) || group.children.some((child) => isActive(child.href));
+}
+
+const openGroups = ref<Record<string, boolean>>({});
+
+for (const entry of nav.value) {
+    if (isGroup(entry)) {
+        openGroups.value[entry.label] = isGroupActive(entry);
+    }
+}
+
+function toggleGroup(label: string) {
+    openGroups.value[label] = !openGroups.value[label];
+}
 
 function switchSchool(id: number) {
     schoolMenuOpen.value = false;
@@ -127,10 +191,6 @@ onUnmounted(() => {
     offRouterSuccess();
 });
 
-function isActive(href: string): boolean {
-    return href === '/' ? currentUrl.value === '/' : currentUrl.value.startsWith(href);
-}
-
 function linkClass(href: string): string {
     if (href === '/schools' || href === '/users') {
         const base = 'block rounded-md px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-50';
@@ -139,6 +199,19 @@ function linkClass(href: string): string {
     const base = 'block rounded-md px-3 py-2 text-sm font-medium';
     return isActive(href)
         ? `${base} bg-indigo-100 text-indigo-800`
+        : `${base} text-gray-700 hover:bg-gray-100`;
+}
+
+function groupClass(group: NavGroup): string {
+    if (group.danger) {
+        const base = 'flex w-full items-center justify-between gap-1 rounded-md px-3 py-2 text-sm font-bold';
+        return isGroupActive(group) || openGroups.value[group.label]
+            ? `${base} bg-red-100 text-red-800`
+            : `${base} text-red-700 hover:bg-red-50`;
+    }
+    const base = 'flex w-full items-center justify-between gap-1 rounded-md px-3 py-2 text-sm font-medium';
+    return isGroupActive(group) || openGroups.value[group.label]
+        ? `${base} bg-indigo-50 text-indigo-800`
         : `${base} text-gray-700 hover:bg-gray-100`;
 }
 
@@ -163,7 +236,7 @@ function logout() {
                     </button>
                     <Link href="/" class="flex items-center gap-2">
                         <img :src="'/favicon.png'" alt="Kelebek logosu" class="h-8 w-8 object-contain" />
-                        <span class="font-semibold text-gray-900">Kelebek Oturma Planı</span>
+                        <span class="text-sm font-semibold leading-none text-gray-900">Okul Yönetim Sistemi</span>
                     </Link>
                 </div>
                 <div class="flex items-center gap-3">
@@ -215,18 +288,98 @@ function logout() {
                 </div>
             </div>
             <nav v-if="menuOpen" class="space-y-1 border-t px-4 py-3 md:hidden">
-                <Link v-for="item in nav" :key="item.href" :href="item.href" :class="linkClass(item.href)">
-                    {{ item.label }}
-                </Link>
+                <template v-for="entry in nav" :key="entry.label">
+                    <div v-if="isGroup(entry)">
+                        <div :class="groupClass(entry)">
+                            <img v-if="entry.icon === 'logo'" :src="'/favicon.png'" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 object-contain" />
+                            <NavIcon v-else :name="entry.icon" />
+                            <Link v-if="entry.href" :href="entry.href" class="min-w-0 flex-1 truncate text-left">
+                                {{ entry.label }}
+                            </Link>
+                            <button v-else type="button" class="min-w-0 flex-1 cursor-pointer truncate text-left" @click="toggleGroup(entry.label)">
+                                {{ entry.label }}
+                            </button>
+                            <button
+                                type="button"
+                                :aria-expanded="!!openGroups[entry.label]"
+                                :aria-label="entry.label + ' menüsü'"
+                                class="shrink-0 cursor-pointer rounded p-0.5"
+                                @click="toggleGroup(entry.label)"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-4 w-4 transition-transform" :class="openGroups[entry.label] ? 'rotate-180' : ''"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                            </button>
+                        </div>
+                        <div v-show="openGroups[entry.label]" class="ml-3 mt-1 space-y-1 border-l-2 border-gray-100 pl-2">
+                            <template v-for="child in entry.children" :key="child.label">
+                                <span
+                                    v-if="child.disabled"
+                                    class="flex cursor-not-allowed items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-400"
+                                    :title="child.label + ' (yakında)'"
+                                >
+                                    <NavIcon :name="child.icon" />
+                                    {{ child.label }}
+                                </span>
+                                <Link v-else :href="child.href" :class="[linkClass(child.href), 'flex items-center gap-2']">
+                                    <NavIcon :name="child.icon" />
+                                    {{ child.label }}
+                                </Link>
+                            </template>
+                        </div>
+                    </div>
+                    <Link v-else :href="entry.href" :class="[linkClass(entry.href), 'flex items-center gap-2']">
+                        <NavIcon :name="entry.icon" />
+                        {{ entry.label }}
+                    </Link>
+                </template>
             </nav>
         </header>
 
         <div class="flex gap-6 px-2 py-6">
             <aside class="sticky top-20 z-20 hidden w-56 shrink-0 self-start md:block print:hidden">
                 <nav class="space-y-1 rounded-lg bg-white p-3 shadow-sm">
-                    <Link v-for="item in nav" :key="item.href" :href="item.href" :class="linkClass(item.href)">
-                        {{ item.label }}
-                    </Link>
+                    <template v-for="entry in nav" :key="entry.label">
+                        <div v-if="isGroup(entry)">
+                            <div :class="groupClass(entry)">
+                                <img v-if="entry.icon === 'logo'" :src="'/favicon.png'" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 object-contain" />
+                                <NavIcon v-else :name="entry.icon" />
+                                <Link v-if="entry.href" :href="entry.href" class="min-w-0 flex-1 truncate text-left">
+                                    {{ entry.label }}
+                                </Link>
+                                <button v-else type="button" class="min-w-0 flex-1 cursor-pointer truncate text-left" @click="toggleGroup(entry.label)">
+                                    {{ entry.label }}
+                                </button>
+                                <button
+                                    type="button"
+                                    :aria-expanded="!!openGroups[entry.label]"
+                                    :aria-label="entry.label + ' menüsü'"
+                                    class="shrink-0 cursor-pointer rounded p-0.5"
+                                    @click="toggleGroup(entry.label)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="block h-4 w-4 transition-transform" :class="openGroups[entry.label] ? 'rotate-180' : ''"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                                </button>
+                            </div>
+                            <div v-show="openGroups[entry.label]" class="ml-3 mt-1 space-y-1 border-l-2 border-gray-100 pl-2">
+                                <template v-for="child in entry.children" :key="child.label">
+                                    <span
+                                        v-if="child.disabled"
+                                        class="flex cursor-not-allowed items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-400"
+                                        :title="child.label + ' (yakında)'"
+                                    >
+                                        <NavIcon :name="child.icon" />
+                                        {{ child.label }}
+                                    </span>
+                                    <Link v-else :href="child.href" :class="[linkClass(child.href), 'flex items-center gap-2']">
+                                        <NavIcon :name="child.icon" />
+                                        {{ child.label }}
+                                    </Link>
+                                </template>
+                            </div>
+                        </div>
+                        <Link v-else :href="entry.href" :class="[linkClass(entry.href), 'flex items-center gap-2']">
+                            <NavIcon :name="entry.icon" />
+                            {{ entry.label }}
+                        </Link>
+                    </template>
                 </nav>
             </aside>
 
