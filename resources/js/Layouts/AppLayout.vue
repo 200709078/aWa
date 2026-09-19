@@ -70,7 +70,7 @@ const nav = computed<NavEntry[]>(() => {
                 { label: 'Sınıflar', href: '/branches', icon: 'users' },
                 { label: 'Öğrenciler', href: '/students', icon: 'user' },
                 { label: 'Rehber Aktarma', href: '/rehber-aktarma', icon: 'book' },
-                { label: 'Mezunlar', href: '#', icon: 'cap', disabled: true },
+                { label: 'Mezunlar', href: '/mezunlar', icon: 'cap' },
             ],
         },
         {
@@ -180,6 +180,7 @@ function collectToasts(props: unknown) {
 
 onMounted(() => {
     collectToasts(usePage().props);
+    window.addEventListener('kelebek-toast', onKelebekToast);
 });
 
 const offRouterSuccess = router.on('success', (event) => {
@@ -189,7 +190,19 @@ const offRouterSuccess = router.on('success', (event) => {
 
 onUnmounted(() => {
     offRouterSuccess();
+    window.removeEventListener('kelebek-toast', onKelebekToast);
 });
+
+function onKelebekToast(event: Event) {
+    const detail = (event as CustomEvent<{ type?: unknown; title?: unknown; messages?: unknown; message?: unknown }>).detail ?? {};
+    const type = detail.type === 'error' ? 'error' : 'success';
+    const messages = Array.isArray(detail.messages)
+        ? detail.messages.map(String)
+        : typeof detail.message === 'string' && detail.message !== ''
+          ? [detail.message]
+          : [];
+    pushToast(type, typeof detail.title === 'string' ? detail.title : '', messages);
+}
 
 function linkClass(href: string): string {
     if (href === '/schools' || href === '/users') {
