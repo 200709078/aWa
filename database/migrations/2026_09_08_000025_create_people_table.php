@@ -51,7 +51,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('person_id')->constrained()->cascadeOnDelete();
             $table->string('company_name');
-            $table->string('job_title');
+            $table->string('job_title')->nullable();
             $table->string('city')->nullable();
             $table->unsignedSmallInteger('start_year')->nullable();
             $table->unsignedSmallInteger('end_year')->nullable();
