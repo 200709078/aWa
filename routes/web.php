@@ -7,6 +7,7 @@ use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamWeekController;
 use App\Http\Controllers\PrintController;
+use App\Http\Controllers\RehberAktarmaController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\SeatController;
@@ -58,6 +59,12 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/students/photos', [StudentPhotoController::class, 'show'])->name('students.photos');
     Route::post('/students/photos/match', [StudentPhotoController::class, 'match'])->name('students.photos.match');
     Route::post('/students/photos/confirm', [StudentPhotoController::class, 'confirm'])->name('students.photos.confirm');
+
+    Route::get('/rehber-aktarma', [RehberAktarmaController::class, 'index'])->name('rehber.index');
+    Route::get('/rehber-aktarma/yillar/{academicYear}/subeler', [RehberAktarmaController::class, 'branches'])->name('rehber.branches');
+    Route::post('/rehber-aktarma/ozet', [RehberAktarmaController::class, 'summary'])->name('rehber.summary');
+    Route::get('/rehber-aktarma/indir', [RehberAktarmaController::class, 'download'])->name('rehber.download');
+    Route::get('/rehber-aktarma/excel', [RehberAktarmaController::class, 'excel'])->name('rehber.excel');
 
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
     Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');

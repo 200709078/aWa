@@ -200,7 +200,7 @@ class StudentImportTest extends TestCase
 
         // Yeni öğrenci: kişi + iletişim + ad ayrışımı
         $this->assertDatabaseHas('people', [
-            'full_name' => 'Ahmet Bayram Gün', 'first_name' => 'Ahmet', 'last_name' => 'Bayram Gün',
+            'full_name' => 'Ahmet Bayram Gün', 'first_name' => 'Ahmet Bayram', 'last_name' => 'Gün',
             'phone' => '5333021071', 'address' => 'Dikmekavak Mah. No:1',
         ]);
         $this->assertDatabaseHas('student_enrollments', ['academic_year_id' => $year->id, 'school_number' => '301']);
