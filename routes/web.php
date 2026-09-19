@@ -6,6 +6,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamWeekController;
+use App\Http\Controllers\GraduateController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RehberAktarmaController;
 use App\Http\Controllers\RoomController;
@@ -65,6 +66,9 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::post('/rehber-aktarma/ozet', [RehberAktarmaController::class, 'summary'])->name('rehber.summary');
     Route::get('/rehber-aktarma/indir', [RehberAktarmaController::class, 'download'])->name('rehber.download');
     Route::get('/rehber-aktarma/excel', [RehberAktarmaController::class, 'excel'])->name('rehber.excel');
+
+    Route::get('/mezunlar', [GraduateController::class, 'index'])->name('mezunlar.index');
+    Route::get('/mezunlar/vcf', [GraduateController::class, 'vcf'])->name('mezunlar.vcf');
 
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
     Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');

@@ -12,6 +12,8 @@ demek ve ilgili adımı eksiksiz uygulatmaktır.
 
 # 0. GENEL KURALLAR
 
+**Durum: ✅ Uyuluyor**
+
 ## Proje
 
 - Proje kökü: `~/Belgeler/OAL_Kelebek`
@@ -98,6 +100,8 @@ Kritik iş mantığı olan dağıtım algoritması için sınırlı ama anlamlı
 
 # 1. PROJE TEMELİNİ HAZIRLA
 
+**Durum: ✅ Yapıldı**
+
 `~/Belgeler/OAL_Kelebek` Laravel projesinin doğrudan kökü olacak.
 
 Ek `kelebek/` alt klasörü oluşturma.
@@ -150,6 +154,8 @@ Kritik kontrol:
 ---
 
 # 2. VERİTABANI MİMARİSİNİ NİHAİ HALE GETİR VE MEVCUT KELEBEK BAĞLANTILARINI UYARLA
+
+**Durum: ✅ Yapıldı**
 
 Bu adımda mevcut proje production'da olmadığı için eski migration'ları parça parça `add_*` migration'larıyla büyütme.
 
@@ -526,6 +532,8 @@ Sonraki adıma geçme.
 
 # 3. BASİT YÖNETİCİ GİRİŞİ
 
+**Durum: ✅ Yapıldı**
+
 Uygulama yalnızca yetkili kullanıcılar tarafından kullanılacak.
 
 Gereksinimler:
@@ -544,6 +552,8 @@ Mevcut projede bu özellik zaten varsa yeniden oluşturma; yalnızca çalıştı
 ---
 
 # 4. ANA YÖNETİM ARAYÜZÜ
+
+**Durum: ✅ Yapıldı**
 
 Sade ve modern admin arayüzü.
 
@@ -568,6 +578,8 @@ Bu adımda tasarım ayrıntılarını katılaştırma.
 
 # 5. AKADEMİK YIL VE ŞUBE YÖNETİMİ
 
+**Durum: ✅ Yapıldı**
+
 Academic year CRUD.
 
 Branch CRUD.
@@ -589,6 +601,8 @@ Aynı academic year içinde duplicate şube olmasın.
 ---
 
 # 6. ÖĞRENCİ YÖNETİMİ
+
+**Durum: ⚠️ Kısmen** — CRUD person-centric çalışıyor; formda ad/soyad ayrımı, telefon, e-posta, adres, fotoğraf alanı yok.
 
 Öğrenci yönetimi yeni person-centric modele göre çalışmalı.
 
@@ -617,6 +631,8 @@ göster.
 ---
 
 # 7. EXCEL ÖĞRENCİ İÇE AKTARMA
+
+**Durum: ✅ Yapıldı**
 
 Excel import V1 için zorunlu.
 
@@ -677,6 +693,8 @@ Sonuç özeti:
 
 # 8. TOPLU ÖĞRENCİ FOTOĞRAFI YÜKLEME
 
+**Durum: ✅ Yapıldı**
+
 Fotoğraf dosya adı öğrenci numarasıdır:
 
 - `145.jpg`
@@ -704,6 +722,8 @@ Fotoğraf yoksa:
 
 # 9. SALON VE KOLTUK DÜZENİ
 
+**Durum: ✅ Yapıldı**
+
 Salon CRUD.
 
 Seat:
@@ -722,6 +742,8 @@ Salon kapasitesi aktif koltuk sayısından hesaplanmalı.
 
 # 10. SINAV HAFTASI
 
+**Durum: ✅ Yapıldı**
+
 Bir sınav haftasında kullanıcı:
 
 - dağıtıma dahil şubeleri seçebilmeli
@@ -738,6 +760,8 @@ Bazı salonlar o hafta hariç tutulabilir.
 ---
 
 # 11. DAĞITIM MOTORU
+
+**Durum: ⚠️ Kısmen** — kesin kural, minimizasyon, kapasite kontrolü ve kritik testler tamam; "yumuşak tercih" (aynı salonda aynı şubeden en az 2 öğrenci) kuralı yok.
 
 Backend service içinde tutulmalı.
 
@@ -791,6 +815,8 @@ Kritik testler:
 
 # 12. DAĞITIM EKRANI
 
+**Durum: ✅ Yapıldı**
+
 Dağıtım öncesi özet:
 - katılan şubeler
 - öğrenci sayısı
@@ -807,6 +833,8 @@ Draft/final yaklaşımı kullanılabilir.
 ---
 
 # 13. MANUEL SALON/KOLTUK DÜZENLEME
+
+**Durum: ✅ Yapıldı**
 
 Destekle:
 
@@ -831,6 +859,8 @@ diyebilsin.
 
 # 14. OTURMA PLANI
 
+**Durum: ✅ Yapıldı**
+
 Salon bazında göster.
 
 Her koltukta:
@@ -847,6 +877,8 @@ Fotoğraf göster/gizle seçeneği veri değiştirmemeli.
 ---
 
 # 15. YAZDIRILABİLİR ÇIKTILAR
+
+**Durum: ✅ Yapıldı**
 
 A4 uyumlu.
 
@@ -867,6 +899,8 @@ Gereksiz server-side PDF paketi ekleme.
 
 # 16. SINAV TARİHLERİ / PROGRAMI
 
+**Durum: ✅ Yapıldı**
+
 Mevcut eski Excel uygulamasında sınav tarihleri yalnız duyuru amaçlıydı.
 
 V1 ana işlevi değildir.
@@ -882,6 +916,8 @@ Dağıtım motoru sınav tarihine bağımlı olmasın.
 ---
 
 # 17. MEZUN / SMS / VCF ALTYAPISI
+
+**Durum: ✅ Yapıldı** — altyapı + VCF indir + Excele Dışa Aktar + Mezunlar listesi/VCF tamam; SMS export bilerek yok.
 
 Bu bölümde SADECE veri mimarisi hazırdır.
 
@@ -921,43 +957,9 @@ VCF ekranı yapma.
 
 ---
 
-# 18. ESKİ EXCEL DEMO VERİSİ AKTARIMI
+# 18. MEVCUT FOTOĞRAFLARI BAĞLAMA
 
-Masaüstünde:
-
-`~/Masaüstü/kelebek.xls`
-
-bulunuyor.
-
-Yeni sistem tamamlandıktan sonra uygun verileri demo/başlangıç verisi olarak aktar.
-
-Önce dosyayı analiz et.
-
-Uygun veriler:
-- şubeler
-- öğrenciler
-- okul numaraları
-- ad soyad
-- salonlar
-- salon kapasiteleri
-- koltuk düzenleri
-- uygun sabit referans verileri
-
-Yeni person-centric modele uygun şekilde aktar:
-- people
-- students
-- student_enrollments
-
-Eski VBA renk mantığını taşıma.
-Eski Sınav Yeri dağıtımlarını zorunlu olarak import etme.
-SınavTarihleri zorunlu değildir.
-
-Tek seferlik importer/command/seeder olabilir.
-Tekrar çalıştırıldığında duplicate oluşturmamalı.
-
----
-
-# 19. MEVCUT FOTOĞRAFLARI BAĞLAMA
+**Durum: ✅ Yapıldı** — 1151 mezun + öğrenci fotoğrafları `people.photo_path` üzerinden bağlı.
 
 Fotoğraf klasörü varsa öğrenci numarası üzerinden eşleştir.
 
@@ -971,7 +973,9 @@ Fotoğraf yoksa hata verme.
 
 ---
 
-# 20. KULLANILABİLİRLİK VE HATA MESAJLARI
+# 19. KULLANILABİLİRLİK VE HATA MESAJLARI
+
+**Durum: ✅ Yapıldı**
 
 Türkçe ve anlaşılır mesajlar kullan.
 
@@ -989,7 +993,9 @@ Teknik exception'ı doğrudan kullanıcıya gösterme.
 
 ---
 
-# 21. RESPONSIVE SON KONTROL
+# 20. RESPONSIVE SON KONTROL
+
+**Durum: ⚠️ Kısmen** — viewport + responsive sınıflar var; formel cihaz testi yapılmadı.
 
 Öncelik:
 1. Masaüstü
@@ -1000,7 +1006,9 @@ Mobilde tüm yönetim fonksiyonları kusursuz olmak zorunda değil, ama bozulmam
 
 ---
 
-# 22. PRODUCTION HAZIRLIK
+# 21. PRODUCTION HAZIRLIK
+
+**Durum: ❌ Yapılmadı** — deploy kullanıcı onayıyla yapılır.
 
 Hedef:
 
@@ -1021,7 +1029,9 @@ Kullanıcı istemeden deploy yapma.
 
 ---
 
-# 23. SON KRİTİK KONTROL
+# 22. SON KRİTİK KONTROL
+
+**Durum: ❌ Yapılmadı**
 
 Sadece kritik akışları kontrol et:
 
@@ -1045,7 +1055,9 @@ Yeni özellik ekleme.
 
 ---
 
-# 24. GIT / GITHUB
+# 23. GIT / GITHUB
+
+**Durum: ✅ Yapıldı**
 
 Bu adımı yalnızca kullanıcı isterse uygula.
 

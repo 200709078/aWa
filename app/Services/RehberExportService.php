@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Http\Controllers\StudentImportController;
 use App\Models\Branch;
+use App\Models\Graduate;
 use App\Models\Student;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -122,8 +123,58 @@ class RehberExportService
     }
 
     /**
-     * @param  array<int>  $branchIds
      * @return array{filename: string, content: string, cards: int, skipped: int}
+     */
+    public function buildGraduateVcf(?int $year, ?string $search, bool $withPhoto): array
+    {
+        $graduates = Graduate::with(['person', 'person.educations', 'person.employments'])
+            ->when($year, fn ($query) => $query->where('graduation_year', $year))
+            ->when($search, fn ($query) => $query->whereHas('person', fn ($query) => $query->where('full_name', 'like', "%{$search}%")))
+            ->orderByDesc('graduation_year')
+            ->orderBy('graduation_number')
+            ->get();
+
+        $cards = [];
+        $cardCount = 0;
+        $skipped = 0;
+        foreach ($graduates as $graduate) {
+            $tel = self::exportPhone($graduate->person?->phone);
+            if ($tel === null) {
+                $skipped++;
+                continue;
+            }
+            $cardCount++;
+            $prefix = $graduate->graduation_year.'-'.(ctype_digit($graduate->graduation_number)
+                ? str_pad($graduate->graduation_number, 3, '0', STR_PAD_LEFT)
+                : $graduate->graduation_number);
+            $employment = $graduate->person?->employments->first();
+            $cards = array_merge($cards, $this->vcard(
+                prefix: $prefix,
+                name: (string) $graduate->person?->full_name,
+                tel: $tel,
+                school: '',
+                title: (string) ($employment?->job_title ?? ''),
+                category: "Mezun {$graduate->graduation_year}",
+                photoPath: $withPhoto ? $graduate->person?->photo_path : null,
+                email: $graduate->person?->email,
+                company: $employment?->company_name,
+                note: $graduate->notes,
+            ));
+        }
+
+        $scope = $year ? (string) $year : 'tum-yillar';
+
+        return [
+            'filename' => Str::slug("mezunlar {$scope} {$cardCount}").'.vcf',
+            'content' => implode("\r\n", $cards),
+            'cards' => $cardCount,
+            'skipped' => $skipped,
+        ];
+    }
+
+    /**
+     * @param  array<int>  $branchIds
+     * @return array{filename: string, filepath: string, rows: int}
      */
     public function build(int $yearId, array $branchIds, string $type, string $schoolName, string $yearName, bool $withPhoto): array
     {
@@ -295,7 +346,7 @@ class RehberExportService
     /**
      * @return array<int, string>
      */
-    private function vcard(string $prefix, string $name, string $tel, string $school, string $title, string $category, ?string $photoPath): array
+    private function vcard(string $prefix, string $name, string $tel, string $school, string $title, string $category, ?string $photoPath, ?string $email = null, ?string $company = null, ?string $note = null): array
     {
         [$ad, $soyad] = StudentImportController::splitName(trim($name));
         $ad ??= trim($name);
@@ -307,10 +358,23 @@ class RehberExportService
             $this->fold('FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp(trim("{$prefix} {$ad}".($soyad !== '' ? " {$soyad}" : '')))),
             $this->fold('N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($soyad).';'.$this->qp(trim("{$prefix} {$ad}")).';;;'),
             "TEL;CELL:{$tel}",
-            $this->fold('ORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($school)),
-            $this->fold('TITLE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($title)),
-            'CATEGORIES:'.$this->qp($category),
         ];
+
+        if ($email !== null && $email !== '') {
+            $lines[] = 'EMAIL;HOME:'.$email;
+        }
+        if ($company !== null && $company !== '') {
+            $lines[] = $this->fold('ORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($company));
+        } elseif ($school !== '') {
+            $lines[] = $this->fold('ORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($school));
+        }
+        if ($title !== '') {
+            $lines[] = $this->fold('TITLE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($title));
+        }
+        $lines[] = 'CATEGORIES:'.$category;
+        if ($note !== null && $note !== '') {
+            $lines[] = $this->fold('NOTE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp(str_replace(["\r\n", "\r", "\n"], ' ', $note)));
+        }
 
         if (($b64 = $this->photoBase64($photoPath)) !== null) {
             $pre = 'PHOTO;ENCODING=b;TYPE=JPEG:';
