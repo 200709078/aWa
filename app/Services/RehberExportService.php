@@ -9,13 +9,9 @@ use App\Models\Student;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Encoders\JpegEncoder;
-use Intervention\Image\ImageManager;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
-use Throwable;
 
 class RehberExportService
 {
@@ -402,16 +398,9 @@ class RehberExportService
             return null;
         }
 
-        try {
-            $encoded = (string) (new ImageManager(new Driver()))
-                ->decode($absolute)
-                ->scaleDown(400, 400)
-                ->encode(new JpegEncoder(quality: 80));
-        } catch (Throwable) {
-            return null;
-        }
+        $encoded = PhotoService::jpegBytes($absolute, 400, 80);
 
-        return $encoded === '' ? null : base64_encode($encoded);
+        return $encoded === null ? null : base64_encode($encoded);
     }
 
     private function qp(string $value): string

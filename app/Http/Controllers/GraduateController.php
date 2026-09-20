@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Graduate;
 use App\Models\Person;
+use App\Services\PhotoService;
 use App\Services\RehberExportService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -14,9 +15,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Encoders\JpegEncoder;
-use Intervention\Image\ImageManager;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class GraduateController extends Controller
@@ -315,12 +313,7 @@ class GraduateController extends Controller
 
     private function storePersonPhoto(Person $person, Graduate $graduate, UploadedFile $photo): void
     {
-        $image = (new ImageManager(new Driver()))->decode($photo->getRealPath());
-
-        Storage::disk('public')->makeDirectory('graduates');
-        $image->scaleDown(800, 800)
-            ->encode(new JpegEncoder(quality: 80))
-            ->save(Storage::disk('public')->path("graduates/{$graduate->id}.jpg"));
+        PhotoService::store($photo, "graduates/{$graduate->id}.jpg");
 
         $person->update(['photo_path' => "graduates/{$graduate->id}.jpg"]);
     }

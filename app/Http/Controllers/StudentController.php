@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Person;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
+use App\Services\PhotoService;
 use App\Support\SchoolScope;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -17,9 +18,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Encoders\JpegEncoder;
-use Intervention\Image\ImageManager;
 
 class StudentController extends Controller
 {
@@ -345,12 +343,7 @@ class StudentController extends Controller
 
     private function storePersonPhoto(Person $person, Student $student, UploadedFile $photo): void
     {
-        $image = (new ImageManager(new Driver()))->decode($photo->getRealPath());
-
-        Storage::disk('public')->makeDirectory('students');
-        $image->scaleDown(800, 800)
-            ->encode(new JpegEncoder(quality: 80))
-            ->save(Storage::disk('public')->path("students/{$student->id}.jpg"));
+        PhotoService::store($photo, "students/{$student->id}.jpg");
 
         $person->update(['photo_path' => "students/{$student->id}.jpg"]);
     }

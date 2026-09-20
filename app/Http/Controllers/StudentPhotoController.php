@@ -5,15 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\AcademicYear;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
+use App\Services\PhotoService;
 use App\Support\SchoolScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Encoders\JpegEncoder;
-use Intervention\Image\ImageManager;
 use Throwable;
 
 class StudentPhotoController extends Controller
@@ -143,9 +141,6 @@ class StudentPhotoController extends Controller
             ->get()
             ->keyBy(fn (StudentEnrollment $e) => $this->normalizeNumber($e->school_number));
 
-        $manager = new ImageManager(new Driver());
-        Storage::disk('public')->makeDirectory('students');
-
         $matched = 0;
         $unmatched = [];
         $failed = [];
@@ -165,19 +160,9 @@ class StudentPhotoController extends Controller
 
             try {
                 $student = $enrollments[$number]->student;
-                [$image, $temps] = $this->loadImage($manager, $candidate);
-                try {
-                    $absolute = Storage::disk('public')->path("students/{$student->id}.jpg");
-                    $image->scaleDown(self::MAX_WIDTH, self::MAX_HEIGHT)
-                        ->encode(new JpegEncoder(quality: self::QUALITY))
-                        ->save($absolute);
-                    $student->person->update(['photo_path' => "students/{$student->id}.jpg"]);
-                    $matched++;
-                } finally {
-                    foreach ($temps as $temp) {
-                        @unlink($temp);
-                    }
-                }
+                PhotoService::store($candidate['source'], "students/{$student->id}.jpg", self::MAX_WIDTH, self::QUALITY);
+                $student->person->update(['photo_path' => "students/{$student->id}.jpg"]);
+                $matched++;
             } catch (Throwable $e) {
                 $failed[] = ['filename' => $candidate['filename'], 'message' => 'Dosya işlenemedi.'];
             }
@@ -213,57 +198,6 @@ class StudentPhotoController extends Controller
             'withoutPhoto' => $withoutPhoto->take(100)->values(),
             'withoutPhotoTruncated' => $withoutPhoto->count() > 100,
         ];
-    }
-
-    /**
-     * Kaynağı işlenebilir görüntüye çevirir. BMP içerikler (uzantısı ne olursa olsun)
-     * önce JPEG'e dönüştürülür. Dönen geçici dosyaların silinmesi çağırana aittir.
-     *
-     * @param  array{filename: string, source: mixed}  $candidate
-     * @return array{0: \Intervention\Image\Interfaces\ImageInterface, 1: array<int, string>}
-     */
-    private function loadImage(ImageManager $manager, array $candidate): array
-    {
-        $temps = [];
-        $source = $candidate['source'];
-
-        if (is_string($source) && is_file($source)) {
-            $path = $source;
-        } else {
-            $path = tempnam(sys_get_temp_dir(), 'foto').'.bin';
-            file_put_contents($path, (string) $source);
-            $temps[] = $path;
-        }
-
-        if ($this->isBmp($path)) {
-            $gd = @imagecreatefrombmp($path);
-            if ($gd === false) {
-                throw new \RuntimeException('Dosya okunamadı.');
-            }
-            $jpg = tempnam(sys_get_temp_dir(), 'foto').'.jpg';
-            imagejpeg($gd, $jpg, 92);
-            imagedestroy($gd);
-            $path = $jpg;
-            $temps[] = $path;
-        }
-
-        try {
-            return [$manager->decode($path), $temps];
-        } catch (Throwable $e) {
-            foreach ($temps as $temp) {
-                @unlink($temp);
-            }
-            throw $e;
-        }
-    }
-
-    private function isBmp(string $path): bool
-    {
-        if (@file_get_contents($path, false, null, 0, 2) === 'BM') {
-            return true;
-        }
-
-        return finfo_file(finfo_open(FILEINFO_MIME_TYPE), $path) === 'image/bmp';
     }
 
     private function normalizeNumber(?string $value): string    {
