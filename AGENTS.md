@@ -602,7 +602,7 @@ Aynı academic year içinde duplicate şube olmasın.
 
 # 6. ÖĞRENCİ YÖNETİMİ
 
-**Durum: ⚠️ Kısmen** — CRUD person-centric çalışıyor; formda ad/soyad ayrımı, telefon, e-posta, adres, fotoğraf alanı yok.
+**Durum: ✅ Yapıldı** — tek formdan ad/soyad/ad soyad/telefon/e-posta/adres/fotoğraf/numara/şube/aktif yönetimi çalışıyor.
 
 Öğrenci yönetimi yeni person-centric modele göre çalışmalı.
 
