@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Graduate;
 use App\Services\RehberExportService;
-use Illuminate\Database\QueryException;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;

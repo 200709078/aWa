@@ -250,4 +250,71 @@ class DistributionTest extends TestCase
         $this->actingAs($user)->post("/distribution/plans/{$plan->id}/finalize")->assertRedirect();
         $this->assertEquals('final', $plan->fresh()->status);
     }
+
+    public function test_yumusak_tercih_ayni_subeden_en_az_iki(): void
+    {
+        $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
+        $a = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
+        $b = Branch::create(['academic_year_id' => $year->id, 'name' => '10A', 'grade_level' => 10, 'section' => 'A']);
+        for ($i = 1; $i <= 4; $i++) {
+            $this->makeStudent($year, $a, "1$i", "A $i");
+            $this->makeStudent($year, $b, "2$i", "B $i");
+        }
+
+        $r1 = Room::create(['name' => 'Salon 1', 'sort_order' => 1]);
+        $this->addSeats($r1, 2, 3);
+        $r2 = Room::create(['name' => 'Salon 2', 'sort_order' => 2]);
+        $this->addSeats($r2, 2, 2);
+
+        $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
+        $week->branches()->sync([$a->id, $b->id]);
+        $week->rooms()->sync([$r1->id, $r2->id]);
+
+        try {
+            foreach ([1, 2, 3, 4, 5] as $seed) {
+                mt_srand($seed);
+                $service = new SeatingDistributionService();
+                $plan = $service->distribute($week, "Yumusak $seed");
+
+                $this->assertEquals(0, $service->summary($plan)['violations'], "seed $seed");
+                $this->assertEquals(0, $this->countLones($service->seatingGrid($plan)), "seed $seed");
+
+                $plan->assignments()->delete();
+                $plan->delete();
+            }
+        } finally {
+            mt_srand();
+        }
+    }
+
+    private function countLones(array $grid): int
+    {
+        $totals = [];
+        foreach ($grid as $room) {
+            foreach ($room['seats'] as $seat) {
+                if ($seat['student'] !== null) {
+                    $branch = $seat['student']['branch'];
+                    $totals[$branch] = ($totals[$branch] ?? 0) + 1;
+                }
+            }
+        }
+
+        $lones = 0;
+        foreach ($grid as $room) {
+            $counts = [];
+            foreach ($room['seats'] as $seat) {
+                if ($seat['student'] !== null) {
+                    $branch = $seat['student']['branch'];
+                    $counts[$branch] = ($counts[$branch] ?? 0) + 1;
+                }
+            }
+            foreach ($counts as $branch => $count) {
+                if ($count === 1 && ($totals[$branch] ?? 0) > 1) {
+                    $lones++;
+                }
+            }
+        }
+
+        return $lones;
+    }
 }

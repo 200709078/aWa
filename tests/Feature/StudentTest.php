@@ -7,6 +7,8 @@ use App\Models\Branch;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 use Tests\Traits\CreatesStudents;
 
@@ -103,5 +105,108 @@ class StudentTest extends TestCase
 
         $this->actingAs($user)->post("/students/{$student->id}/deactivate")->assertRedirect();
         $this->assertFalse($student->fresh()->is_active);
+    }
+
+    private function makePhoto(string $filename, int $w = 1200, int $h = 900): string
+    {
+        $path = sys_get_temp_dir().'/'.$filename;
+        $img = imagecreatetruecolor($w, $h);
+        imagefill($img, 0, 0, imagecolorallocate($img, 100, 150, 200));
+        imagejpeg($img, $path, 90);
+        imagedestroy($img);
+
+        return $path;
+    }
+
+    public function test_ogrenci_tum_kisi_bilgileriyle_eklenir(): void
+    {
+        $user = User::factory()->create();
+        $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $photo = $this->makePhoto('ogrenci.jpg');
+
+        $this->actingAs($user)->post('/students', [
+            'branch_id' => $branch->id,
+            'school_number' => '145',
+            'first_name' => 'Ali',
+            'last_name' => 'Veli',
+            'full_name' => 'Ali Veli',
+            'phone' => '05320000000',
+            'email' => 'ali@example.com',
+            'address' => 'Örnek Mah.',
+            'photo' => new UploadedFile($photo, 'ogrenci.jpg', 'image/jpeg', null, true),
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('people', [
+            'full_name' => 'Ali Veli',
+            'first_name' => 'Ali',
+            'last_name' => 'Veli',
+            'phone' => '05320000000',
+            'email' => 'ali@example.com',
+            'address' => 'Örnek Mah.',
+        ]);
+
+        $student = Student::first();
+        $this->assertEquals("students/{$student->id}.jpg", $student->person->photo_path);
+        Storage::disk('public')->assertExists($student->person->photo_path);
+        [$width] = getimagesize(Storage::disk('public')->path($student->person->photo_path));
+        $this->assertLessThanOrEqual(800, $width);
+
+        Storage::disk('public')->delete($student->person->photo_path);
+        unlink($photo);
+    }
+
+    public function test_ad_soyad_bos_verilirse_tam_isimden_ayrilir(): void
+    {
+        $user = User::factory()->create();
+        $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+
+        $this->actingAs($user)->post('/students', [
+            'branch_id' => $branch->id,
+            'school_number' => '146',
+            'full_name' => 'Ayşe Yılmaz Kaya',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('people', [
+            'full_name' => 'Ayşe Yılmaz Kaya',
+            'first_name' => 'Ayşe Yılmaz',
+            'last_name' => 'Kaya',
+        ]);
+    }
+
+    public function test_ogrenci_guncelleme_kisi_bilgisi_ve_fotograf(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $student = $this->makeStudent($year, $branch, '145', 'Ali Veli');
+        $student->person->update(['phone' => '05320000000']);
+
+        $photo = $this->makePhoto('yeni.jpg', 400, 300);
+
+        $this->actingAs($user)->post("/students/{$student->id}", [
+            '_method' => 'PUT',
+            'branch_id' => $branch->id,
+            'school_number' => '145',
+            'first_name' => 'Ali Can',
+            'last_name' => 'Veli',
+            'full_name' => 'Ali Can Veli',
+            'phone' => '',
+            'email' => 'alican@example.com',
+            'address' => '',
+            'photo' => new UploadedFile($photo, 'yeni.jpg', 'image/jpeg', null, true),
+        ])->assertRedirect();
+
+        $person = $student->person->fresh();
+        $this->assertEquals('Ali Can Veli', $person->full_name);
+        $this->assertEquals('Ali Can', $person->first_name);
+        $this->assertNull($person->phone);
+        $this->assertEquals('alican@example.com', $person->email);
+        $this->assertEquals("students/{$student->id}.jpg", $person->photo_path);
+        Storage::disk('public')->assertExists($person->photo_path);
+
+        Storage::disk('public')->delete($person->photo_path);
+        unlink($photo);
     }
 }
