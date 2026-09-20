@@ -11,11 +11,15 @@ use App\Support\SchoolScope;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
+use Intervention\Image\ImageManager;
 
 class StudentController extends Controller
 {
@@ -44,7 +48,7 @@ class StudentController extends Controller
         $search = trim((string) $request->input('q', ''));
 
         $paginator = Student::with([
-            'person:id,full_name,photo_path',
+            'person:id,first_name,last_name,full_name,phone,email,address,photo_path',
             'enrollments' => fn ($query) => $query->where('academic_year_id', $yearId)->with('branch:id,name'),
         ])
             ->withCount('seatingAssignments')
@@ -67,7 +71,12 @@ class StudentController extends Controller
         $paginator->setCollection($paginator->getCollection()->map(fn (Student $student) => [
             'id' => $student->id,
             'school_number' => $student->enrollments->first()?->school_number ?? '—',
+            'first_name' => $student->person?->first_name,
+            'last_name' => $student->person?->last_name,
             'full_name' => $student->person?->full_name ?? '—',
+            'phone' => $student->person?->phone,
+            'email' => $student->person?->email,
+            'address' => $student->person?->address,
             'photo_path' => $student->person?->photo_path,
             'is_active' => $student->is_active,
             'seating_assignments_count' => $student->seating_assignments_count,
@@ -99,7 +108,12 @@ class StudentController extends Controller
 
                 $person = Person::create([
                     'school_id' => $schoolId,
+                    'first_name' => $validated['first_name'],
+                    'last_name' => $validated['last_name'],
                     'full_name' => $validated['full_name'],
+                    'phone' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'address' => $validated['address'],
                 ]);
 
                 $student = Student::create([
@@ -115,6 +129,10 @@ class StudentController extends Controller
                     'school_number' => $validated['school_number'],
                     'status' => 'active',
                 ]);
+
+                if ($validated['photo']) {
+                    $this->storePersonPhoto($person, $student, $validated['photo']);
+                }
             });
         } catch (QueryException $e) {
             return back()->withErrors(['school_number' => 'Bu okul numarası bu akademik yılda zaten kayıtlı.'])->withInput();
@@ -145,8 +163,19 @@ class StudentController extends Controller
                     ]);
                 }
 
-                $student->person?->update(['full_name' => $validated['full_name']]);
+                $student->person?->update([
+                    'first_name' => $validated['first_name'],
+                    'last_name' => $validated['last_name'],
+                    'full_name' => $validated['full_name'],
+                    'phone' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'address' => $validated['address'],
+                ]);
                 $student->update(['is_active' => $validated['is_active']]);
+
+                if ($validated['photo'] && $student->person) {
+                    $this->storePersonPhoto($student->person, $student, $validated['photo']);
+                }
             });
         } catch (QueryException $e) {
             return back()->withErrors(['school_number' => 'Bu okul numarası bu akademik yılda zaten kayıtlı.'])->withInput();
@@ -191,7 +220,7 @@ class StudentController extends Controller
     }
 
     /**
-     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, full_name: string, is_active: bool}
+     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, first_name: ?string, last_name: ?string, full_name: string, phone: ?string, email: ?string, address: ?string, photo: ?UploadedFile, is_active: bool}
      */
     private function validated(Request $request, ?Student $student = null): array
     {
@@ -205,7 +234,13 @@ class StudentController extends Controller
                 'required', 'string', 'max:20',
                 Rule::unique('student_enrollments')->where(fn ($query) => $query->where('academic_year_id', $branch->academic_year_id))->ignore($enrollment?->id),
             ],
+            'first_name' => ['nullable', 'string', 'max:50'],
+            'last_name' => ['nullable', 'string', 'max:50'],
             'full_name' => ['required', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:100'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
             'branch_id.required' => 'Şube seçin.',
@@ -213,14 +248,46 @@ class StudentController extends Controller
             'school_number.required' => 'Okul numarası gerekli.',
             'school_number.unique' => 'Bu okul numarası bu akademik yılda zaten kayıtlı.',
             'full_name.required' => 'Ad soyad gerekli.',
+            'email.email' => 'Geçerli bir e-posta adresi girin.',
+            'photo.image' => 'Yalnızca resim dosyası yükleyin.',
+            'photo.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp.',
+            'photo.max' => 'Fotoğraf en fazla 10 MB olabilir.',
         ]);
+
+        $fullName = trim($data['full_name']);
+        $firstName = trim((string) ($data['first_name'] ?? ''));
+        $lastName = trim((string) ($data['last_name'] ?? ''));
+
+        if ($firstName === '' && $lastName === '') {
+            [$firstName, $lastName] = StudentImportController::splitName($fullName);
+        }
+
+        $nullify = fn ($value) => trim((string) $value) === '' ? null : trim((string) $value);
 
         return [
             'branch' => $branch,
             'enrollment' => $enrollment,
             'school_number' => trim($data['school_number']),
-            'full_name' => trim($data['full_name']),
+            'first_name' => $firstName === '' ? null : $firstName,
+            'last_name' => $lastName === '' ? null : $lastName,
+            'full_name' => $fullName,
+            'phone' => $nullify($data['phone'] ?? null),
+            'email' => $nullify($data['email'] ?? null),
+            'address' => $nullify($data['address'] ?? null),
+            'photo' => $request->file('photo'),
             'is_active' => $request->boolean('is_active', $student?->is_active ?? true),
         ];
+    }
+
+    private function storePersonPhoto(Person $person, Student $student, UploadedFile $photo): void
+    {
+        $image = (new ImageManager(new Driver()))->decode($photo->getRealPath());
+
+        Storage::disk('public')->makeDirectory('students');
+        $image->scaleDown(800, 800)
+            ->encode(new JpegEncoder(quality: 80))
+            ->save(Storage::disk('public')->path("students/{$student->id}.jpg"));
+
+        $person->update(['photo_path' => "students/{$student->id}.jpg"]);
     }
 }

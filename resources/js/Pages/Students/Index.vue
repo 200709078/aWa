@@ -19,11 +19,16 @@ interface BranchOption {
 interface Student {
     id: number;
     school_number: string;
+    first_name: string | null;
+    last_name: string | null;
     full_name: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
     photo_path: string | null;
     is_active: boolean;
     seating_assignments_count: number;
-    branch: { id: number; name: string };
+    branch: { id: number | null; name: string };
 }
 
 interface Paginator {
@@ -74,21 +79,47 @@ function clearFilters() {
 const createForm = useForm({
     branch_id: props.branchId as number | null,
     school_number: '',
+    first_name: '',
+    last_name: '',
     full_name: '',
+    phone: '',
+    email: '',
+    address: '',
+    photo: null as File | null,
     is_active: true,
 });
 
 function submitCreate() {
     createForm.post('/students', {
-        onSuccess: () => createForm.reset('school_number', 'full_name'),
+        onSuccess: () => {
+            createForm.reset('school_number', 'first_name', 'last_name', 'full_name', 'phone', 'email', 'address', 'photo');
+            if (photoInput.value) photoInput.value.value = '';
+        },
     });
+}
+
+const photoInput = ref<HTMLInputElement | null>(null);
+const editPhotoInput = ref<HTMLInputElement | null>(null);
+
+function onPhotoChange(e: Event) {
+    createForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null;
+}
+
+function onEditPhotoChange(e: Event) {
+    editForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null;
 }
 
 const editing = ref<Student | null>(null);
 const editForm = useForm({
     branch_id: null as number | null,
     school_number: '',
+    first_name: '',
+    last_name: '',
     full_name: '',
+    phone: '',
+    email: '',
+    address: '',
+    photo: null as File | null,
     is_active: true,
 });
 
@@ -96,14 +127,20 @@ function openEdit(student: Student) {
     editing.value = student;
     editForm.branch_id = student.branch.id;
     editForm.school_number = student.school_number;
+    editForm.first_name = student.first_name ?? '';
+    editForm.last_name = student.last_name ?? '';
     editForm.full_name = student.full_name;
+    editForm.phone = student.phone ?? '';
+    editForm.email = student.email ?? '';
+    editForm.address = student.address ?? '';
+    editForm.photo = null;
     editForm.is_active = student.is_active;
     editForm.clearErrors();
 }
 
 function submitEdit() {
     if (!editing.value) return;
-    editForm.put(`/students/${editing.value.id}`, {
+    editForm.transform((data) => ({ ...data, _method: 'put' })).post(`/students/${editing.value.id}`, {
         onSuccess: () => (editing.value = null),
     });
 }
@@ -388,6 +425,94 @@ function confirmDelete() {
                         {{ createForm.errors.full_name }}
                     </p>
                 </div>
+                <div>
+                    <label for="student-first" class="block text-sm font-medium text-gray-700">Ad</label>
+                    <input
+                        id="student-first"
+                        v-model="createForm.first_name"
+                        type="text"
+                        maxlength="50"
+                        placeholder="Boşsa ad soyaddan ayrılır"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.first_name" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.first_name }}
+                    </p>
+                </div>
+                <div>
+                    <label for="student-last" class="block text-sm font-medium text-gray-700">Soyad</label>
+                    <input
+                        id="student-last"
+                        v-model="createForm.last_name"
+                        type="text"
+                        maxlength="50"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.last_name" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.last_name }}
+                    </p>
+                </div>
+                <div>
+                    <label for="student-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                    <input
+                        id="student-phone"
+                        v-model="createForm.phone"
+                        type="text"
+                        maxlength="30"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.phone" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.phone }}
+                    </p>
+                </div>
+                <div>
+                    <label for="student-email" class="block text-sm font-medium text-gray-700">E-posta</label>
+                    <input
+                        id="student-email"
+                        v-model="createForm.email"
+                        type="email"
+                        maxlength="100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.email" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.email }}
+                    </p>
+                </div>
+                <div class="col-span-2">
+                    <label for="student-address" class="block text-sm font-medium text-gray-700">Adres</label>
+                    <input
+                        id="student-address"
+                        v-model="createForm.address"
+                        type="text"
+                        maxlength="500"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.address" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.address }}
+                    </p>
+                </div>
+                <div class="col-span-2">
+                    <span class="block text-sm font-medium text-gray-700">Fotoğraf</span>
+                    <input
+                        id="student-photo"
+                        ref="photoInput"
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        class="hidden"
+                        @change="onPhotoChange"
+                    />
+                    <button
+                        type="button"
+                        class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                        @click="photoInput?.click()"
+                    >
+                        <span class="truncate">{{ createForm.photo ? createForm.photo.name : 'Fotoğraf seçin (opsiyonel)' }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                    </button>
+                    <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.photo }}
+                    </p>
+                </div>
                 <div class="flex items-end">
                     <button
                         type="submit"
@@ -465,6 +590,95 @@ function confirmDelete() {
                         />
                         <p v-if="editForm.errors.full_name" class="mt-1 text-sm text-red-600">
                             {{ editForm.errors.full_name }}
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="edit-student-first" class="block text-sm font-medium text-gray-700">Ad</label>
+                            <input
+                                id="edit-student-first"
+                                v-model="editForm.first_name"
+                                type="text"
+                                maxlength="50"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <p v-if="editForm.errors.first_name" class="mt-1 text-sm text-red-600">
+                                {{ editForm.errors.first_name }}
+                            </p>
+                        </div>
+                        <div>
+                            <label for="edit-student-last" class="block text-sm font-medium text-gray-700">Soyad</label>
+                            <input
+                                id="edit-student-last"
+                                v-model="editForm.last_name"
+                                type="text"
+                                maxlength="50"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <p v-if="editForm.errors.last_name" class="mt-1 text-sm text-red-600">
+                                {{ editForm.errors.last_name }}
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-student-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                        <input
+                            id="edit-student-phone"
+                            v-model="editForm.phone"
+                            type="text"
+                            maxlength="30"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="editForm.errors.phone" class="mt-1 text-sm text-red-600">
+                            {{ editForm.errors.phone }}
+                        </p>
+                    </div>
+                    <div>
+                        <label for="edit-student-email" class="block text-sm font-medium text-gray-700">E-posta</label>
+                        <input
+                            id="edit-student-email"
+                            v-model="editForm.email"
+                            type="email"
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="editForm.errors.email" class="mt-1 text-sm text-red-600">
+                            {{ editForm.errors.email }}
+                        </p>
+                    </div>
+                    <div>
+                        <label for="edit-student-address" class="block text-sm font-medium text-gray-700">Adres</label>
+                        <input
+                            id="edit-student-address"
+                            v-model="editForm.address"
+                            type="text"
+                            maxlength="500"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="editForm.errors.address" class="mt-1 text-sm text-red-600">
+                            {{ editForm.errors.address }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-700">Fotoğraf</span>
+                        <input
+                            id="edit-student-photo"
+                            ref="editPhotoInput"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            class="hidden"
+                            @change="onEditPhotoChange"
+                        />
+                        <button
+                            type="button"
+                            class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                            @click="editPhotoInput?.click()"
+                        >
+                            <span class="truncate">{{ editForm.photo ? editForm.photo.name : 'Değiştirmek için seçin (boş kalırsa korunur)' }}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                        </button>
+                        <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">
+                            {{ editForm.errors.photo }}
                         </p>
                     </div>
                 </form>

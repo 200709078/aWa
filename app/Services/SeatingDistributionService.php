@@ -20,6 +20,10 @@ class SeatingDistributionService
 
     private const MAX_REPAIR_ITERATIONS = 500;
 
+    private const MAX_LONE_ITERATIONS = 300;
+
+    private const MAX_LONE_EVALS = 5000;
+
     public function distribute(ExamWeek $examWeek, ?string $name = null, ?int $createdBy = null): SeatingPlan
     {
         $yearId = (int) $examWeek->academic_year_id;
@@ -60,6 +64,7 @@ class SeatingDistributionService
 
         $ordered = $this->interleaveByBranch($students)->values();
         $studentIds = $ordered->map(fn (Student $s) => $s->id)->all();
+        $studentBranches = $ordered->map(fn (Student $s) => $s->enrollments->first()?->branch_id)->all();
         $studentLevels = $ordered->map(fn (Student $s) => $levels[$s->enrollments->first()?->branch_id] ?? null)->all();
 
         $caps = $rooms->map(fn (Room $room) => $room->seats->count())->all();
@@ -85,7 +90,7 @@ class SeatingDistributionService
                     break 2;
                 }
                 $roomSet = collect($combo)->map(fn (int $i) => $rooms[$i])->values();
-                $result = $this->place($studentLevels, $roomSet);
+                $result = $this->place($studentLevels, $studentBranches, $roomSet);
                 if ($best === null || $result['violations'] < $best['violations']) {
                     $best = $result;
                 }
@@ -551,10 +556,11 @@ class SeatingDistributionService
 
     /**
      * @param  array<int, int|null>  $studentLevels  sıra => seviye
+     * @param  array<int, int|null>  $studentBranches  sıra => şube
      * @param  Collection<int, Room>  $rooms
      * @return array{rooms: Collection<int, Room>, seats: array, violations: int}
      */
-    private function place(array $studentLevels, Collection $rooms): array
+    private function place(array $studentLevels, array $studentBranches, Collection $rooms): array
     {
         $seats = [];
         foreach ($rooms as $room) {
@@ -583,22 +589,35 @@ class SeatingDistributionService
         }
 
         $free = array_keys($seats);
+        $roomBranchCount = [];
         foreach ($studentLevels as $si => $level) {
+            $branch = $studentBranches[$si] ?? null;
             $chosen = null;
+            $bestScore = -1;
             foreach ($free as $key => $i) {
-                if (! $this->conflicts($i, $level, $seats, $neighbors, $studentLevels)) {
+                if ($this->conflicts($i, $level, $seats, $neighbors, $studentLevels)) {
+                    continue;
+                }
+                // Çakışmasız koltuklar arasından şube arkadaşlarının çok olduğu salonu yeğle.
+                $score = $branch === null ? 0 : ($roomBranchCount[$seats[$i]['room_id']][$branch] ?? 0);
+                if ($score > $bestScore) {
+                    $bestScore = $score;
                     $chosen = $key;
-                    break;
                 }
             }
             if ($chosen === null) {
                 $chosen = array_key_first($free);
             }
             $seats[$free[$chosen]]['student'] = $si;
+            if ($branch !== null) {
+                $roomId = $seats[$free[$chosen]]['room_id'];
+                $roomBranchCount[$roomId][$branch] = ($roomBranchCount[$roomId][$branch] ?? 0) + 1;
+            }
             unset($free[$chosen]);
         }
 
         $this->repair($seats, $neighbors, $studentLevels);
+        $this->reduceLones($seats, $neighbors, $studentLevels, $studentBranches);
 
         return ['rooms' => $rooms, 'seats' => $seats, 'violations' => $this->countViolations($seats, $neighbors, $studentLevels)];
     }
@@ -788,6 +807,234 @@ class SeatingDistributionService
         }
 
         return false;
+    }
+
+    /**
+     * Yumuşak tercih: aynı şubeden tek kalan öğrencileri, kesin kuralı
+     * bozmadan şube arkadaşlarının yanına topla. Garanti vermez.
+     *
+     * @param  array  $seats
+     * @param  array<int, array<int>>  $neighbors
+     * @param  array<int, int|null>  $studentLevels
+     * @param  array<int, int|null>  $studentBranches
+     */
+    private function reduceLones(array &$seats, array $neighbors, array $studentLevels, array $studentBranches): void
+    {
+        $baseViolations = $this->countViolations($seats, $neighbors, $studentLevels);
+        $budget = self::MAX_LONE_EVALS;
+
+        for ($iter = 0; $iter < self::MAX_LONE_ITERATIONS; $iter++) {
+            $lones = $this->loneSeats($seats, $studentBranches);
+            if ($lones === []) {
+                return;
+            }
+
+            $baseLones = count($lones);
+            $improved = false;
+
+            foreach ($lones as $a) {
+                if ($budget <= 0) {
+                    return;
+                }
+                if ($this->tryFixLone($a, $seats, $neighbors, $studentLevels, $studentBranches, $baseViolations, $baseLones, $budget)) {
+                    $improved = true;
+                    break;
+                }
+            }
+
+            if (! $improved) {
+                return;
+            }
+        }
+    }
+
+    /**
+     * Salonda şubesinden tek kalan öğrencilerin oturduğu koltuklar.
+     * Şubede tek öğrenci varsa (çözümsüz) yalnız sayılmaz.
+     *
+     * @param  array  $seats
+     * @param  array<int, int|null>  $studentBranches
+     * @return array<int>
+     */
+    private function loneSeats(array $seats, array $studentBranches): array
+    {
+        $roomCounts = [];
+        $totals = [];
+        foreach ($seats as $seat) {
+            $si = $seat['student'];
+            if ($si === null) {
+                continue;
+            }
+            $branch = $studentBranches[$si] ?? null;
+            if ($branch === null) {
+                continue;
+            }
+            $roomCounts[$seat['room_id']][$branch] = ($roomCounts[$seat['room_id']][$branch] ?? 0) + 1;
+            $totals[$branch] = ($totals[$branch] ?? 0) + 1;
+        }
+
+        $out = [];
+        foreach ($seats as $i => $seat) {
+            $si = $seat['student'];
+            if ($si === null) {
+                continue;
+            }
+            $branch = $studentBranches[$si] ?? null;
+            if ($branch === null) {
+                continue;
+            }
+            if (($roomCounts[$seat['room_id']][$branch] ?? 0) === 1 && ($totals[$branch] ?? 0) > 1) {
+                $out[] = $i;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  array  $seats
+     * @param  array<int, array<int>>  $neighbors
+     * @param  array<int, int|null>  $studentLevels
+     * @param  array<int, int|null>  $studentBranches
+     */
+    private function tryFixLone(int $a, array &$seats, array $neighbors, array $studentLevels, array $studentBranches, int $baseViolations, int $baseLones, int &$budget): bool
+    {
+        $occupied = [];
+        $free = [];
+        foreach ($seats as $i => $seat) {
+            if ($seat['student'] === null) {
+                $free[] = $i;
+            } else {
+                $occupied[] = $i;
+            }
+        }
+
+        $branchA = $studentBranches[$seats[$a]['student']] ?? null;
+        $roomA = $seats[$a]['room_id'];
+
+        // Önce: yalnızın yanına aynı şubeden arkadaş getir (çifti bozma).
+        if ($branchA !== null) {
+            // 1) Aynı salondaki boş koltuğa X'li arkadaş taşı.
+            foreach ($free as $f) {
+                if ($seats[$f]['room_id'] !== $roomA) {
+                    continue;
+                }
+                foreach ($occupied as $b) {
+                    if ($seats[$b]['room_id'] === $roomA
+                        || ($studentBranches[$seats[$b]['student']] ?? null) !== $branchA
+                        || $this->roomBranchCount($seats, $studentBranches, $seats[$b]['room_id'], $branchA) === 2) {
+                        continue;
+                    }
+                    if ($budget-- <= 0) {
+                        return false;
+                    }
+                    $moved = $seats;
+                    $moved[$f]['student'] = $moved[$b]['student'];
+                    $moved[$b]['student'] = null;
+
+                    if ($this->countViolations($moved, $neighbors, $studentLevels) <= $baseViolations
+                        && count($this->loneSeats($moved, $studentBranches)) < $baseLones) {
+                        $seats = $moved;
+
+                        return true;
+                    }
+                }
+            }
+
+            // 2) Aynı salondaki başka şubeden biriyle takas et.
+            foreach ($occupied as $c) {
+                if ($seats[$c]['room_id'] !== $roomA
+                    || ($studentBranches[$seats[$c]['student']] ?? null) === $branchA) {
+                    continue;
+                }
+                foreach ($occupied as $b) {
+                    if ($seats[$b]['room_id'] === $roomA
+                        || ($studentBranches[$seats[$b]['student']] ?? null) !== $branchA
+                        || $this->roomBranchCount($seats, $studentBranches, $seats[$b]['room_id'], $branchA) === 2) {
+                        continue;
+                    }
+                    if ($budget-- <= 0) {
+                        return false;
+                    }
+                    $swapped = $seats;
+                    $tmp = $swapped[$b]['student'];
+                    $swapped[$b]['student'] = $swapped[$c]['student'];
+                    $swapped[$c]['student'] = $tmp;
+
+                    if ($this->countViolations($swapped, $neighbors, $studentLevels) <= $baseViolations
+                        && count($this->loneSeats($swapped, $studentBranches)) < $baseLones) {
+                        $seats = $swapped;
+
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Sonra eski davranış: yalnız öğrenciyi başka koltuğa taşıma dene.
+        foreach ($free as $f) {
+            if ($budget-- <= 0) {
+                return false;
+            }
+            $moved = $seats;
+            $moved[$f]['student'] = $moved[$a]['student'];
+            $moved[$a]['student'] = null;
+
+            if ($this->countViolations($moved, $neighbors, $studentLevels) <= $baseViolations
+                && count($this->loneSeats($moved, $studentBranches)) < $baseLones) {
+                $seats = $moved;
+
+                return true;
+            }
+        }
+
+        // Sonra başka salonlardaki öğrencilerle takas dene.
+        $branchA = $studentBranches[$seats[$a]['student']] ?? null;
+        foreach ($occupied as $b) {
+            if ($b === $a || $seats[$b]['room_id'] === $seats[$a]['room_id']) {
+                continue;
+            }
+            if (($studentBranches[$seats[$b]['student']] ?? null) === $branchA) {
+                continue;
+            }
+            if ($budget-- <= 0) {
+                return false;
+            }
+
+            $swapped = $seats;
+            $tmp = $swapped[$a]['student'];
+            $swapped[$a]['student'] = $swapped[$b]['student'];
+            $swapped[$b]['student'] = $tmp;
+
+            if ($this->countViolations($swapped, $neighbors, $studentLevels) <= $baseViolations
+                && count($this->loneSeats($swapped, $studentBranches)) < $baseLones) {
+                $seats = $swapped;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Verilen salondaki verilen şubeden öğrenci sayısı.
+     *
+     * @param  array  $seats
+     * @param  array<int, int|null>  $studentBranches
+     */
+    private function roomBranchCount(array $seats, array $studentBranches, int $roomId, int $branch): int
+    {
+        $count = 0;
+        foreach ($seats as $seat) {
+            if ($seat['room_id'] === $roomId
+                && $seat['student'] !== null
+                && ($studentBranches[$seat['student']] ?? null) === $branch) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     /**

@@ -761,7 +761,7 @@ Bazı salonlar o hafta hariç tutulabilir.
 
 # 11. DAĞITIM MOTORU
 
-**Durum: ⚠️ Kısmen** — kesin kural, minimizasyon, kapasite kontrolü ve kritik testler tamam; "yumuşak tercih" (aynı salonda aynı şubeden en az 2 öğrenci) kuralı yok.
+**Durum: ✅ Yapıldı** — kesin kural, yumuşak tercih (yalnız kalanın yanına şube arkadaşı, çifti bozmadan), minimizasyon, kapasite kontrolü ve kritik testler tamam.
 
 Backend service içinde tutulmalı.
 
@@ -1006,56 +1006,7 @@ Mobilde tüm yönetim fonksiyonları kusursuz olmak zorunda değil, ama bozulmam
 
 ---
 
-# 21. PRODUCTION HAZIRLIK
-
-**Durum: ❌ Yapılmadı** — deploy kullanıcı onayıyla yapılır.
-
-Hedef:
-
-`https://kelebek.madematik.com`
-
-Subdomain document root Laravel `public` klasörünü göstermeli.
-
-Production:
-- `APP_ENV=production`
-- `APP_DEBUG=false`
-- doğru `APP_URL`
-- MySQL production bağlantısı
-- storage link gerekiyorsa belirt
-- optimize komutlarını belirt
-- queue varsa worker gereksinimini belirt
-
-Kullanıcı istemeden deploy yapma.
-
----
-
-# 22. SON KRİTİK KONTROL
-
-**Durum: ❌ Yapılmadı**
-
-Sadece kritik akışları kontrol et:
-
-1. Login
-2. Academic year / branch
-3. Öğrenci import
-4. Fotoğraf import
-5. Salon/koltuk
-6. Exam week
-7. Şube/salon seçimi
-8. Dağıtım
-9. Aynı şube yatay yan yana gelmiyor
-10. Minimum salon
-11. Manuel koltuk değişimi
-12. Salon değiştirme
-13. Fotoğraflı/fotoğrafsız görünüm
-14. Yazdırma
-15. `pnpm build`
-
-Yeni özellik ekleme.
-
----
-
-# 23. GIT / GITHUB
+# 21. GIT / GITHUB
 
 **Durum: ✅ Yapıldı**
 
