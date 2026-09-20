@@ -36,9 +36,14 @@ const createForm = useForm({
 
 function submitCreate() {
     createForm.post('/users', {
-        onSuccess: () => createForm.reset('name', 'email', 'password', 'school_ids'),
+        onSuccess: () => {
+            creating.value = false;
+            createForm.reset('name', 'email', 'password', 'school_ids');
+        },
     });
 }
+
+const creating = ref(false);
 
 const editing = ref<AppUser | null>(null);
 const editForm = useForm({
@@ -82,8 +87,15 @@ function confirmDelete() {
 
 <template>
     <AppLayout title="Kullanıcılar">
-        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+        <div class="flex w-full max-w-[80%] flex-wrap items-center justify-between gap-3 rounded-lg bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">Kullanıcılar</h1>
+            <button
+                type="button"
+                class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+                @click="creating = true"
+            >
+                Kullanıcı Ekle
+            </button>
         </div>
 
         <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
@@ -148,85 +160,97 @@ function confirmDelete() {
             {{ $page.props.errors.user }}
         </p>
 
-        <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-gray-900">Yeni Kullanıcı Ekle</h2>
-
-            <form class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4" @submit.prevent="submitCreate">
-                <div>
-                    <label for="user-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
-                    <input
-                        id="user-name"
-                        v-model="createForm.name"
-                        type="text"
-                        required
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
-                </div>
-                <div>
-                    <label for="user-email" class="block text-sm font-medium text-gray-700">E-posta</label>
-                    <input
-                        id="user-email"
-                        v-model="createForm.email"
-                        type="email"
-                        required
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.email" class="mt-1 text-sm text-red-600">{{ createForm.errors.email }}</p>
-                </div>
-                <div>
-                    <label for="user-password" class="block text-sm font-medium text-gray-700">Şifre</label>
-                    <input
-                        id="user-password"
-                        v-model="createForm.password"
-                        type="password"
-                        required
-                        minlength="8"
-                        maxlength="100"
-                        autocomplete="new-password"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.password" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.password }}
-                    </p>
-                </div>
-                <div>
-                    <label for="user-role" class="block text-sm font-medium text-gray-700">Rol</label>
-                    <div class="mt-1">
-                        <DropdownSelect
-                            id="user-role"
-                            v-model="createForm.role"
-                            :options="[{ value: 'school_admin', label: 'Okul Yöneticisi' }, { value: 'super_admin', label: 'Süper Admin' }]"
-                            aria-label="Rol"
+        <div v-if="creating" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
+                <form class="space-y-4" @submit.prevent="submitCreate">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-lg font-semibold text-gray-900">Yeni Kullanıcı Ekle</h2>
+                        <div class="flex gap-2">
+                            <button
+                                type="submit"
+                                title="Kaydet"
+                                aria-label="Kaydet"
+                                :disabled="createForm.processing"
+                                class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            </button>
+                            <button
+                                type="button"
+                                title="Vazgeç"
+                                aria-label="Vazgeç"
+                                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                                @click="creating = false"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="user-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                        <input
+                            id="user-name"
+                            v-model="createForm.name"
+                            type="text"
+                            required
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
+                        <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
                     </div>
-                </div>
-                <div v-if="createForm.role === 'school_admin'" class="col-span-2 md:col-span-4">
-                    <span class="block text-sm font-medium text-gray-700">Okullar</span>
-                    <div class="mt-1 flex flex-wrap gap-3">
-                        <label v-for="school in schools" :key="school.id" class="flex items-center gap-1 text-sm text-gray-700">
-                            <input v-model="createForm.school_ids" type="checkbox" :value="school.id" class="rounded border-gray-300" />
-                            {{ school.name }}
-                        </label>
+                    <div>
+                        <label for="user-email" class="block text-sm font-medium text-gray-700">E-posta</label>
+                        <input
+                            id="user-email"
+                            v-model="createForm.email"
+                            type="email"
+                            required
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="createForm.errors.email" class="mt-1 text-sm text-red-600">{{ createForm.errors.email }}</p>
                     </div>
-                    <p v-if="createForm.errors.school_ids" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.school_ids }}
-                    </p>
-                </div>
-                <div class="flex items-end">
-                    <button
-                        type="submit"
-                        title="Ekle"
-                        aria-label="Ekle"
-                        :disabled="createForm.processing"
-                        class="inline-flex h-9 w-full items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    </button>
-                </div>
-            </form>
+                    <div>
+                        <label for="user-password" class="block text-sm font-medium text-gray-700">Şifre</label>
+                        <input
+                            id="user-password"
+                            v-model="createForm.password"
+                            type="password"
+                            required
+                            minlength="8"
+                            maxlength="100"
+                            autocomplete="new-password"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="createForm.errors.password" class="mt-1 text-sm text-red-600">
+                            {{ createForm.errors.password }}
+                        </p>
+                    </div>
+                    <div>
+                        <label for="user-role" class="block text-sm font-medium text-gray-700">Rol</label>
+                        <div class="mt-1">
+                            <DropdownSelect
+                                id="user-role"
+                                v-model="createForm.role"
+                                :options="[{ value: 'school_admin', label: 'Okul Yöneticisi' }, { value: 'super_admin', label: 'Süper Admin' }]"
+                                aria-label="Rol"
+                            />
+                        </div>
+                    </div>
+                    <div v-if="createForm.role === 'school_admin'">
+                        <span class="block text-sm font-medium text-gray-700">Okullar</span>
+                        <div class="mt-1 flex flex-wrap gap-3">
+                            <label v-for="school in schools" :key="school.id" class="flex items-center gap-1 text-sm text-gray-700">
+                                <input v-model="createForm.school_ids" type="checkbox" :value="school.id" class="rounded border-gray-300" />
+                                {{ school.name }}
+                            </label>
+                        </div>
+                        <p v-if="createForm.errors.school_ids" class="mt-1 text-sm text-red-600">
+                            {{ createForm.errors.school_ids }}
+                        </p>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

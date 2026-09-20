@@ -96,6 +96,7 @@ const editPhotoInput = ref<HTMLInputElement | null>(null);
 function submitCreate() {
     createForm.post('/mezunlar', {
         onSuccess: () => {
+            creating.value = false;
             createForm.reset(
                 'graduation_number',
                 'first_name',
@@ -117,6 +118,7 @@ function submitCreate() {
 }
 
 const editing = ref<Graduate | null>(null);
+const creating = ref(false);
 const editForm = useForm({
     graduation_year: 0,
     graduation_number: '',
@@ -225,6 +227,13 @@ const downloadUrl = computed(() => {
                 >
                     VCF İndir
                 </a>
+                <button
+                    type="button"
+                    class="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+                    @click="creating = true"
+                >
+                    Mezun Ekle
+                </button>
             </div>
 
             <div class="mt-4 overflow-x-auto">
@@ -322,10 +331,32 @@ const downloadUrl = computed(() => {
             </div>
         </div>
 
-        <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-gray-900">Yeni Mezun Ekle</h2>
-
-            <form class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4" @submit.prevent="submitCreate">
+        <div v-if="creating" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow">
+                <form class="space-y-4" @submit.prevent="submitCreate">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-lg font-semibold text-gray-900">Yeni Mezun Ekle</h2>
+                        <div class="flex gap-2">
+                            <button
+                                type="submit"
+                                title="Kaydet"
+                                aria-label="Kaydet"
+                                :disabled="createForm.processing"
+                                class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            </button>
+                            <button
+                                type="button"
+                                title="Vazgeç"
+                                aria-label="Vazgeç"
+                                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                                @click="creating = false"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                    </div>
                 <div>
                     <label for="graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
                     <input
@@ -491,18 +522,8 @@ const downloadUrl = computed(() => {
                         {{ createForm.errors.photo }}
                     </p>
                 </div>
-                <div class="col-span-2 flex items-end">
-                    <button
-                        type="submit"
-                        title="Ekle"
-                        aria-label="Ekle"
-                        :disabled="createForm.processing"
-                        class="inline-flex h-9 w-full items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
 
         <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
