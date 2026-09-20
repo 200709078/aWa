@@ -31,9 +31,14 @@ const createForm = useForm({
 
 function submitCreate() {
     createForm.post('/schools', {
-        onSuccess: () => createForm.reset('name', 'kurum_kodu', 'mail', 'telefon', 'mudur', 'muduryrd'),
+        onSuccess: () => {
+            creating.value = false;
+            createForm.reset('name', 'kurum_kodu', 'mail', 'telefon', 'mudur', 'muduryrd');
+        },
     });
 }
+
+const creating = ref(false);
 
 const editing = ref<School | null>(null);
 const editForm = useForm({
@@ -85,8 +90,15 @@ function confirmDelete() {
 
 <template>
     <AppLayout title="Okullar">
-        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+        <div class="flex w-full max-w-[80%] flex-wrap items-center justify-between gap-3 rounded-lg bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">Okullar</h1>
+            <button
+                type="button"
+                class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+                @click="creating = true"
+            >
+                Okul Ekle
+            </button>
         </div>
 
         <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
@@ -161,89 +173,105 @@ function confirmDelete() {
             {{ $page.props.errors.school }}
         </p>
 
-        <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-gray-900">Yeni Okul Ekle</h2>
-
-            <form class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4" @submit.prevent="submitCreate">
-                <div class="col-span-2">
-                    <label for="school-name" class="block text-sm font-medium text-gray-700">Okul Adı</label>
-                    <input
-                        id="school-name"
-                        v-model="createForm.name"
-                        type="text"
-                        required
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
-                </div>
-                <div>
-                    <label for="school-code" class="block text-sm font-medium text-gray-700">Kurum Kodu</label>
-                    <input
-                        id="school-code"
-                        v-model="createForm.kurum_kodu"
-                        type="text"
-                        required
-                        maxlength="20"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.kurum_kodu" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.kurum_kodu }}
-                    </p>
-                </div>
-                <div>
-                    <label for="school-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
-                    <input
-                        id="school-phone"
-                        v-model="createForm.telefon"
-                        type="text"
-                        maxlength="30"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div class="col-span-2">
-                    <label for="school-mail" class="block text-sm font-medium text-gray-700">E-posta</label>
-                    <input
-                        id="school-mail"
-                        v-model="createForm.mail"
-                        type="email"
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.mail" class="mt-1 text-sm text-red-600">{{ createForm.errors.mail }}</p>
-                </div>
-                <div>
-                    <label for="school-manager" class="block text-sm font-medium text-gray-700">Müdür</label>
-                    <input
-                        id="school-manager"
-                        v-model="createForm.mudur"
-                        type="text"
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div>
-                    <label for="school-vice" class="block text-sm font-medium text-gray-700">Müdür Yardımcısı</label>
-                    <input
-                        id="school-vice"
-                        v-model="createForm.muduryrd"
-                        type="text"
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div class="flex items-end">
-                    <button
-                        type="submit"
-                        title="Ekle"
-                        aria-label="Ekle"
-                        :disabled="createForm.processing"
-                        class="inline-flex h-9 w-full items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    </button>
-                </div>
-            </form>
+        <div v-if="creating" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
+                <form class="space-y-4" @submit.prevent="submitCreate">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-lg font-semibold text-gray-900">Yeni Okul Ekle</h2>
+                        <div class="flex gap-2">
+                            <button
+                                type="submit"
+                                title="Kaydet"
+                                aria-label="Kaydet"
+                                :disabled="createForm.processing"
+                                class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            </button>
+                            <button
+                                type="button"
+                                title="Vazgeç"
+                                aria-label="Vazgeç"
+                                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                                @click="creating = false"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="school-name" class="block text-sm font-medium text-gray-700">Okul Adı</label>
+                        <input
+                            id="school-name"
+                            v-model="createForm.name"
+                            type="text"
+                            required
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="school-code" class="block text-sm font-medium text-gray-700">Kurum Kodu</label>
+                            <input
+                                id="school-code"
+                                v-model="createForm.kurum_kodu"
+                                type="text"
+                                required
+                                maxlength="20"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <p v-if="createForm.errors.kurum_kodu" class="mt-1 text-sm text-red-600">
+                                {{ createForm.errors.kurum_kodu }}
+                            </p>
+                        </div>
+                        <div>
+                            <label for="school-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                            <input
+                                id="school-phone"
+                                v-model="createForm.telefon"
+                                type="text"
+                                maxlength="30"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label for="school-mail" class="block text-sm font-medium text-gray-700">E-posta</label>
+                        <input
+                            id="school-mail"
+                            v-model="createForm.mail"
+                            type="email"
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="createForm.errors.mail" class="mt-1 text-sm text-red-600">{{ createForm.errors.mail }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="school-manager" class="block text-sm font-medium text-gray-700">Müdür</label>
+                            <input
+                                id="school-manager"
+                                v-model="createForm.mudur"
+                                type="text"
+                                maxlength="100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label for="school-vice" class="block text-sm font-medium text-gray-700">Müdür Yardımcısı</label>
+                            <input
+                                id="school-vice"
+                                v-model="createForm.muduryrd"
+                                type="text"
+                                maxlength="100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

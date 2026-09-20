@@ -17,8 +17,15 @@ defineProps<{ years: Year[] }>();
 const createForm = useForm({ name: '' });
 
 function submitCreate() {
-    createForm.post('/academic-years', { onSuccess: () => createForm.reset() });
+    createForm.post('/academic-years', {
+        onSuccess: () => {
+            creating.value = false;
+            createForm.reset();
+        },
+    });
 }
+
+const creating = ref(false);
 
 const editing = ref<Year | null>(null);
 const editForm = useForm({ name: '' });
@@ -61,8 +68,15 @@ function confirmDelete() {
 
 <template>
     <AppLayout title="Akademik Yıllar">
-        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+        <div class="flex w-full max-w-[80%] flex-wrap items-center justify-between gap-3 rounded-lg bg-white p-6 shadow-sm">
             <h1 class="text-2xl font-bold text-gray-900">Akademik Yıllar</h1>
+            <button
+                type="button"
+                class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+                @click="creating = true"
+            >
+                Akademik Yıl Ekle
+            </button>
         </div>
 
         <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
@@ -153,33 +167,47 @@ function confirmDelete() {
             {{ $page.props.errors.year }}
         </p>
 
-        <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-semibold text-gray-900">Yeni Akademik Yıl Ekle</h2>
-
-            <form class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" @submit.prevent="submitCreate">
-                <div class="flex-1">
-                    <label for="year-name" class="block text-sm font-medium text-gray-700">Yıl Adı (örn. 2026-2027)</label>
-                    <input
-                        id="year-name"
-                        v-model="createForm.name"
-                        type="text"
-                        required
-                        maxlength="20"
-                        placeholder="2026-2027"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
-                </div>
-                <button
-                    type="submit"
-                    title="Ekle"
-                    aria-label="Ekle"
-                    :disabled="createForm.processing"
-                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                </button>
-            </form>
+        <div v-if="creating" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
+                <form class="space-y-4" @submit.prevent="submitCreate">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-lg font-semibold text-gray-900">Yeni Akademik Yıl Ekle</h2>
+                        <div class="flex gap-2">
+                            <button
+                                type="submit"
+                                title="Kaydet"
+                                aria-label="Kaydet"
+                                :disabled="createForm.processing"
+                                class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            </button>
+                            <button
+                                type="button"
+                                title="Vazgeç"
+                                aria-label="Vazgeç"
+                                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                                @click="creating = false"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="year-name" class="block text-sm font-medium text-gray-700">Yıl Adı (örn. 2026-2027)</label>
+                        <input
+                            id="year-name"
+                            v-model="createForm.name"
+                            type="text"
+                            required
+                            maxlength="20"
+                            placeholder="2026-2027"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
