@@ -119,6 +119,17 @@ function submitCreate() {
 
 const editing = ref<Graduate | null>(null);
 const creating = ref(false);
+
+const createPhotoSrc = computed(() => {
+    if (createForm.photo) return URL.createObjectURL(createForm.photo);
+    return null;
+});
+
+const editPhotoSrc = computed(() => {
+    if (editForm.photo) return URL.createObjectURL(editForm.photo);
+    if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}`;
+    return null;
+});
 const editForm = useForm({
     graduation_year: 0,
     graduation_number: '',
@@ -358,36 +369,62 @@ const downloadUrl = computed(() => {
                         </div>
                     </div>
                 <div>
-                    <label for="graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
-                    <input
-                        id="graduate-year"
-                        v-model.number="createForm.graduation_year"
-                        type="number"
-                        required
-                        min="1900"
-                        max="2100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.graduation_year" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.graduation_year }}
-                    </p>
-                </div>
-                <div>
-                    <label for="graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
-                    <input
-                        id="graduate-number"
-                        v-model="createForm.graduation_number"
-                        type="text"
-                        required
-                        maxlength="20"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.graduation_number }}
-                    </p>
-                </div>
-                <div class="col-span-2">
-                    <label for="graduate-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                    <div class="flex gap-3">
+                        <button
+                            type="button"
+                            title="Fotoğraf seç"
+                            aria-label="Fotoğraf seç"
+                            class="relative block h-[212px] w-[182px] shrink-0 overflow-hidden rounded-md border border-gray-300 bg-gray-50 hover:ring-2 hover:ring-indigo-500"
+                            @click="photoInput?.click()"
+                        >
+                            <StudentAvatar
+                                :photo-url="createPhotoSrc"
+                                :full-name="createForm.full_name"
+                                img-class="h-full w-full object-cover"
+                                placeholder-class="h-full w-full"
+                                circle-class="w-10 text-sm"
+                            />
+                        </button>
+                        <input
+                            id="graduate-photo"
+                            ref="photoInput"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            class="hidden"
+                            @change="(e) => (createForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null)"
+                        />
+                        <div class="min-w-0 flex-1 space-y-4">
+                            <div>
+                                <label for="graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
+                                <input
+                                    id="graduate-number"
+                                    v-model="createForm.graduation_number"
+                                    type="text"
+                                    required
+                                    maxlength="20"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="createForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
+                                    {{ createForm.errors.graduation_number }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
+                                <input
+                                    id="graduate-year"
+                                    v-model.number="createForm.graduation_year"
+                                    type="number"
+                                    required
+                                    min="1900"
+                                    max="2100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="createForm.errors.graduation_year" class="mt-1 text-sm text-red-600">
+                                    {{ createForm.errors.graduation_year }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="graduate-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
                     <input
                         id="graduate-name"
                         v-model="createForm.full_name"
@@ -398,6 +435,12 @@ const downloadUrl = computed(() => {
                     />
                     <p v-if="createForm.errors.full_name" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.full_name }}
+                    </p>
+                </div>
+                        </div>
+                    </div>
+                    <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.photo }}
                     </p>
                 </div>
                 <div>
@@ -500,28 +543,6 @@ const downloadUrl = computed(() => {
                         class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                 </div>
-                <div class="col-span-2">
-                    <span class="block text-sm font-medium text-gray-700">Fotoğraf</span>
-                    <input
-                        id="graduate-photo"
-                        ref="photoInput"
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.webp"
-                        class="hidden"
-                        @change="(e) => (createForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null)"
-                    />
-                    <button
-                        type="button"
-                        class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
-                        @click="photoInput?.click()"
-                    >
-                        <span class="truncate">{{ createForm.photo ? createForm.photo.name : 'Fotoğraf seçin (opsiyonel)' }}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-                    </button>
-                    <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.photo }}
-                    </p>
-                </div>
                 </form>
             </div>
         </div>
@@ -552,45 +573,73 @@ const downloadUrl = computed(() => {
                             </button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="edit-graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
-                            <input
-                                id="edit-graduate-year"
-                                v-model.number="editForm.graduation_year"
-                                type="number"
-                                required
-                                min="1900"
-                                max="2100"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    <div class="flex gap-3">
+                        <button
+                            type="button"
+                            title="Fotoğraf seç"
+                            aria-label="Fotoğraf seç"
+                            class="relative block h-[212px] w-[182px] shrink-0 overflow-hidden rounded-md border border-gray-300 bg-gray-50 hover:ring-2 hover:ring-indigo-500"
+                            @click="editPhotoInput?.click()"
+                        >
+                            <StudentAvatar
+                                :photo-url="editPhotoSrc"
+                                :full-name="editForm.full_name"
+                                img-class="h-full w-full object-cover"
+                                placeholder-class="h-full w-full"
+                                circle-class="w-10 text-sm"
                             />
-                        </div>
-                        <div>
-                            <label for="edit-graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
-                            <input
-                                id="edit-graduate-number"
-                                v-model="editForm.graduation_number"
-                                type="text"
-                                required
-                                maxlength="20"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="editForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
-                                {{ editForm.errors.graduation_number }}
-                            </p>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="edit-graduate-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                        </button>
                         <input
-                            id="edit-graduate-name"
-                            v-model="editForm.full_name"
-                            type="text"
-                            required
-                            maxlength="100"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            id="edit-graduate-photo"
+                            ref="editPhotoInput"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            class="hidden"
+                            @change="(e) => (editForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null)"
                         />
+                        <div class="min-w-0 flex-1 space-y-4">
+                            <div>
+                                <label for="edit-graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
+                                <input
+                                    id="edit-graduate-number"
+                                    v-model="editForm.graduation_number"
+                                    type="text"
+                                    required
+                                    maxlength="20"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="editForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
+                                    {{ editForm.errors.graduation_number }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="edit-graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
+                                <input
+                                    id="edit-graduate-year"
+                                    v-model.number="editForm.graduation_year"
+                                    type="number"
+                                    required
+                                    min="1900"
+                                    max="2100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div>
+                                <label for="edit-graduate-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                                <input
+                                    id="edit-graduate-name"
+                                    v-model="editForm.full_name"
+                                    type="text"
+                                    required
+                                    maxlength="100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                        </div>
                     </div>
+                    <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">
+                        {{ editForm.errors.photo }}
+                    </p>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="edit-graduate-first" class="block text-sm font-medium text-gray-700">Ad</label>
@@ -698,25 +747,6 @@ const downloadUrl = computed(() => {
                             maxlength="2000"
                             class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
-                    </div>
-                    <div>
-                        <span class="block text-sm font-medium text-gray-700">Fotoğraf</span>
-                        <input
-                            id="edit-graduate-photo"
-                            ref="editPhotoInput"
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp"
-                            class="hidden"
-                            @change="(e) => (editForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null)"
-                        />
-                        <button
-                            type="button"
-                            class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
-                            @click="editPhotoInput?.click()"
-                        >
-                            <span class="truncate">{{ editForm.photo ? editForm.photo.name : 'Değiştirmek için seçin (boş kalırsa korunur)' }}</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-                        </button>
                     </div>
                 </form>
             </div>

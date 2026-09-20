@@ -129,6 +129,17 @@ function onEditPhotoChange(e: Event) {
 }
 
 const editing = ref<Student | null>(null);
+
+const editPhotoSrc = computed(() => {
+    if (editForm.photo) return URL.createObjectURL(editForm.photo);
+    if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}`;
+    return null;
+});
+
+const createPhotoSrc = computed(() => {
+    if (createForm.photo) return URL.createObjectURL(createForm.photo);
+    return null;
+});
 const editForm = useForm({
     branch_id: null as number | null,
     school_number: '',
@@ -398,7 +409,7 @@ function confirmDelete() {
         </div>
 
         <div v-if="creating" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow">
                 <form class="space-y-4" @submit.prevent="submitCreate">
                     <div class="flex items-center justify-between gap-2">
                         <h2 class="text-lg font-semibold text-gray-900">Yeni Öğrenci Ekle</h2>
@@ -423,36 +434,61 @@ function confirmDelete() {
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <label for="student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                        <div class="mt-1">
-                            <DropdownSelect
-                                id="student-branch"
-                                v-model="createForm.branch_id"
-                                :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
-                                aria-label="Sınıf"
+                    <div class="flex gap-3">
+                        <button
+                            type="button"
+                            title="Fotoğraf seç"
+                            aria-label="Fotoğraf seç"
+                            class="relative block h-[212px] w-[182px] shrink-0 overflow-hidden rounded-md border border-gray-300 bg-gray-50 hover:ring-2 hover:ring-indigo-500"
+                            @click="photoInput?.click()"
+                        >
+                            <StudentAvatar
+                                :photo-url="createPhotoSrc"
+                                :full-name="createForm.full_name"
+                                img-class="h-full w-full object-cover"
+                                placeholder-class="h-full w-full"
+                                circle-class="w-10 text-sm"
                             />
-                        </div>
-                        <p v-if="createForm.errors.branch_id" class="mt-1 text-sm text-red-600">
-                            {{ createForm.errors.branch_id }}
-                        </p>
-                    </div>
-                    <div>
-                        <label for="student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
+                        </button>
                         <input
-                            id="student-number"
-                            v-model="createForm.school_number"
-                            type="text"
-                            required
-                            maxlength="20"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            id="student-photo"
+                            ref="photoInput"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            class="hidden"
+                            @change="onPhotoChange"
                         />
-                        <p v-if="createForm.errors.school_number" class="mt-1 text-sm text-red-600">
-                            {{ createForm.errors.school_number }}
-                        </p>
-                    </div>
-                    <div>
-                        <label for="student-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                        <div class="min-w-0 flex-1 space-y-4">
+                            <div>
+                                <label for="student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
+                                <input
+                                    id="student-number"
+                                    v-model="createForm.school_number"
+                                    type="text"
+                                    required
+                                    maxlength="20"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="createForm.errors.school_number" class="mt-1 text-sm text-red-600">
+                                    {{ createForm.errors.school_number }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
+                                <div class="mt-1">
+                                    <DropdownSelect
+                                        id="student-branch"
+                                        v-model="createForm.branch_id"
+                                        :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
+                                        aria-label="Sınıf"
+                                    />
+                                </div>
+                                <p v-if="createForm.errors.branch_id" class="mt-1 text-sm text-red-600">
+                                    {{ createForm.errors.branch_id }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="student-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
                         <input
                             id="student-name"
                             v-model="createForm.full_name"
@@ -465,6 +501,11 @@ function confirmDelete() {
                             {{ createForm.errors.full_name }}
                         </p>
                     </div>
+                        </div>
+                    </div>
+                    <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.photo }}
+                    </p>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="student-first" class="block text-sm font-medium text-gray-700">Ad</label>
@@ -535,34 +576,12 @@ function confirmDelete() {
                             {{ createForm.errors.address }}
                         </p>
                     </div>
-                    <div>
-                        <span class="block text-sm font-medium text-gray-700">Fotoğraf</span>
-                        <input
-                            id="student-photo"
-                            ref="photoInput"
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp"
-                            class="hidden"
-                            @change="onPhotoChange"
-                        />
-                        <button
-                            type="button"
-                            class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
-                            @click="photoInput?.click()"
-                        >
-                            <span class="truncate">{{ createForm.photo ? createForm.photo.name : 'Fotoğraf seçin (opsiyonel)' }}</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-                        </button>
-                        <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
-                            {{ createForm.errors.photo }}
-                        </p>
-                    </div>
                 </form>
             </div>
         </div>
 
         <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div class="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-lg bg-white p-6 shadow">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow">
                 <form class="space-y-4" @submit.prevent="submitEdit">
                     <div class="flex items-center justify-between gap-2">
                         <h2 class="text-lg font-semibold text-gray-900">Öğrenciyi Düzenle</h2>
@@ -587,45 +606,75 @@ function confirmDelete() {
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <label for="edit-student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                        <div class="mt-1">
-                            <DropdownSelect
-                                id="edit-student-branch"
-                                v-model="editForm.branch_id"
-                                :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
-                                aria-label="Sınıf"
+                    <div class="flex gap-3">
+                        <button
+                            type="button"
+                            title="Fotoğraf seç"
+                            aria-label="Fotoğraf seç"
+                            class="relative block h-[212px] w-[182px] shrink-0 overflow-hidden rounded-md border border-gray-300 bg-gray-50 hover:ring-2 hover:ring-indigo-500"
+                            @click="editPhotoInput?.click()"
+                        >
+                            <StudentAvatar
+                                :photo-url="editPhotoSrc"
+                                :full-name="editForm.full_name"
+                                img-class="h-full w-full object-cover"
+                                placeholder-class="h-full w-full"
+                                circle-class="w-10 text-sm"
                             />
+                        </button>
+                        <input
+                            id="edit-student-photo"
+                            ref="editPhotoInput"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            class="hidden"
+                            @change="onEditPhotoChange"
+                        />
+                        <div class="min-w-0 flex-1 space-y-4">
+                            <div>
+                                <label for="edit-student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
+                                <input
+                                    id="edit-student-number"
+                                    v-model="editForm.school_number"
+                                    type="text"
+                                    required
+                                    maxlength="20"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="editForm.errors.school_number" class="mt-1 text-sm text-red-600">
+                                    {{ editForm.errors.school_number }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="edit-student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
+                                <div class="mt-1">
+                                    <DropdownSelect
+                                        id="edit-student-branch"
+                                        v-model="editForm.branch_id"
+                                        :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
+                                        aria-label="Sınıf"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label for="edit-student-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                                <input
+                                    id="edit-student-name"
+                                    v-model="editForm.full_name"
+                                    type="text"
+                                    required
+                                    maxlength="100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="editForm.errors.full_name" class="mt-1 text-sm text-red-600">
+                                    {{ editForm.errors.full_name }}
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <label for="edit-student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
-                        <input
-                            id="edit-student-number"
-                            v-model="editForm.school_number"
-                            type="text"
-                            required
-                            maxlength="20"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <p v-if="editForm.errors.school_number" class="mt-1 text-sm text-red-600">
-                            {{ editForm.errors.school_number }}
-                        </p>
-                    </div>
-                    <div>
-                        <label for="edit-student-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
-                        <input
-                            id="edit-student-name"
-                            v-model="editForm.full_name"
-                            type="text"
-                            required
-                            maxlength="100"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <p v-if="editForm.errors.full_name" class="mt-1 text-sm text-red-600">
-                            {{ editForm.errors.full_name }}
-                        </p>
-                    </div>
+                    <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">
+                        {{ editForm.errors.photo }}
+                    </p>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="edit-student-first" class="block text-sm font-medium text-gray-700">Ad</label>
@@ -691,28 +740,6 @@ function confirmDelete() {
                         />
                         <p v-if="editForm.errors.address" class="mt-1 text-sm text-red-600">
                             {{ editForm.errors.address }}
-                        </p>
-                    </div>
-                    <div>
-                        <span class="block text-sm font-medium text-gray-700">Fotoğraf</span>
-                        <input
-                            id="edit-student-photo"
-                            ref="editPhotoInput"
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp"
-                            class="hidden"
-                            @change="onEditPhotoChange"
-                        />
-                        <button
-                            type="button"
-                            class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
-                            @click="editPhotoInput?.click()"
-                        >
-                            <span class="truncate">{{ editForm.photo ? editForm.photo.name : 'Değiştirmek için seçin (boş kalırsa korunur)' }}</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-                        </button>
-                        <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">
-                            {{ editForm.errors.photo }}
                         </p>
                     </div>
                 </form>
