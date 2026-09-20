@@ -251,8 +251,15 @@ class SeatingDistributionService
      */
     private function loadPlanStudents(SeatingPlan $plan): void
     {
+        // Controller'lar examWeek'i bazen eksik sütunlarla (id,name) önyükler;
+        // academic_year_id yoksa enrollment eşleşmesi yıl=0'a düşer ve tüm
+        // numara/şube/seviye alanları null gelir. O yüzden tam yüklemeyi garantile.
+        if (! $plan->relationLoaded('examWeek')
+            || $plan->examWeek === null
+            || ! array_key_exists('academic_year_id', $plan->examWeek->getAttributes())) {
+            $plan->load('examWeek');
+        }
         $plan->loadMissing([
-            'examWeek:id,academic_year_id',
             'assignments.seat',
             'assignments.student.person:id,full_name,photo_path',
             'assignments.student.enrollments.branch:id,name,grade_level',

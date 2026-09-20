@@ -68,6 +68,9 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/rehber-aktarma/excel', [RehberAktarmaController::class, 'excel'])->name('rehber.excel');
 
     Route::get('/mezunlar', [GraduateController::class, 'index'])->name('mezunlar.index');
+    Route::post('/mezunlar', [GraduateController::class, 'store'])->name('mezunlar.store');
+    Route::put('/mezunlar/{graduate}', [GraduateController::class, 'update'])->name('mezunlar.update');
+    Route::delete('/mezunlar/{graduate}', [GraduateController::class, 'destroy'])->name('mezunlar.destroy');
     Route::get('/mezunlar/vcf', [GraduateController::class, 'vcf'])->name('mezunlar.vcf');
 
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');

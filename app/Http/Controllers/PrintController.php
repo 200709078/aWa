@@ -41,7 +41,10 @@ class PrintController extends Controller
             ->map(fn ($items) => [
                 'branch' => $items->first()->student->enrollmentForYear($yearId)?->branch?->name ?? '—',
                 'students' => $items
-                    ->sortBy(fn ($a) => $a->student->enrollmentForYear($yearId)?->school_number)
+                    ->sort(fn ($a, $b) => strnatcmp(
+                        $a->student->enrollmentForYear($yearId)?->school_number ?? '',
+                        $b->student->enrollmentForYear($yearId)?->school_number ?? ''
+                    ))
                     ->values()
                     ->map(fn ($a) => [
                         'school_number' => $a->student->enrollmentForYear($yearId)?->school_number,
@@ -72,7 +75,8 @@ class PrintController extends Controller
             'room' => $room['room'],
             'students' => collect($room['seats'])
                 ->filter(fn ($seat) => $seat['student'] !== null)
-                ->sortBy([['row', 'asc'], ['column', 'asc']])
+                ->sort(fn ($a, $b) => strnatcmp($a['student']['branch'] ?? '', $b['student']['branch'] ?? '')
+                    ?: strnatcmp($a['student']['school_number'] ?? '', $b['student']['school_number'] ?? ''))
                 ->values()
                 ->map(fn ($seat) => [
                     'seat' => $seat['label'] ?: $seat['row'].'-'.$seat['column'],

@@ -71,6 +71,60 @@ class MezunlarTest extends TestCase
         // Arama tüm yıllarda düz liste
         $response = $this->actingAs($user)->get('/mezunlar?q=Mezun 3');
         $response->assertInertia(fn ($page) => $page->where('graduates.total', 4));
+
+        $response = $this->actingAs($user)->get('/mezunlar?q=32');
+        $response->assertInertia(fn ($page) => $page
+            ->where('graduates.total', 1)
+            ->where('graduates.data.0.full_name', 'Mezun 32')
+        );
+    }
+
+    public function test_mezun_ekleme_guncelleme_silme(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post('/mezunlar', [
+            'graduation_year' => 2024,
+            'graduation_number' => '10',
+            'full_name' => 'Yeni Mezun',
+            'phone' => '05320000000',
+            'email' => 'yeni@example.com',
+            'institution_name' => 'Hitit Üniversitesi',
+            'department' => 'Tıp',
+            'company' => 'Hastane',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('people', ['full_name' => 'Yeni Mezun', 'first_name' => 'Yeni', 'last_name' => 'Mezun']);
+        $this->assertDatabaseHas('graduates', ['graduation_year' => 2024, 'graduation_number' => '10']);
+        $this->assertDatabaseHas('person_educations', ['institution_name' => 'Hitit Üniversitesi']);
+        $this->assertDatabaseHas('person_employments', ['company_name' => 'Hastane']);
+
+        $graduate = Graduate::where('graduation_number', '10')->first();
+
+        $this->actingAs($user)->post('/mezunlar', [
+            'graduation_year' => 2024,
+            'graduation_number' => '10',
+            'full_name' => 'Başka Biri',
+        ])->assertSessionHasErrors('graduation_number');
+
+        $this->actingAs($user)->put("/mezunlar/{$graduate->id}", [
+            'graduation_year' => 2024,
+            'graduation_number' => '11',
+            'full_name' => 'Yeni Mezun Güncel',
+            'phone' => '',
+            'company' => '',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('graduates', ['id' => $graduate->id, 'graduation_number' => '11']);
+        $this->assertDatabaseHas('people', ['id' => $graduate->person_id, 'phone' => null]);
+        // Şirket temizlenince iş kaydı boş şirketle kalmamalı, mevcut kayıt korunur
+        $this->assertDatabaseHas('person_employments', ['company_name' => 'Hastane']);
+
+        $personId = $graduate->person_id;
+        $this->actingAs($user)->delete("/mezunlar/{$graduate->id}")->assertRedirect();
+        $this->assertDatabaseMissing('graduates', ['id' => $graduate->id]);
+        $this->assertDatabaseMissing('people', ['id' => $personId]);
+        $this->assertDatabaseMissing('person_educations', ['person_id' => $personId]);
     }
 
     public function test_mezun_vcf_fotografli_indirilir(): void

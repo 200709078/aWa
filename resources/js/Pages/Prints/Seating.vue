@@ -84,7 +84,10 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
         [...(byLevel.get(level) ?? new Map()).entries()]
             .map(([branch, count]) => ({ branch, count }))
             .sort((a, b) => a.branch.localeCompare(b.branch, 'tr', { numeric: true }));
-    const groups = [9, 10, 11, 12].map((level) => ({ label: `${level}. Sınıf`, rows: toRows(level) }));
+    const groups = [...byLevel.keys()]
+        .filter((level): level is number => level !== null)
+        .sort((a, b) => a - b)
+        .map((level) => ({ label: `${level}. Sınıf`, rows: toRows(level) }));
     if (byLevel.has(null)) {
         groups.push({ label: '—', rows: toRows(null) });
     }

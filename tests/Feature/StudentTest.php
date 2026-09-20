@@ -71,6 +71,35 @@ class StudentTest extends TestCase
         );
     }
 
+    public function test_sinif_sayfalama_ve_numara_sirasi(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $b9a = Branch::where('name', '9A')->first();
+        $b9b = Branch::where('name', '9B')->first();
+        $this->makeStudent($year, $b9a, '145', 'Ali Veli');
+        $this->makeStudent($year, $b9a, '9', 'Küçük Numara');
+        $this->makeStudent($year, $b9a, '30', 'Orta Numara');
+        $this->makeStudent($year, $b9b, '146', 'Ayşe Yılmaz');
+
+        // 1. sayfa ilk sınıf (9A), numaraya göre doğal sıralı
+        $response = $this->actingAs($user)->get('/students');
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('students.total', 3)
+            ->where('students.data.0.school_number', '9')
+            ->where('students.data.1.school_number', '30')
+            ->where('students.data.2.school_number', '145')
+        );
+
+        // 2. sayfa ikinci sınıf
+        $response = $this->actingAs($user)->get('/students?page=2');
+        $response->assertInertia(fn ($page) => $page
+            ->where('students.total', 1)
+            ->where('students.data.0.full_name', 'Ayşe Yılmaz')
+        );
+    }
+
     public function test_ayni_yilda_mukerrer_numara_engellenir(): void
     {
         $user = User::factory()->create();

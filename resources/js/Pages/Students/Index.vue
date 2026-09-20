@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
 import DropdownSelect from '../../Components/DropdownSelect.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
@@ -46,6 +46,7 @@ const props = defineProps<{
     branches: BranchOption[];
     allBranches: BranchOption[];
     branchId: number | null;
+    page: number;
     search: string;
     students: Paginator;
     totalStudents: number;
@@ -55,19 +56,34 @@ const filterYear = ref<number | null>(props.yearId);
 const filterBranch = ref<number | null>(props.branchId);
 const filterSearch = ref(props.search);
 
-function applyFilters(resetBranch = false) {
-    if (resetBranch) {
-        filterBranch.value = null;
-    }
+const currentBranchName = computed(() => props.branches.find((b) => b.id === props.branchId)?.name ?? '');
+
+function applyFilters() {
     router.get(
         '/students',
         {
             academic_year_id: filterYear.value,
-            branch_id: filterBranch.value,
             q: filterSearch.value || undefined,
         },
         { preserveState: true },
     );
+}
+
+function jumpToBranch() {
+    const index = props.branches.findIndex((b) => b.id === filterBranch.value);
+    router.get(
+        '/students',
+        {
+            academic_year_id: filterYear.value,
+            page: index >= 0 ? index + 1 : 1,
+        },
+        { preserveState: true },
+    );
+}
+
+function changeYear() {
+    filterBranch.value = null;
+    router.get('/students', { academic_year_id: filterYear.value }, { preserveState: true });
 }
 
 function clearFilters() {
@@ -190,13 +206,31 @@ function confirmDelete() {
                         Ara
                     </button>
                     <button
-                        v-if="branchId || search"
+                        v-if="search"
                         type="button"
                         class="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                         @click="clearFilters()"
                     >
                         Temizle
                     </button>
+                </div>
+                <div class="w-40">
+                    <DropdownSelect
+                        id="filter-year"
+                        v-model="filterYear"
+                        :options="years.map((year) => ({ value: year.id, label: year.name }))"
+                        aria-label="Akademik Yıl"
+                        @change="changeYear"
+                    />
+                </div>
+                <div class="w-32">
+                    <DropdownSelect
+                        id="filter-branch"
+                        v-model="filterBranch"
+                        :options="branches.map((branch) => ({ value: branch.id, label: branch.name }))"
+                        aria-label="Sınıf"
+                        @change="jumpToBranch"
+                    />
                 </div>
                 <div class="ml-auto flex shrink-0 gap-2">
                     <Link
@@ -214,33 +248,6 @@ function confirmDelete() {
                     </Link>
                 </div>
             </div>
-
-            <div v-if="totalStudents > 0" class="mt-4 grid grid-cols-2 gap-3 md:ml-auto md:max-w-md md:grid-cols-2">
-                <div>
-                    <label for="filter-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
-                    <div class="mt-1">
-                        <DropdownSelect
-                            id="filter-year"
-                            v-model="filterYear"
-                            :options="years.map((year) => ({ value: year.id, label: year.name }))"
-                            aria-label="Akademik Yıl"
-                            @change="applyFilters(true)"
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label for="filter-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                    <div class="mt-1">
-                        <DropdownSelect
-                            id="filter-branch"
-                            v-model="filterBranch"
-                            :options="[{ value: null, label: 'Tümü' }, ...branches.map((branch) => ({ value: branch.id, label: branch.name }))]"
-                            aria-label="Sınıf"
-                            @change="applyFilters()"
-                        />
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
@@ -248,9 +255,9 @@ function confirmDelete() {
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Okul No</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ad Soyad</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sınıf</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ad Soyad</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Durum</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
                     </tr>
@@ -258,17 +265,17 @@ function confirmDelete() {
                 <tbody class="divide-y divide-gray-200">
                     <tr v-for="student in students.data" :key="student.id">
                         <td class="whitespace-nowrap px-4 py-3 text-gray-900">{{ student.school_number }}</td>
-                        <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ student.full_name }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ student.branch.name }}</td>
                         <td class="whitespace-nowrap px-4 py-3">
                             <StudentAvatar
                                 :photo-url="student.photo_path ? `/storage/${student.photo_path}` : null"
                                 :full-name="student.full_name"
-                                img-class="block h-auto w-10 rounded object-contain"
-                                placeholder-class="w-10"
-                                circle-class="w-8 text-xs"
+                                img-class="block h-16 w-12 rounded object-cover"
+                                placeholder-class="w-12"
+                                circle-class="w-10 text-sm"
                             />
                         </td>
+                        <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ student.full_name }}</td>
                         <td class="whitespace-nowrap px-4 py-3">
                             <div class="flex items-center gap-2">
                                 <button
@@ -360,7 +367,8 @@ function confirmDelete() {
                     Önceki
                 </span>
             </div>
-            <span class="flex-1 text-center">{{ students.from }}-{{ students.to }} / Toplam {{ students.total }}</span>
+            <span v-if="search" class="flex-1 text-center">{{ students.from }}-{{ students.to }} / Toplam {{ students.total }}</span>
+            <span v-else class="flex-1 text-center">{{ currentBranchName }} Sınıfı ({{ students.total }} öğrenci)</span>
             <div class="flex w-24 justify-end">
                 <Link
                     v-if="students.next_page_url"

@@ -99,7 +99,6 @@ function confirmDelete() {
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h1 class="text-2xl font-bold text-gray-900">Sınıflar</h1>
                 <div v-if="totalBranches > 0" class="flex items-center gap-2">
-                    <label for="year-filter" class="text-sm text-gray-600">Akademik Yıl:</label>
                     <DropdownSelect
                         id="year-filter"
                         v-model="filterYear"
