@@ -193,7 +193,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                                         :photo-url="seatMap(room).get(`${row}-${col}`)!.student!.photo_url"
                                         :full-name="seatMap(room).get(`${row}-${col}`)!.student!.full_name"
                                         img-class="block h-20 w-full object-contain print:h-14"
-                                        placeholder-class="max-h-20 w-full print:max-h-14"
+                                        placeholder-class="mx-auto h-20 w-auto print:h-14"
                                         circle-class="w-12 text-base"
                                     />
                                     <div
