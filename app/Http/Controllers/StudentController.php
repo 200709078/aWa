@@ -38,7 +38,7 @@ class StudentController extends Controller
 
         $branches = $yearId
             ? Branch::where('academic_year_id', $yearId)->orderBy('name')->get(['id', 'name'])
-            : [];
+            : collect();
 
         $branchId = $request->integer('branch_id') ?: null;
 
@@ -47,28 +47,15 @@ class StudentController extends Controller
         }
         $search = trim((string) $request->input('q', ''));
 
-        $paginator = Student::with([
+        $baseQuery = fn () => Student::with([
             'person:id,first_name,last_name,full_name,phone,email,address,photo_path',
             'enrollments' => fn ($query) => $query->where('academic_year_id', $yearId)->with('branch:id,name'),
         ])
             ->withCount('seatingAssignments')
             ->join('people', 'people.id', '=', 'students.person_id')
-            ->when($yearId, fn ($query) => $query->whereHas('enrollments', fn ($query) => $query
-                ->where('academic_year_id', $yearId)
-                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ), fn ($query) => $query->whereRaw('0 = 1'))
-            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search, $yearId) {
-                $query->where('people.full_name', 'like', "%{$search}%")
-                    ->orWhereHas('enrollments', fn ($query) => $query
-                        ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId))
-                        ->where('school_number', 'like', "%{$search}%"));
-            }))
-            ->orderBy('people.full_name')
-            ->select('students.*')
-            ->paginate(30)
-            ->withQueryString();
+            ->select('students.*');
 
-        $paginator->setCollection($paginator->getCollection()->map(fn (Student $student) => [
+        $flatten = fn (Student $student) => [
             'id' => $student->id,
             'school_number' => $student->enrollments->first()?->school_number ?? '—',
             'first_name' => $student->person?->first_name,
@@ -84,18 +71,95 @@ class StudentController extends Controller
                 'id' => $student->enrollments->first()?->branch?->id,
                 'name' => $student->enrollments->first()?->branch?->name ?? '—',
             ],
-        ]));
+        ];
 
-        return Inertia::render('Students/Index', [
+        // Arama varsa yıllara bakılmaksızın düz liste; yoksa her sayfa bir sınıf.
+        if ($search !== '') {
+            $paginator = $baseQuery()
+                ->when($yearId, fn ($query) => $query->whereHas('enrollments', fn ($query) => $query->where('academic_year_id', $yearId)),
+                    fn ($query) => $query->whereRaw('0 = 1'))
+                ->where(function ($query) use ($search, $yearId) {
+                    $query->where('people.full_name', 'like', "%{$search}%")
+                        ->orWhereHas('enrollments', fn ($query) => $query
+                            ->when($yearId, fn ($query) => $query->where('academic_year_id', $yearId))
+                            ->where('school_number', 'like', "%{$search}%"));
+                })
+                ->orderBy('people.full_name')
+                ->paginate(30)
+                ->withQueryString();
+
+            $paginator->setCollection($paginator->getCollection()->map($flatten));
+
+            return Inertia::render('Students/Index', $this->indexProps($years, $yearId, $branches, $branchId, $search, $paginator, 1));
+        }
+
+        if ($branchId) {
+            $page = max(1, $branches->search(fn ($branch) => $branch->id === $branchId) + 1);
+        } else {
+            $page = $request->integer('page', 1);
+        }
+        $page = min(max(1, $page), max(1, $branches->count()));
+        $branch = $branches->get($page - 1);
+        $branchId = $branch?->id;
+
+        $rows = $branch
+            ? $baseQuery()
+                ->whereHas('enrollments', fn ($query) => $query
+                    ->where('academic_year_id', $yearId)
+                    ->where('branch_id', $branch->id))
+                ->get()
+                ->sort(fn (Student $a, Student $b) => strnatcmp(
+                    $a->enrollments->first()?->school_number ?? '',
+                    $b->enrollments->first()?->school_number ?? ''
+                ))
+                ->values()
+            : collect();
+
+        $data = $rows->map($flatten)->all();
+        $total = count($data);
+
+        $students = [
+            'data' => $data,
+            'from' => $total > 0 ? 1 : null,
+            'to' => $total,
+            'total' => $total,
+            'prev_page_url' => $this->studentPageUrl($request, $yearId, $page - 1, $page > 1),
+            'next_page_url' => $this->studentPageUrl($request, $yearId, $page + 1, $page < $branches->count()),
+        ];
+
+        return Inertia::render('Students/Index', $this->indexProps($years, $yearId, $branches, $branchId, $search, $students, $page));
+    }
+
+    private function studentPageUrl(Request $request, ?int $yearId, int $page, bool $enabled): ?string
+    {
+        if (! $enabled) {
+            return null;
+        }
+
+        $params = array_filter([
+            'academic_year_id' => $yearId ?? $request->integer('academic_year_id') ?: null,
+            'page' => $page,
+        ]);
+
+        return '/students?'.http_build_query($params);
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, mixed>  $branches
+     */
+    private function indexProps($years, $yearId, $branches, $branchId, string $search, $students, int $page): array
+    {
+        return [
             'years' => $years,
             'yearId' => $yearId,
             'branches' => $branches,
             'allBranches' => Branch::whereIn('academic_year_id', $years->pluck('id'))->orderBy('name')->get(['id', 'name']),
             'branchId' => $branchId,
+            'page' => $page,
             'search' => $search,
-            'students' => $paginator,
+            'students' => $students,
             'totalStudents' => Student::whereHas('enrollments', fn ($query) => $query->whereIn('academic_year_id', $years->pluck('id')))->count(),
-        ]);
+        ];
     }
 
     public function store(Request $request): RedirectResponse

@@ -58,6 +58,10 @@ const busy = ref(false);
 
 const showPhotos = ref(localStorage.getItem('kelebek-show-photos') !== '0');
 watch(showPhotos, (value) => localStorage.setItem('kelebek-show-photos', value ? '1' : '0'));
+const showNumber = ref(localStorage.getItem('kelebek-show-number') !== '0');
+watch(showNumber, (value) => localStorage.setItem('kelebek-show-number', value ? '1' : '0'));
+const showBranch = ref(localStorage.getItem('kelebek-show-branch') !== '0');
+watch(showBranch, (value) => localStorage.setItem('kelebek-show-branch', value ? '1' : '0'));
 
 function seatMap(room: RoomData): Map<string, SeatInfo> {
     const map = new Map<string, SeatInfo>();
@@ -273,7 +277,10 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
         [...(byLevel.get(level) ?? new Map()).entries()]
             .map(([branch, count]) => ({ branch, count }))
             .sort((a, b) => a.branch.localeCompare(b.branch, 'tr', { numeric: true }));
-    const groups = [9, 10, 11, 12].map((level) => ({ label: `${level}. Sınıf`, rows: toRows(level) }));
+    const groups = [...byLevel.keys()]
+        .filter((level): level is number => level !== null)
+        .sort((a, b) => a - b)
+        .map((level) => ({ label: `${level}. Sınıf`, rows: toRows(level) }));
     if (byLevel.has(null)) {
         groups.push({ label: '—', rows: toRows(null) });
     }
@@ -372,6 +379,48 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                             />
                         </button>
                         <span class="text-sm text-gray-700">Fotoğraflar</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            role="switch"
+                            :aria-checked="showNumber"
+                            title="Numarayı Göster/Gizle"
+                            :class="[
+                                'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                                showNumber ? 'bg-indigo-600' : 'bg-gray-300',
+                            ]"
+                            @click="showNumber = !showNumber"
+                        >
+                            <span
+                                :class="[
+                                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                                    showNumber ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                                ]"
+                            />
+                        </button>
+                        <span class="text-sm text-gray-700">Numara</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            role="switch"
+                            :aria-checked="showBranch"
+                            title="Sınıfı Göster/Gizle"
+                            :class="[
+                                'relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                                showBranch ? 'bg-indigo-600' : 'bg-gray-300',
+                            ]"
+                            @click="showBranch = !showBranch"
+                        >
+                            <span
+                                :class="[
+                                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                                    showBranch ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                                ]"
+                            />
+                        </button>
+                        <span class="text-sm text-gray-700">Sınıf</span>
                     </div>
                     <Link
                         :href="`/distribution?exam_week_id=${week.id}`"
@@ -546,10 +595,9 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                                     </div>
                                     <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
                                         <div class="truncate text-center">
-                                            {{ seatMap(room).get(`${row}-${col}`)!.student!.school_number }}
-                                            {{ seatMap(room).get(`${row}-${col}`)!.student!.full_name }}
+                                            <template v-if="showNumber">{{ seatMap(room).get(`${row}-${col}`)!.student!.school_number }} </template>{{ seatMap(room).get(`${row}-${col}`)!.student!.full_name }}
                                         </div>
-                                        <div class="text-center text-gray-500">
+                                        <div v-if="showBranch" class="text-center text-gray-500">
                                             {{ seatMap(room).get(`${row}-${col}`)!.student!.branch }}
                                         </div>
                                     </template>

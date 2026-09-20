@@ -48,4 +48,33 @@ class SeatingViewTest extends TestCase
             ->where('roomsData.0.seats.1.student.photo_url', null)
         );
     }
+
+    public function test_planda_numara_ve_sube_gorunur(): void
+    {
+        $user = User::factory()->create();
+        $year = AcademicYear::create(['name' => '2026-2027', 'is_active' => true]);
+        $branch = Branch::create(['academic_year_id' => $year->id, 'name' => '9A', 'grade_level' => 9, 'section' => 'A']);
+        $room = Room::create(['name' => 'Salon 1']);
+        $seat = Seat::where('room_id', $room->id)->where('row', 1)->where('column', 1)->first();
+
+        $student = $this->makeStudent($year, $branch, '1', 'Numaralı');
+
+        $week = ExamWeek::create(['academic_year_id' => $year->id, 'name' => '1. Dönem']);
+        $week->branches()->sync([$branch->id]);
+        $week->rooms()->sync([$room->id]);
+
+        $plan = SeatingPlan::create(['exam_week_id' => $week->id, 'status' => 'draft', 'total_students' => 1, 'used_room_count' => 1]);
+        SeatingAssignment::create(['seating_plan_id' => $plan->id, 'student_id' => $student->id, 'seat_id' => $seat->id]);
+
+        // Controller examWeek'i eksik sütunlarla önyükler; ızgara yine dolu gelmeli.
+        $response = $this->actingAs($user)->get("/distribution/plans/{$plan->id}");
+        $response->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->where('roomsData.0.seats.0.student.school_number', '1')
+            ->where('roomsData.0.seats.0.student.full_name', 'Numaralı')
+            ->where('roomsData.0.seats.0.student.branch', '9A')
+            ->where('roomsData.0.seats.0.student.grade_level', 9)
+        );
+    }
 }

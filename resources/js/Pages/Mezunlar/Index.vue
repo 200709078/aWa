@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
 import DropdownSelect from '../../Components/DropdownSelect.vue';
@@ -10,11 +10,18 @@ interface Graduate {
     year: number;
     number: string;
     full_name: string;
+    first_name: string | null;
+    last_name: string | null;
     phone: string | null;
     email: string | null;
     photo_path: string | null;
+    notes: string | null;
     education: string | null;
+    institution_name: string | null;
+    faculty: string | null;
+    department: string | null;
     company: string | null;
+    job_city: string | null;
 }
 
 interface Paginator {
@@ -37,7 +44,6 @@ const props = defineProps<{
 
 const filterYear = ref<number | null>(props.year);
 const filterSearch = ref(props.search);
-const withPhoto = ref(true);
 
 function jumpToYear() {
     const index = props.years.indexOf(filterYear.value as number);
@@ -67,11 +73,107 @@ function notifyDownload() {
     );
 }
 
+const createForm = useForm({
+    graduation_year: new Date().getFullYear(),
+    graduation_number: '',
+    first_name: '',
+    last_name: '',
+    full_name: '',
+    phone: '',
+    email: '',
+    notes: '',
+    institution_name: '',
+    faculty: '',
+    department: '',
+    company: '',
+    job_city: '',
+    photo: null as File | null,
+});
+
+const photoInput = ref<HTMLInputElement | null>(null);
+const editPhotoInput = ref<HTMLInputElement | null>(null);
+
+function submitCreate() {
+    createForm.post('/mezunlar', {
+        onSuccess: () => {
+            createForm.reset(
+                'graduation_number',
+                'first_name',
+                'last_name',
+                'full_name',
+                'phone',
+                'email',
+                'notes',
+                'institution_name',
+                'faculty',
+                'department',
+                'company',
+                'job_city',
+                'photo',
+            );
+            if (photoInput.value) photoInput.value.value = '';
+        },
+    });
+}
+
+const editing = ref<Graduate | null>(null);
+const editForm = useForm({
+    graduation_year: 0,
+    graduation_number: '',
+    first_name: '',
+    last_name: '',
+    full_name: '',
+    phone: '',
+    email: '',
+    notes: '',
+    institution_name: '',
+    faculty: '',
+    department: '',
+    company: '',
+    job_city: '',
+    photo: null as File | null,
+});
+
+function openEdit(graduate: Graduate) {
+    editing.value = graduate;
+    editForm.graduation_year = graduate.year;
+    editForm.graduation_number = graduate.number;
+    editForm.first_name = graduate.first_name ?? '';
+    editForm.last_name = graduate.last_name ?? '';
+    editForm.full_name = graduate.full_name;
+    editForm.phone = graduate.phone ?? '';
+    editForm.email = graduate.email ?? '';
+    editForm.notes = graduate.notes ?? '';
+    editForm.institution_name = graduate.institution_name ?? '';
+    editForm.faculty = graduate.faculty ?? '';
+    editForm.department = graduate.department ?? '';
+    editForm.company = graduate.company ?? '';
+    editForm.job_city = graduate.job_city ?? '';
+    editForm.photo = null;
+    editForm.clearErrors();
+}
+
+function submitEdit() {
+    if (!editing.value) return;
+    editForm.transform((data) => ({ ...data, _method: 'put' })).post(`/mezunlar/${editing.value.id}`, {
+        onSuccess: () => (editing.value = null),
+    });
+}
+
+const deleting = ref<Graduate | null>(null);
+
+function confirmDelete() {
+    if (!deleting.value) return;
+    router.delete(`/mezunlar/${deleting.value.id}`, {
+        onFinish: () => (deleting.value = null),
+    });
+}
+
 const downloadUrl = computed(() => {
     const params = new URLSearchParams();
     if (filterYear.value) params.append('year', String(filterYear.value));
     if (filterSearch.value) params.append('q', filterSearch.value);
-    params.append('photo', withPhoto.value ? '1' : '0');
+    params.append('photo', '1');
     return `/mezunlar/vcf?${params.toString()}`;
 });
 </script>
@@ -86,7 +188,7 @@ const downloadUrl = computed(() => {
                         id="filter-search"
                         v-model="filterSearch"
                         type="text"
-                        placeholder="Ad ara"
+                        placeholder="No veya ad ara"
                         aria-label="Mezun ara"
                         class="block h-9 w-64 rounded-md border-gray-300 bg-gray-50 px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         @keydown.enter.prevent="applyFilters()"
@@ -98,6 +200,23 @@ const downloadUrl = computed(() => {
                     >
                         Ara
                     </button>
+                    <button
+                        v-if="search"
+                        type="button"
+                        class="inline-flex h-9 shrink-0 items-center justify-center rounded-md px-2 text-sm text-gray-500 hover:text-indigo-700 hover:underline"
+                        @click="clearFilters()"
+                    >
+                        Temizle
+                    </button>
+                </div>
+                <div class="w-32">
+                    <DropdownSelect
+                        id="filter-year"
+                        v-model="filterYear"
+                        :options="years.map((y) => ({ value: y, label: String(y) }))"
+                        aria-label="Mezuniyet Yılı"
+                        @change="jumpToYear"
+                    />
                 </div>
                 <a
                     :href="downloadUrl"
@@ -108,79 +227,58 @@ const downloadUrl = computed(() => {
                 </a>
             </div>
 
-            <div class="mt-4 flex flex-wrap items-end gap-3">
-                <div>
-                    <label for="filter-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
-                    <div class="mt-1">
-                        <DropdownSelect
-                            id="filter-year"
-                            v-model="filterYear"
-                            :options="years.map((y) => ({ value: y, label: String(y) }))"
-                            aria-label="Mezuniyet Yılı"
-                            @change="jumpToYear"
-                        />
-                    </div>
-                </div>
-                <div class="flex h-9 items-center gap-2">
-                    <button
-                        type="button"
-                        role="switch"
-                        :aria-checked="withPhoto"
-                        aria-label="Fotoğrafları dahil et"
-                        class="flex h-6 w-11 shrink-0 items-center rounded-full px-0.5 transition-colors"
-                        :class="withPhoto ? 'bg-indigo-600' : 'bg-gray-300'"
-                        @click="withPhoto = !withPhoto"
-                    >
-                        <span
-                            class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
-                            :class="withPhoto ? 'translate-x-5' : 'translate-x-0'"
-                        ></span>
-                    </button>
-                    <span class="text-sm text-gray-700">Fotoğraflar</span>
-                </div>
-                <button
-                    v-if="search"
-                    type="button"
-                    class="inline-flex h-9 items-center justify-center rounded-md px-2 text-sm text-gray-500 hover:text-indigo-700 hover:underline"
-                    @click="clearFilters()"
-                >
-                    Temizle
-                </button>
-            </div>
-
             <div class="mt-4 overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Yıl</th>
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">No</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ad Soyad</th>
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Telefon</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">E-posta</th>
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Eğitim</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İş</th>
-                            <th v-if="withPhoto" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         <tr v-for="graduate in graduates.data" :key="graduate.id">
                             <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ graduate.year }}</td>
                             <td class="whitespace-nowrap px-4 py-3 text-gray-900">{{ graduate.number }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ graduate.full_name }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ graduate.phone ?? '—' }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ graduate.email ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ graduate.education ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ graduate.company ?? '—' }}</td>
-                            <td v-if="withPhoto" class="px-4 py-3">
+                            <td class="px-4 py-3">
                                 <StudentAvatar
                                     :photo-url="graduate.photo_path ? `/storage/${graduate.photo_path}` : null"
                                     :full-name="graduate.full_name"
-                                    img-class="h-10 w-8 rounded object-cover"
+                                    img-class="h-16 w-12 rounded object-cover"
                                 />
+                            </td>
+                            <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ graduate.full_name }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ graduate.phone ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ graduate.education ?? '—' }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-left">
+                                <div class="flex justify-start gap-2">
+                                    <button
+                                        type="button"
+                                        title="Düzenle"
+                                        aria-label="Düzenle"
+                                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                                        @click="openEdit(graduate)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        title="Sil"
+                                        aria-label="Sil"
+                                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700 focus:border-red-500 focus:ring-red-500"
+                                        @click="deleting = graduate"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         <tr v-if="graduates.data.length === 0">
-                            <td :colspan="withPhoto ? 8 : 7" class="px-4 py-6 text-center text-gray-500">Kayıt bulunamadı.</td>
+                            <td colspan="7" class="px-4 py-6 text-center text-gray-500">Kayıt bulunamadı.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -220,6 +318,410 @@ const downloadUrl = computed(() => {
                     >
                         Sonraki
                     </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Yeni Mezun Ekle</h2>
+
+            <form class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4" @submit.prevent="submitCreate">
+                <div>
+                    <label for="graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
+                    <input
+                        id="graduate-year"
+                        v-model.number="createForm.graduation_year"
+                        type="number"
+                        required
+                        min="1900"
+                        max="2100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.graduation_year" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.graduation_year }}
+                    </p>
+                </div>
+                <div>
+                    <label for="graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
+                    <input
+                        id="graduate-number"
+                        v-model="createForm.graduation_number"
+                        type="text"
+                        required
+                        maxlength="20"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.graduation_number }}
+                    </p>
+                </div>
+                <div class="col-span-2">
+                    <label for="graduate-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                    <input
+                        id="graduate-name"
+                        v-model="createForm.full_name"
+                        type="text"
+                        required
+                        maxlength="100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <p v-if="createForm.errors.full_name" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.full_name }}
+                    </p>
+                </div>
+                <div>
+                    <label for="graduate-first" class="block text-sm font-medium text-gray-700">Ad</label>
+                    <input
+                        id="graduate-first"
+                        v-model="createForm.first_name"
+                        type="text"
+                        maxlength="50"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label for="graduate-last" class="block text-sm font-medium text-gray-700">Soyad</label>
+                    <input
+                        id="graduate-last"
+                        v-model="createForm.last_name"
+                        type="text"
+                        maxlength="50"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label for="graduate-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                    <input
+                        id="graduate-phone"
+                        v-model="createForm.phone"
+                        type="text"
+                        maxlength="30"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label for="graduate-email" class="block text-sm font-medium text-gray-700">E-posta</label>
+                    <input
+                        id="graduate-email"
+                        v-model="createForm.email"
+                        type="email"
+                        maxlength="100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div class="col-span-2">
+                    <label for="graduate-institution" class="block text-sm font-medium text-gray-700">Üniversite / Okul</label>
+                    <input
+                        id="graduate-institution"
+                        v-model="createForm.institution_name"
+                        type="text"
+                        maxlength="100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label for="graduate-faculty" class="block text-sm font-medium text-gray-700">Fakülte</label>
+                    <input
+                        id="graduate-faculty"
+                        v-model="createForm.faculty"
+                        type="text"
+                        maxlength="100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label for="graduate-department" class="block text-sm font-medium text-gray-700">Bölüm</label>
+                    <input
+                        id="graduate-department"
+                        v-model="createForm.department"
+                        type="text"
+                        maxlength="100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label for="graduate-company" class="block text-sm font-medium text-gray-700">İşyeri</label>
+                    <input
+                        id="graduate-company"
+                        v-model="createForm.company"
+                        type="text"
+                        maxlength="100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label for="graduate-city" class="block text-sm font-medium text-gray-700">Şehir</label>
+                    <input
+                        id="graduate-city"
+                        v-model="createForm.job_city"
+                        type="text"
+                        maxlength="100"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div class="col-span-2">
+                    <label for="graduate-notes" class="block text-sm font-medium text-gray-700">Notlar</label>
+                    <input
+                        id="graduate-notes"
+                        v-model="createForm.notes"
+                        type="text"
+                        maxlength="2000"
+                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                </div>
+                <div class="col-span-2">
+                    <span class="block text-sm font-medium text-gray-700">Fotoğraf</span>
+                    <input
+                        id="graduate-photo"
+                        ref="photoInput"
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp"
+                        class="hidden"
+                        @change="(e) => (createForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null)"
+                    />
+                    <button
+                        type="button"
+                        class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                        @click="photoInput?.click()"
+                    >
+                        <span class="truncate">{{ createForm.photo ? createForm.photo.name : 'Fotoğraf seçin (opsiyonel)' }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                    </button>
+                    <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.photo }}
+                    </p>
+                </div>
+                <div class="col-span-2 flex items-end">
+                    <button
+                        type="submit"
+                        title="Ekle"
+                        aria-label="Ekle"
+                        :disabled="createForm.processing"
+                        class="inline-flex h-9 w-full items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow">
+                <form class="space-y-4" @submit.prevent="submitEdit">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-lg font-semibold text-gray-900">Mezunu Düzenle</h2>
+                        <div class="flex gap-2">
+                            <button
+                                type="submit"
+                                title="Kaydet"
+                                aria-label="Kaydet"
+                                :disabled="editForm.processing"
+                                class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            </button>
+                            <button
+                                type="button"
+                                title="Vazgeç"
+                                aria-label="Vazgeç"
+                                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                                @click="editing = null"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="edit-graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
+                            <input
+                                id="edit-graduate-year"
+                                v-model.number="editForm.graduation_year"
+                                type="number"
+                                required
+                                min="1900"
+                                max="2100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label for="edit-graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
+                            <input
+                                id="edit-graduate-number"
+                                v-model="editForm.graduation_number"
+                                type="text"
+                                required
+                                maxlength="20"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <p v-if="editForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
+                                {{ editForm.errors.graduation_number }}
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-graduate-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                        <input
+                            id="edit-graduate-name"
+                            v-model="editForm.full_name"
+                            type="text"
+                            required
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="edit-graduate-first" class="block text-sm font-medium text-gray-700">Ad</label>
+                            <input
+                                id="edit-graduate-first"
+                                v-model="editForm.first_name"
+                                type="text"
+                                maxlength="50"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label for="edit-graduate-last" class="block text-sm font-medium text-gray-700">Soyad</label>
+                            <input
+                                id="edit-graduate-last"
+                                v-model="editForm.last_name"
+                                type="text"
+                                maxlength="50"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="edit-graduate-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                            <input
+                                id="edit-graduate-phone"
+                                v-model="editForm.phone"
+                                type="text"
+                                maxlength="30"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label for="edit-graduate-email" class="block text-sm font-medium text-gray-700">E-posta</label>
+                            <input
+                                id="edit-graduate-email"
+                                v-model="editForm.email"
+                                type="email"
+                                maxlength="100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-graduate-institution" class="block text-sm font-medium text-gray-700">Üniversite / Okul</label>
+                        <input
+                            id="edit-graduate-institution"
+                            v-model="editForm.institution_name"
+                            type="text"
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="edit-graduate-faculty" class="block text-sm font-medium text-gray-700">Fakülte</label>
+                            <input
+                                id="edit-graduate-faculty"
+                                v-model="editForm.faculty"
+                                type="text"
+                                maxlength="100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label for="edit-graduate-department" class="block text-sm font-medium text-gray-700">Bölüm</label>
+                            <input
+                                id="edit-graduate-department"
+                                v-model="editForm.department"
+                                type="text"
+                                maxlength="100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="edit-graduate-company" class="block text-sm font-medium text-gray-700">İşyeri</label>
+                            <input
+                                id="edit-graduate-company"
+                                v-model="editForm.company"
+                                type="text"
+                                maxlength="100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label for="edit-graduate-city" class="block text-sm font-medium text-gray-700">Şehir</label>
+                            <input
+                                id="edit-graduate-city"
+                                v-model="editForm.job_city"
+                                type="text"
+                                maxlength="100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label for="edit-graduate-notes" class="block text-sm font-medium text-gray-700">Notlar</label>
+                        <input
+                            id="edit-graduate-notes"
+                            v-model="editForm.notes"
+                            type="text"
+                            maxlength="2000"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                    </div>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-700">Fotoğraf</span>
+                        <input
+                            id="edit-graduate-photo"
+                            ref="editPhotoInput"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            class="hidden"
+                            @change="(e) => (editForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null)"
+                        />
+                        <button
+                            type="button"
+                            class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                            @click="editPhotoInput?.click()"
+                        >
+                            <span class="truncate">{{ editForm.photo ? editForm.photo.name : 'Değiştirmek için seçin (boş kalırsa korunur)' }}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div v-if="deleting" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
+                <h2 class="text-lg font-semibold text-gray-900">Mezunu Sil</h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    {{ deleting.year }} / {{ deleting.number }} — {{ deleting.full_name }} silinsin mi? Bu işlem geri alınamaz.
+                </p>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                        @click="deleting = null"
+                    >
+                        Vazgeç
+                    </button>
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+                        @click="confirmDelete"
+                    >
+                        Sil
+                    </button>
                 </div>
             </div>
         </div>

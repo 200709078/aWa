@@ -28,11 +28,10 @@ const props = defineProps<{
 
 const yearId = ref<number | null>(props.activeYearId);
 const branches = ref<Branch[]>([]);
-const selectedBranches = ref<number[]>([]);
+const selectedBranch = ref<number | null>(null);
 const kind = ref<'all' | 'student' | 'guardian'>('all');
 const withPhoto = ref(true);
 const summary = ref<Summary | null>(null);
-const loading = ref(false);
 const error = ref('');
 
 function getXsrfToken(): string {
@@ -42,7 +41,7 @@ function getXsrfToken(): string {
 
 async function loadBranches() {
     branches.value = [];
-    selectedBranches.value = [];
+    selectedBranch.value = null;
     summary.value = null;
     if (!yearId.value) return;
     const response = await fetch(`/rehber-aktarma/yillar/${yearId.value}/subeler`, {
@@ -50,7 +49,12 @@ async function loadBranches() {
     });
     if (!response.ok) return;
     branches.value = (await response.json()) as Branch[];
-    selectedBranches.value = branches.value.map((b) => b.id);
+    await showSummary();
+}
+
+function branchIds(): number[] {
+    if (selectedBranch.value) return [selectedBranch.value];
+    return branches.value.map((b) => b.id);
 }
 
 async function showSummary() {
@@ -60,11 +64,11 @@ async function showSummary() {
         error.value = 'Akademik yıl seçin.';
         return;
     }
-    if (selectedBranches.value.length === 0) {
-        error.value = 'En az bir şube seçin.';
+    const ids = branchIds();
+    if (ids.length === 0) {
+        error.value = 'Bu yılda şube yok.';
         return;
     }
-    loading.value = true;
     try {
         const response = await fetch('/rehber-aktarma/ozet', {
             method: 'POST',
@@ -76,7 +80,7 @@ async function showSummary() {
             },
             body: JSON.stringify({
                 academic_year_id: yearId.value,
-                branch_ids: selectedBranches.value,
+                branch_ids: ids,
                 type: kind.value,
             }),
         });
@@ -84,15 +88,13 @@ async function showSummary() {
         summary.value = (await response.json()) as Summary;
     } catch {
         error.value = 'Özet alınamadı. Tekrar deneyin.';
-    } finally {
-        loading.value = false;
     }
 }
 
 const downloadUrl = computed(() => {
     const params = new URLSearchParams();
     if (yearId.value) params.append('academic_year_id', String(yearId.value));
-    for (const id of selectedBranches.value) params.append('branch_ids[]', String(id));
+    for (const id of branchIds()) params.append('branch_ids[]', String(id));
     params.append('type', kind.value);
     params.append('photo', withPhoto.value ? '1' : '0');
     return `/rehber-aktarma/indir?${params.toString()}`;
@@ -101,12 +103,24 @@ const downloadUrl = computed(() => {
 const excelUrl = computed(() => {
     const params = new URLSearchParams();
     if (yearId.value) params.append('academic_year_id', String(yearId.value));
-    for (const id of selectedBranches.value) params.append('branch_ids[]', String(id));
+    for (const id of branchIds()) params.append('branch_ids[]', String(id));
     params.append('type', kind.value);
     return `/rehber-aktarma/excel?${params.toString()}`;
 });
 
-const canDownload = computed(() => !!yearId.value && selectedBranches.value.length > 0);
+const canDownload = computed(() => !!yearId.value && branchIds().length > 0);
+
+watch([selectedBranch, kind], () => {
+    void showSummary();
+});
+
+function notifyDownload(message: string) {
+    window.dispatchEvent(
+        new CustomEvent('kelebek-toast', {
+            detail: { type: 'success', messages: [message] },
+        }),
+    );
+}
 
 watch(yearId, () => {
     void loadBranches();
@@ -138,52 +152,57 @@ void loadBranches();
                 </div>
 
                 <div>
-                    <span class="block text-sm font-medium text-gray-700">Şubeler</span>
-                    <div class="mt-1 flex flex-wrap gap-3">
-                        <label v-for="branch in branches" :key="branch.id" class="flex items-center gap-1 text-sm text-gray-700">
-                            <input v-model="selectedBranches" type="checkbox" :value="branch.id" class="rounded border-gray-300" />
-                            {{ branch.name }}
-                        </label>
-                        <p v-if="branches.length === 0" class="text-sm text-gray-400">Önce akademik yıl seçin.</p>
+                    <label for="vcf-branch" class="block text-sm font-medium text-gray-700">Sınıflar</label>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="vcf-branch"
+                            v-model="selectedBranch"
+                            :options="[{ value: null, label: 'Tümü' }, ...branches.map((branch) => ({ value: branch.id, label: branch.name }))]"
+                            aria-label="Sınıflar"
+                        />
                     </div>
                 </div>
 
                 <div>
-                    <span class="block text-sm font-medium text-gray-700">Kayıt Tipi</span>
-                    <div class="mt-1 flex gap-4 text-sm text-gray-700">
-                        <label class="flex items-center gap-1">
-                            <input v-model="kind" type="radio" value="all" class="border-gray-300" /> Tümü
-                        </label>
-                        <label class="flex items-center gap-1">
-                            <input v-model="kind" type="radio" value="student" class="border-gray-300" /> Öğrenci
-                        </label>
-                        <label class="flex items-center gap-1">
-                            <input v-model="kind" type="radio" value="guardian" class="border-gray-300" /> Veli
-                        </label>
+                    <label for="vcf-kind" class="block text-sm font-medium text-gray-700">Kayıt Tipi</label>
+                    <div class="mt-1">
+                        <DropdownSelect
+                            id="vcf-kind"
+                            v-model="kind"
+                            :options="[
+                                { value: 'all', label: 'Tümü' },
+                                { value: 'student', label: 'Öğrenci' },
+                                { value: 'guardian', label: 'Veli' },
+                            ]"
+                            aria-label="Kayıt Tipi"
+                        />
                     </div>
                 </div>
 
-                <label class="flex items-center gap-1 text-sm text-gray-700">
-                    <input v-model="withPhoto" type="checkbox" class="rounded border-gray-300" />
-                    Fotoğrafları dahil et
-                </label>
-
-                <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
-
-                <div class="flex flex-wrap gap-2">
-                    <button
-                        type="button"
-                        :disabled="loading || !canDownload"
-                        class="rounded-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-100"
-                        @click="showSummary"
-                    >
-                        Özeti Göster
-                    </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex h-9 items-center gap-2">
+                        <button
+                            type="button"
+                            role="switch"
+                            :aria-checked="withPhoto"
+                            aria-label="Fotoğrafları dahil et"
+                            class="flex h-6 w-11 shrink-0 items-center rounded-full px-0.5 transition-colors"
+                            :class="withPhoto ? 'bg-indigo-600' : 'bg-gray-300'"
+                            @click="withPhoto = !withPhoto"
+                        >
+                            <span
+                                class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+                                :class="withPhoto ? 'translate-x-5' : 'translate-x-0'"
+                            ></span>
+                        </button>
+                        <span class="text-sm text-gray-700">Fotoğraflar</span>
+                    </div>
                     <a
                         :href="canDownload ? downloadUrl : undefined"
                         :aria-disabled="!canDownload"
                         class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
                         :class="{ 'pointer-events-none bg-gray-300 text-gray-500': !canDownload }"
+                        @click="notifyDownload('VCF dosyası indiriliyor.')"
                     >
                         VCF İndir
                     </a>
@@ -196,6 +215,8 @@ void loadBranches();
                         Excele Dışa Aktar
                     </a>
                 </div>
+
+                <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
 
                 <dl v-if="summary" class="divide-y divide-gray-200">
                     <div class="flex justify-between py-2">

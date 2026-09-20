@@ -253,6 +253,7 @@ function logout() {
                     </Link>
                 </div>
                 <div class="flex items-center gap-3">
+                    <span class="hidden text-sm text-gray-600 sm:inline">{{ user?.name }}</span>
                     <div v-if="currentSchool || mySchools.length > 0" class="relative">
                         <button
                             type="button"
@@ -290,7 +291,6 @@ function logout() {
                             </button>
                         </div>
                     </div>
-                    <span class="hidden text-sm text-gray-600 sm:inline">{{ user?.name }}</span>
                     <button
                         type="button"
                         class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
