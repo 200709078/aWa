@@ -81,11 +81,11 @@ class GraduateController extends Controller
     }
 
     /**
-     * @return array{id: int, year: int, number: string, full_name: string, first_name: ?string, last_name: ?string, phone: ?string, email: ?string, photo_path: ?string, notes: ?string, education: ?string, institution_name: ?string, faculty: ?string, department: ?string, company: ?string, job_city: ?string}
+     * @return array{id: int, year: int, number: string, full_name: string, first_name: ?string, last_name: ?string, phone: ?string, email: ?string, photo_path: ?string, notes: ?string, educations: array<int, string>, institution_name: ?string, faculty: ?string, department: ?string, company: ?string, job_city: ?string}
      */
     private function flatten(Graduate $graduate): array
     {
-        $education = $graduate->person?->educations->first();
+        $educations = $graduate->person?->educations ?? collect();
         $employment = $graduate->person?->employments->first();
 
         return [
@@ -99,12 +99,19 @@ class GraduateController extends Controller
             'email' => $graduate->person?->email,
             'photo_path' => $graduate->person?->photo_path,
             'notes' => $graduate->notes,
-            'education' => $education
-                ? trim(($education->institution_name ?? '').' / '.($education->department ?? ''), ' /')
-                : null,
-            'institution_name' => $education?->institution_name,
-            'faculty' => $education?->faculty,
-            'department' => $education?->department,
+            'educations' => $educations
+                ->map(fn ($item) => implode(' / ', array_filter([
+                    $item->city ?? '',
+                    $item->institution_name ?? '',
+                    $item->faculty ?? '',
+                    $item->department ?? '',
+                ])))
+                ->filter()
+                ->values()
+                ->all(),
+            'institution_name' => $educations->first()?->institution_name,
+            'faculty' => $educations->first()?->faculty,
+            'department' => $educations->first()?->department,
             'company' => $employment?->company_name,
             'job_city' => $employment?->city,
         ];

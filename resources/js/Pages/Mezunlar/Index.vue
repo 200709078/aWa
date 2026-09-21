@@ -16,7 +16,7 @@ interface Graduate {
     email: string | null;
     photo_path: string | null;
     notes: string | null;
-    education: string | null;
+    educations: string[];
     institution_name: string | null;
     faculty: string | null;
     department: string | null;
@@ -274,7 +274,10 @@ const downloadUrl = computed(() => {
                             </td>
                             <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ graduate.full_name }}</td>
                             <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ graduate.phone ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ graduate.education ?? '—' }}</td>
+                            <td class="px-4 py-3 text-xs text-gray-600">
+                                <div v-for="(item, i) in graduate.educations" :key="i">• {{ item }}</div>
+                                <span v-if="graduate.educations.length === 0">—</span>
+                            </td>
                             <td class="whitespace-nowrap px-4 py-3 text-left">
                                 <div class="flex justify-start gap-2">
                                     <button
