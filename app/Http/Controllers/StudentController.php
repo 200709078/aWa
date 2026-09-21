@@ -282,7 +282,7 @@ class StudentController extends Controller
     }
 
     /**
-     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, first_name: ?string, last_name: ?string, full_name: string, phone: ?string, email: ?string, address: ?string, photo: ?UploadedFile, is_active: bool}
+     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, first_name: string, last_name: string, full_name: string, phone: ?string, email: ?string, address: ?string, photo: ?UploadedFile, is_active: bool}
      */
     private function validated(Request $request, ?Student $student = null): array
     {
@@ -296,9 +296,8 @@ class StudentController extends Controller
                 'required', 'string', 'max:20',
                 Rule::unique('student_enrollments')->where(fn ($query) => $query->where('academic_year_id', $branch->academic_year_id))->ignore($enrollment?->id),
             ],
-            'first_name' => ['nullable', 'string', 'max:50'],
-            'last_name' => ['nullable', 'string', 'max:50'],
-            'full_name' => ['required', 'string', 'max:100'],
+            'first_name' => ['required', 'string', 'max:50'],
+            'last_name' => ['required', 'string', 'max:50'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:100'],
             'address' => ['nullable', 'string', 'max:500'],
@@ -309,20 +308,16 @@ class StudentController extends Controller
             'branch_id.exists' => 'Seçilen şube bulunamadı.',
             'school_number.required' => 'Okul numarası gerekli.',
             'school_number.unique' => 'Bu okul numarası bu akademik yılda zaten kayıtlı.',
-            'full_name.required' => 'Ad soyad gerekli.',
+            'first_name.required' => 'Ad gerekli.',
+            'last_name.required' => 'Soyad gerekli.',
             'email.email' => 'Geçerli bir e-posta adresi girin.',
             'photo.image' => 'Yalnızca resim dosyası yükleyin.',
             'photo.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp.',
             'photo.max' => 'Fotoğraf en fazla 10 MB olabilir.',
         ]);
 
-        $fullName = trim($data['full_name']);
-        $firstName = trim((string) ($data['first_name'] ?? ''));
-        $lastName = trim((string) ($data['last_name'] ?? ''));
-
-        if ($firstName === '' && $lastName === '') {
-            [$firstName, $lastName] = StudentImportController::splitName($fullName);
-        }
+        $firstName = trim($data['first_name']);
+        $lastName = trim($data['last_name']);
 
         $nullify = fn ($value) => trim((string) $value) === '' ? null : trim((string) $value);
 
@@ -330,9 +325,9 @@ class StudentController extends Controller
             'branch' => $branch,
             'enrollment' => $enrollment,
             'school_number' => trim($data['school_number']),
-            'first_name' => $firstName === '' ? null : $firstName,
-            'last_name' => $lastName === '' ? null : $lastName,
-            'full_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'full_name' => $firstName.' '.$lastName,
             'phone' => $nullify($data['phone'] ?? null),
             'email' => $nullify($data['email'] ?? null),
             'address' => $nullify($data['address'] ?? null),

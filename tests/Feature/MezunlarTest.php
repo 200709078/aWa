@@ -86,7 +86,8 @@ class MezunlarTest extends TestCase
         $this->actingAs($user)->post('/mezunlar', [
             'graduation_year' => 2024,
             'graduation_number' => '10',
-            'full_name' => 'Yeni Mezun',
+            'first_name' => 'Yeni',
+            'last_name' => 'Mezun',
             'phone' => '05320000000',
             'email' => 'yeni@example.com',
             'institution_name' => 'Hitit Üniversitesi',
@@ -104,13 +105,15 @@ class MezunlarTest extends TestCase
         $this->actingAs($user)->post('/mezunlar', [
             'graduation_year' => 2024,
             'graduation_number' => '10',
-            'full_name' => 'Başka Biri',
+            'first_name' => 'Başka',
+            'last_name' => 'Biri',
         ])->assertSessionHasErrors('graduation_number');
 
         $this->actingAs($user)->put("/mezunlar/{$graduate->id}", [
             'graduation_year' => 2024,
             'graduation_number' => '11',
-            'full_name' => 'Yeni Mezun Güncel',
+            'first_name' => 'Yeni Mezun',
+            'last_name' => 'Güncel',
             'phone' => '',
             'company' => '',
         ])->assertRedirect();

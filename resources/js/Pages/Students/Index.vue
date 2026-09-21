@@ -97,7 +97,6 @@ const createForm = useForm({
     school_number: '',
     first_name: '',
     last_name: '',
-    full_name: '',
     phone: '',
     email: '',
     address: '',
@@ -109,7 +108,7 @@ function submitCreate() {
     createForm.post('/students', {
         onSuccess: () => {
             creating.value = false;
-            createForm.reset('school_number', 'first_name', 'last_name', 'full_name', 'phone', 'email', 'address', 'photo');
+            createForm.reset('school_number', 'first_name', 'last_name', 'phone', 'email', 'address', 'photo');
             if (photoInput.value) photoInput.value.value = '';
         },
     });
@@ -136,16 +135,19 @@ const editPhotoSrc = computed(() => {
     return null;
 });
 
+const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_name}`.trim());
+
 const createPhotoSrc = computed(() => {
     if (createForm.photo) return URL.createObjectURL(createForm.photo);
     return null;
 });
+
+const createDisplayName = computed(() => `${createForm.first_name} ${createForm.last_name}`.trim());
 const editForm = useForm({
     branch_id: null as number | null,
     school_number: '',
     first_name: '',
     last_name: '',
-    full_name: '',
     phone: '',
     email: '',
     address: '',
@@ -159,7 +161,6 @@ function openEdit(student: Student) {
     editForm.school_number = student.school_number;
     editForm.first_name = student.first_name ?? '';
     editForm.last_name = student.last_name ?? '';
-    editForm.full_name = student.full_name;
     editForm.phone = student.phone ?? '';
     editForm.email = student.email ?? '';
     editForm.address = student.address ?? '';
@@ -444,7 +445,7 @@ function confirmDelete() {
                         >
                             <StudentAvatar
                                 :photo-url="createPhotoSrc"
-                                :full-name="createForm.full_name"
+                                :full-name="createDisplayName"
                                 img-class="h-full w-full object-cover"
                                 placeholder-class="h-full w-full"
                                 circle-class="w-10 text-sm"
@@ -459,82 +460,69 @@ function confirmDelete() {
                             @change="onPhotoChange"
                         />
                         <div class="min-w-0 flex-1 space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
+                                    <input
+                                        id="student-number"
+                                        v-model="createForm.school_number"
+                                        type="text"
+                                        required
+                                        maxlength="20"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                    <p v-if="createForm.errors.school_number" class="mt-1 text-sm text-red-600">
+                                        {{ createForm.errors.school_number }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
+                                    <div class="mt-1">
+                                        <DropdownSelect
+                                            id="student-branch"
+                                            v-model="createForm.branch_id"
+                                            :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
+                                            aria-label="Sınıf"
+                                        />
+                                    </div>
+                                    <p v-if="createForm.errors.branch_id" class="mt-1 text-sm text-red-600">
+                                        {{ createForm.errors.branch_id }}
+                                    </p>
+                                </div>
+                            </div>
                             <div>
-                                <label for="student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
+                                <label for="student-first" class="block text-sm font-medium text-gray-700">Ad</label>
                                 <input
-                                    id="student-number"
-                                    v-model="createForm.school_number"
+                                    id="student-first"
+                                    v-model="createForm.first_name"
                                     type="text"
                                     required
-                                    maxlength="20"
+                                    maxlength="50"
                                     class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 />
-                                <p v-if="createForm.errors.school_number" class="mt-1 text-sm text-red-600">
-                                    {{ createForm.errors.school_number }}
+                                <p v-if="createForm.errors.first_name" class="mt-1 text-sm text-red-600">
+                                    {{ createForm.errors.first_name }}
                                 </p>
                             </div>
                             <div>
-                                <label for="student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                                <div class="mt-1">
-                                    <DropdownSelect
-                                        id="student-branch"
-                                        v-model="createForm.branch_id"
-                                        :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
-                                        aria-label="Sınıf"
-                                    />
-                                </div>
-                                <p v-if="createForm.errors.branch_id" class="mt-1 text-sm text-red-600">
-                                    {{ createForm.errors.branch_id }}
+                                <label for="student-last" class="block text-sm font-medium text-gray-700">Soyad</label>
+                                <input
+                                    id="student-last"
+                                    v-model="createForm.last_name"
+                                    type="text"
+                                    required
+                                    maxlength="50"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="createForm.errors.last_name" class="mt-1 text-sm text-red-600">
+                                    {{ createForm.errors.last_name }}
                                 </p>
                             </div>
-                            <div>
-                                <label for="student-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
-                        <input
-                            id="student-name"
-                            v-model="createForm.full_name"
-                            type="text"
-                            required
-                            maxlength="100"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <p v-if="createForm.errors.full_name" class="mt-1 text-sm text-red-600">
-                            {{ createForm.errors.full_name }}
-                        </p>
-                    </div>
                         </div>
                     </div>
                     <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.photo }}
                     </p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="student-first" class="block text-sm font-medium text-gray-700">Ad</label>
-                            <input
-                                id="student-first"
-                                v-model="createForm.first_name"
-                                type="text"
-                                maxlength="50"
-                                placeholder="Boşsa ad soyaddan ayrılır"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="createForm.errors.first_name" class="mt-1 text-sm text-red-600">
-                                {{ createForm.errors.first_name }}
-                            </p>
-                        </div>
-                        <div>
-                            <label for="student-last" class="block text-sm font-medium text-gray-700">Soyad</label>
-                            <input
-                                id="student-last"
-                                v-model="createForm.last_name"
-                                type="text"
-                                maxlength="50"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="createForm.errors.last_name" class="mt-1 text-sm text-red-600">
-                                {{ createForm.errors.last_name }}
-                            </p>
-                        </div>
-                    </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="student-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
@@ -565,13 +553,13 @@ function confirmDelete() {
                     </div>
                     <div>
                         <label for="student-address" class="block text-sm font-medium text-gray-700">Adres</label>
-                        <input
+                        <textarea
                             id="student-address"
                             v-model="createForm.address"
-                            type="text"
+                            rows="2"
                             maxlength="500"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
+                            class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        ></textarea>
                         <p v-if="createForm.errors.address" class="mt-1 text-sm text-red-600">
                             {{ createForm.errors.address }}
                         </p>
@@ -616,7 +604,7 @@ function confirmDelete() {
                         >
                             <StudentAvatar
                                 :photo-url="editPhotoSrc"
-                                :full-name="editForm.full_name"
+                                :full-name="editDisplayName"
                                 img-class="h-full w-full object-cover"
                                 placeholder-class="h-full w-full"
                                 circle-class="w-10 text-sm"
@@ -631,43 +619,59 @@ function confirmDelete() {
                             @change="onEditPhotoChange"
                         />
                         <div class="min-w-0 flex-1 space-y-4">
-                            <div>
-                                <label for="edit-student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
-                                <input
-                                    id="edit-student-number"
-                                    v-model="editForm.school_number"
-                                    type="text"
-                                    required
-                                    maxlength="20"
-                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                                <p v-if="editForm.errors.school_number" class="mt-1 text-sm text-red-600">
-                                    {{ editForm.errors.school_number }}
-                                </p>
-                            </div>
-                            <div>
-                                <label for="edit-student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                                <div class="mt-1">
-                                    <DropdownSelect
-                                        id="edit-student-branch"
-                                        v-model="editForm.branch_id"
-                                        :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
-                                        aria-label="Sınıf"
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="edit-student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
+                                    <input
+                                        id="edit-student-number"
+                                        v-model="editForm.school_number"
+                                        type="text"
+                                        required
+                                        maxlength="20"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     />
+                                    <p v-if="editForm.errors.school_number" class="mt-1 text-sm text-red-600">
+                                        {{ editForm.errors.school_number }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="edit-student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
+                                    <div class="mt-1">
+                                        <DropdownSelect
+                                            id="edit-student-branch"
+                                            v-model="editForm.branch_id"
+                                            :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
+                                            aria-label="Sınıf"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                             <div>
-                                <label for="edit-student-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                                <label for="edit-student-first" class="block text-sm font-medium text-gray-700">Ad</label>
                                 <input
-                                    id="edit-student-name"
-                                    v-model="editForm.full_name"
+                                    id="edit-student-first"
+                                    v-model="editForm.first_name"
                                     type="text"
                                     required
-                                    maxlength="100"
+                                    maxlength="50"
                                     class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 />
-                                <p v-if="editForm.errors.full_name" class="mt-1 text-sm text-red-600">
-                                    {{ editForm.errors.full_name }}
+                                <p v-if="editForm.errors.first_name" class="mt-1 text-sm text-red-600">
+                                    {{ editForm.errors.first_name }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="edit-student-last" class="block text-sm font-medium text-gray-700">Soyad</label>
+                                <input
+                                    id="edit-student-last"
+                                    v-model="editForm.last_name"
+                                    type="text"
+                                    required
+                                    maxlength="50"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="editForm.errors.last_name" class="mt-1 text-sm text-red-600">
+                                    {{ editForm.errors.last_name }}
                                 </p>
                             </div>
                         </div>
@@ -675,34 +679,6 @@ function confirmDelete() {
                     <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">
                         {{ editForm.errors.photo }}
                     </p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="edit-student-first" class="block text-sm font-medium text-gray-700">Ad</label>
-                            <input
-                                id="edit-student-first"
-                                v-model="editForm.first_name"
-                                type="text"
-                                maxlength="50"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="editForm.errors.first_name" class="mt-1 text-sm text-red-600">
-                                {{ editForm.errors.first_name }}
-                            </p>
-                        </div>
-                        <div>
-                            <label for="edit-student-last" class="block text-sm font-medium text-gray-700">Soyad</label>
-                            <input
-                                id="edit-student-last"
-                                v-model="editForm.last_name"
-                                type="text"
-                                maxlength="50"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="editForm.errors.last_name" class="mt-1 text-sm text-red-600">
-                                {{ editForm.errors.last_name }}
-                            </p>
-                        </div>
-                    </div>
                     <div>
                         <label for="edit-student-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
                         <input
@@ -731,13 +707,13 @@ function confirmDelete() {
                     </div>
                     <div>
                         <label for="edit-student-address" class="block text-sm font-medium text-gray-700">Adres</label>
-                        <input
+                        <textarea
                             id="edit-student-address"
                             v-model="editForm.address"
-                            type="text"
+                            rows="2"
                             maxlength="500"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
+                            class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        ></textarea>
                         <p v-if="editForm.errors.address" class="mt-1 text-sm text-red-600">
                             {{ editForm.errors.address }}
                         </p>

@@ -78,7 +78,6 @@ const createForm = useForm({
     graduation_number: '',
     first_name: '',
     last_name: '',
-    full_name: '',
     phone: '',
     email: '',
     notes: '',
@@ -101,7 +100,6 @@ function submitCreate() {
                 'graduation_number',
                 'first_name',
                 'last_name',
-                'full_name',
                 'phone',
                 'email',
                 'notes',
@@ -125,17 +123,21 @@ const createPhotoSrc = computed(() => {
     return null;
 });
 
+const createDisplayName = computed(() => `${createForm.first_name} ${createForm.last_name}`.trim());
+
 const editPhotoSrc = computed(() => {
     if (editForm.photo) return URL.createObjectURL(editForm.photo);
     if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}`;
     return null;
 });
+
+const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_name}`.trim());
+
 const editForm = useForm({
     graduation_year: 0,
     graduation_number: '',
     first_name: '',
     last_name: '',
-    full_name: '',
     phone: '',
     email: '',
     notes: '',
@@ -153,7 +155,6 @@ function openEdit(graduate: Graduate) {
     editForm.graduation_number = graduate.number;
     editForm.first_name = graduate.first_name ?? '';
     editForm.last_name = graduate.last_name ?? '';
-    editForm.full_name = graduate.full_name;
     editForm.phone = graduate.phone ?? '';
     editForm.email = graduate.email ?? '';
     editForm.notes = graduate.notes ?? '';
@@ -379,7 +380,7 @@ const downloadUrl = computed(() => {
                         >
                             <StudentAvatar
                                 :photo-url="createPhotoSrc"
-                                :full-name="createForm.full_name"
+                                :full-name="createDisplayName"
                                 img-class="h-full w-full object-cover"
                                 placeholder-class="h-full w-full"
                                 circle-class="w-10 text-sm"
@@ -394,74 +395,70 @@ const downloadUrl = computed(() => {
                             @change="(e) => (createForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null)"
                         />
                         <div class="min-w-0 flex-1 space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
+                                    <input
+                                        id="graduate-number"
+                                        v-model="createForm.graduation_number"
+                                        type="text"
+                                        required
+                                        maxlength="20"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                    <p v-if="createForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
+                                        {{ createForm.errors.graduation_number }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
+                                    <input
+                                        id="graduate-year"
+                                        v-model.number="createForm.graduation_year"
+                                        type="number"
+                                        required
+                                        min="1900"
+                                        max="2100"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                    <p v-if="createForm.errors.graduation_year" class="mt-1 text-sm text-red-600">
+                                        {{ createForm.errors.graduation_year }}
+                                    </p>
+                                </div>
+                            </div>
                             <div>
-                                <label for="graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
+                                <label for="graduate-first" class="block text-sm font-medium text-gray-700">Ad</label>
                                 <input
-                                    id="graduate-number"
-                                    v-model="createForm.graduation_number"
+                                    id="graduate-first"
+                                    v-model="createForm.first_name"
                                     type="text"
                                     required
-                                    maxlength="20"
+                                    maxlength="50"
                                     class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 />
-                                <p v-if="createForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
-                                    {{ createForm.errors.graduation_number }}
+                                <p v-if="createForm.errors.first_name" class="mt-1 text-sm text-red-600">
+                                    {{ createForm.errors.first_name }}
                                 </p>
                             </div>
                             <div>
-                                <label for="graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
+                                <label for="graduate-last" class="block text-sm font-medium text-gray-700">Soyad</label>
                                 <input
-                                    id="graduate-year"
-                                    v-model.number="createForm.graduation_year"
-                                    type="number"
+                                    id="graduate-last"
+                                    v-model="createForm.last_name"
+                                    type="text"
                                     required
-                                    min="1900"
-                                    max="2100"
+                                    maxlength="50"
                                     class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 />
-                                <p v-if="createForm.errors.graduation_year" class="mt-1 text-sm text-red-600">
-                                    {{ createForm.errors.graduation_year }}
+                                <p v-if="createForm.errors.last_name" class="mt-1 text-sm text-red-600">
+                                    {{ createForm.errors.last_name }}
                                 </p>
                             </div>
-                            <div>
-                                <label for="graduate-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
-                    <input
-                        id="graduate-name"
-                        v-model="createForm.full_name"
-                        type="text"
-                        required
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="createForm.errors.full_name" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.full_name }}
-                    </p>
-                </div>
                         </div>
                     </div>
                     <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
                         {{ createForm.errors.photo }}
                     </p>
-                </div>
-                <div>
-                    <label for="graduate-first" class="block text-sm font-medium text-gray-700">Ad</label>
-                    <input
-                        id="graduate-first"
-                        v-model="createForm.first_name"
-                        type="text"
-                        maxlength="50"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div>
-                    <label for="graduate-last" class="block text-sm font-medium text-gray-700">Soyad</label>
-                    <input
-                        id="graduate-last"
-                        v-model="createForm.last_name"
-                        type="text"
-                        maxlength="50"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
                 </div>
                 <div>
                     <label for="graduate-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
@@ -583,7 +580,7 @@ const downloadUrl = computed(() => {
                         >
                             <StudentAvatar
                                 :photo-url="editPhotoSrc"
-                                :full-name="editForm.full_name"
+                                :full-name="editDisplayName"
                                 img-class="h-full w-full object-cover"
                                 placeholder-class="h-full w-full"
                                 circle-class="w-10 text-sm"
@@ -598,70 +595,67 @@ const downloadUrl = computed(() => {
                             @change="(e) => (editForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null)"
                         />
                         <div class="min-w-0 flex-1 space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="edit-graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
+                                    <input
+                                        id="edit-graduate-number"
+                                        v-model="editForm.graduation_number"
+                                        type="text"
+                                        required
+                                        maxlength="20"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                    <p v-if="editForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
+                                        {{ editForm.errors.graduation_number }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="edit-graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
+                                    <input
+                                        id="edit-graduate-year"
+                                        v-model.number="editForm.graduation_year"
+                                        type="number"
+                                        required
+                                        min="1900"
+                                        max="2100"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
                             <div>
-                                <label for="edit-graduate-number" class="block text-sm font-medium text-gray-700">Mezuniyet No</label>
+                                <label for="edit-graduate-first" class="block text-sm font-medium text-gray-700">Ad</label>
                                 <input
-                                    id="edit-graduate-number"
-                                    v-model="editForm.graduation_number"
+                                    id="edit-graduate-first"
+                                    v-model="editForm.first_name"
                                     type="text"
                                     required
-                                    maxlength="20"
+                                    maxlength="50"
                                     class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 />
-                                <p v-if="editForm.errors.graduation_number" class="mt-1 text-sm text-red-600">
-                                    {{ editForm.errors.graduation_number }}
+                                <p v-if="editForm.errors.first_name" class="mt-1 text-sm text-red-600">
+                                    {{ editForm.errors.first_name }}
                                 </p>
                             </div>
                             <div>
-                                <label for="edit-graduate-year" class="block text-sm font-medium text-gray-700">Mezuniyet Yılı</label>
+                                <label for="edit-graduate-last" class="block text-sm font-medium text-gray-700">Soyad</label>
                                 <input
-                                    id="edit-graduate-year"
-                                    v-model.number="editForm.graduation_year"
-                                    type="number"
-                                    required
-                                    min="1900"
-                                    max="2100"
-                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                            </div>
-                            <div>
-                                <label for="edit-graduate-name" class="block text-sm font-medium text-gray-700">Ad Soyad</label>
-                                <input
-                                    id="edit-graduate-name"
-                                    v-model="editForm.full_name"
+                                    id="edit-graduate-last"
+                                    v-model="editForm.last_name"
                                     type="text"
                                     required
-                                    maxlength="100"
+                                    maxlength="50"
                                     class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 />
+                                <p v-if="editForm.errors.last_name" class="mt-1 text-sm text-red-600">
+                                    {{ editForm.errors.last_name }}
+                                </p>
                             </div>
                         </div>
                     </div>
                     <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">
                         {{ editForm.errors.photo }}
                     </p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="edit-graduate-first" class="block text-sm font-medium text-gray-700">Ad</label>
-                            <input
-                                id="edit-graduate-first"
-                                v-model="editForm.first_name"
-                                type="text"
-                                maxlength="50"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-                        <div>
-                            <label for="edit-graduate-last" class="block text-sm font-medium text-gray-700">Soyad</label>
-                            <input
-                                id="edit-graduate-last"
-                                v-model="editForm.last_name"
-                                type="text"
-                                maxlength="50"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-                    </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="edit-graduate-phone" class="block text-sm font-medium text-gray-700">Telefon</label>

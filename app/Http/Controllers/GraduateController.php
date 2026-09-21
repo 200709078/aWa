@@ -203,7 +203,7 @@ class GraduateController extends Controller
     }
 
     /**
-     * @return array{graduation_year: int, graduation_number: string, first_name: ?string, last_name: ?string, full_name: string, phone: ?string, email: ?string, notes: ?string, institution_name: ?string, faculty: ?string, department: ?string, company: ?string, job_city: ?string, photo: ?UploadedFile}
+     * @return array{graduation_year: int, graduation_number: string, first_name: string, last_name: string, full_name: string, phone: ?string, email: ?string, notes: ?string, institution_name: ?string, faculty: ?string, department: ?string, company: ?string, job_city: ?string, photo: ?UploadedFile}
      */
     private function validated(Request $request, ?Graduate $graduate = null): array
     {
@@ -213,9 +213,8 @@ class GraduateController extends Controller
                 'required', 'string', 'max:20',
                 Rule::unique('graduates')->where(fn ($query) => $query->where('graduation_year', (int) $request->input('graduation_year')))->ignore($graduate?->id),
             ],
-            'first_name' => ['nullable', 'string', 'max:50'],
-            'last_name' => ['nullable', 'string', 'max:50'],
-            'full_name' => ['required', 'string', 'max:100'],
+            'first_name' => ['required', 'string', 'max:50'],
+            'last_name' => ['required', 'string', 'max:50'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:100'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -229,29 +228,25 @@ class GraduateController extends Controller
             'graduation_year.required' => 'Mezuniyet yılı gerekli.',
             'graduation_number.required' => 'Mezuniyet numarası gerekli.',
             'graduation_number.unique' => 'Bu yıl ve numarayla zaten bir mezun kayıtlı.',
-            'full_name.required' => 'Ad soyad gerekli.',
+            'first_name.required' => 'Ad gerekli.',
+            'last_name.required' => 'Soyad gerekli.',
             'email.email' => 'Geçerli bir e-posta adresi girin.',
             'photo.image' => 'Yalnızca resim dosyası yükleyin.',
             'photo.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp.',
             'photo.max' => 'Fotoğraf en fazla 10 MB olabilir.',
         ]);
 
-        $fullName = trim($data['full_name']);
-        $firstName = trim((string) ($data['first_name'] ?? ''));
-        $lastName = trim((string) ($data['last_name'] ?? ''));
-
-        if ($firstName === '' && $lastName === '') {
-            [$firstName, $lastName] = StudentImportController::splitName($fullName);
-        }
+        $firstName = trim($data['first_name']);
+        $lastName = trim($data['last_name']);
 
         $nullify = fn ($value) => trim((string) $value) === '' ? null : trim((string) $value);
 
         return [
             'graduation_year' => (int) $data['graduation_year'],
             'graduation_number' => trim($data['graduation_number']),
-            'first_name' => $firstName === '' ? null : $firstName,
-            'last_name' => $lastName === '' ? null : $lastName,
-            'full_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'full_name' => $firstName.' '.$lastName,
             'phone' => $nullify($data['phone'] ?? null),
             'email' => $nullify($data['email'] ?? null),
             'notes' => $nullify($data['notes'] ?? null),

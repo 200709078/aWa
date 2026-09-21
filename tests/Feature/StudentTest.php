@@ -35,7 +35,8 @@ class StudentTest extends TestCase
         $this->actingAs($user)->post('/students', [
             'branch_id' => $branch->id,
             'school_number' => '145',
-            'full_name' => 'Ali Veli',
+            'first_name' => 'Ali',
+            'last_name' => 'Veli',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('people', [
@@ -110,7 +111,8 @@ class StudentTest extends TestCase
         $this->actingAs($user)->post('/students', [
             'branch_id' => $branch->id,
             'school_number' => '145',
-            'full_name' => 'Başka Biri',
+            'first_name' => 'Başka',
+            'last_name' => 'Biri',
         ])->assertSessionHasErrors('school_number');
     }
 
@@ -125,7 +127,8 @@ class StudentTest extends TestCase
         $this->actingAs($user)->put("/students/{$student->id}", [
             'branch_id' => $b9b->id,
             'school_number' => '145',
-            'full_name' => 'Ali Veli Güncel',
+            'first_name' => 'Ali Veli',
+            'last_name' => 'Güncel',
             'is_active' => true,
         ])->assertRedirect();
 
@@ -159,7 +162,6 @@ class StudentTest extends TestCase
             'school_number' => '145',
             'first_name' => 'Ali',
             'last_name' => 'Veli',
-            'full_name' => 'Ali Veli',
             'phone' => '05320000000',
             'email' => 'ali@example.com',
             'address' => 'Örnek Mah.',
@@ -185,7 +187,7 @@ class StudentTest extends TestCase
         unlink($photo);
     }
 
-    public function test_ad_soyad_bos_verilirse_tam_isimden_ayrilir(): void
+    public function test_ad_soyad_zorunludur(): void
     {
         $user = User::factory()->create();
         $this->setupYear();
@@ -194,14 +196,8 @@ class StudentTest extends TestCase
         $this->actingAs($user)->post('/students', [
             'branch_id' => $branch->id,
             'school_number' => '146',
-            'full_name' => 'Ayşe Yılmaz Kaya',
-        ])->assertRedirect();
-
-        $this->assertDatabaseHas('people', [
-            'full_name' => 'Ayşe Yılmaz Kaya',
-            'first_name' => 'Ayşe Yılmaz',
-            'last_name' => 'Kaya',
-        ]);
+            'first_name' => 'Ayşe',
+        ])->assertSessionHasErrors(['last_name']);
     }
 
     public function test_ogrenci_guncelleme_kisi_bilgisi_ve_fotograf(): void
@@ -220,7 +216,6 @@ class StudentTest extends TestCase
             'school_number' => '145',
             'first_name' => 'Ali Can',
             'last_name' => 'Veli',
-            'full_name' => 'Ali Can Veli',
             'phone' => '',
             'email' => 'alican@example.com',
             'address' => '',
