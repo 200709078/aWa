@@ -81,7 +81,7 @@ class GraduateController extends Controller
     }
 
     /**
-     * @return array{id: int, year: int, number: string, full_name: string, first_name: ?string, last_name: ?string, phone: ?string, email: ?string, photo_path: ?string, notes: ?string, educations: array<int, string>, institution_name: ?string, faculty: ?string, department: ?string, company: ?string, job_city: ?string}
+     * @return array{id: int, year: int, number: string, full_name: string, first_name: ?string, last_name: ?string, phone: ?string, email: ?string, photo_path: ?string, educations: array<int, string>, institution_name: ?string, faculty: ?string, department: ?string, company: ?string, job_city: ?string}
      */
     private function flatten(Graduate $graduate): array
     {
@@ -98,7 +98,6 @@ class GraduateController extends Controller
             'phone' => $graduate->person?->phone,
             'email' => $graduate->person?->email,
             'photo_path' => $graduate->person?->photo_path,
-            'notes' => $graduate->notes,
             'educations' => $educations
                 ->map(fn ($item) => implode(' / ', array_filter([
                     $item->city ?? '',
@@ -112,6 +111,13 @@ class GraduateController extends Controller
             'institution_name' => $educations->first()?->institution_name,
             'faculty' => $educations->first()?->faculty,
             'department' => $educations->first()?->department,
+            'education_rows' => $educations->map(fn ($item) => [
+                'id' => $item->id,
+                'city' => $item->city,
+                'institution_name' => $item->institution_name,
+                'faculty' => $item->faculty,
+                'department' => $item->department,
+            ])->values()->all(),
             'company' => $employment?->company_name,
             'job_city' => $employment?->city,
         ];
@@ -136,10 +142,9 @@ class GraduateController extends Controller
                     'student_id' => null,
                     'graduation_year' => $validated['graduation_year'],
                     'graduation_number' => $validated['graduation_number'],
-                    'notes' => $validated['notes'],
                 ]);
 
-                $this->syncEducation($person, $validated);
+                $this->syncEducations($person, $validated);
                 $this->syncEmployment($person, $validated);
 
                 if ($validated['photo']) {
@@ -162,7 +167,6 @@ class GraduateController extends Controller
                 $graduate->update([
                     'graduation_year' => $validated['graduation_year'],
                     'graduation_number' => $validated['graduation_number'],
-                    'notes' => $validated['notes'],
                 ]);
 
                 $graduate->person?->update([
@@ -174,7 +178,7 @@ class GraduateController extends Controller
                 ]);
 
                 if ($graduate->person) {
-                    $this->syncEducation($graduate->person, $validated);
+                    $this->syncEducations($graduate->person, $validated);
                     $this->syncEmployment($graduate->person, $validated);
 
                     if ($validated['photo']) {
@@ -210,7 +214,7 @@ class GraduateController extends Controller
     }
 
     /**
-     * @return array{graduation_year: int, graduation_number: string, first_name: string, last_name: string, full_name: string, phone: ?string, email: ?string, notes: ?string, institution_name: ?string, faculty: ?string, department: ?string, company: ?string, job_city: ?string, photo: ?UploadedFile}
+     * @return array{graduation_year: int, graduation_number: string, first_name: string, last_name: string, full_name: string, phone: ?string, email: ?string, educations: array<int, array{id: ?int, city: ?string, institution_name: string, faculty: ?string, department: ?string}>, company: ?string, job_city: ?string, photo: ?UploadedFile}
      */
     private function validated(Request $request, ?Graduate $graduate = null): array
     {
@@ -224,10 +228,12 @@ class GraduateController extends Controller
             'last_name' => ['required', 'string', 'max:50'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'institution_name' => ['nullable', 'string', 'max:100'],
-            'faculty' => ['nullable', 'string', 'max:100'],
-            'department' => ['nullable', 'string', 'max:100'],
+            'educations' => ['nullable', 'array'],
+            'educations.*.id' => ['nullable', 'integer'],
+            'educations.*.city' => ['nullable', 'string', 'max:100'],
+            'educations.*.institution_name' => ['required', 'string', 'max:100'],
+            'educations.*.faculty' => ['nullable', 'string', 'max:100'],
+            'educations.*.department' => ['nullable', 'string', 'max:100'],
             'company' => ['nullable', 'string', 'max:100'],
             'job_city' => ['nullable', 'string', 'max:100'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
@@ -238,6 +244,7 @@ class GraduateController extends Controller
             'first_name.required' => 'Ad gerekli.',
             'last_name.required' => 'Soyad gerekli.',
             'email.email' => 'Geçerli bir e-posta adresi girin.',
+            'educations.*.institution_name.required' => 'Her eğitim satırında üniversite gerekli.',
             'photo.image' => 'Yalnızca resim dosyası yükleyin.',
             'photo.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp.',
             'photo.max' => 'Fotoğraf en fazla 10 MB olabilir.',
@@ -248,6 +255,21 @@ class GraduateController extends Controller
 
         $nullify = fn ($value) => trim((string) $value) === '' ? null : trim((string) $value);
 
+        $educations = [];
+        foreach ($data['educations'] ?? [] as $row) {
+            $institution = trim((string) ($row['institution_name'] ?? ''));
+            if ($institution === '') {
+                continue;
+            }
+            $educations[] = [
+                'id' => isset($row['id']) && is_numeric($row['id']) ? (int) $row['id'] : null,
+                'city' => $nullify($row['city'] ?? null),
+                'institution_name' => $institution,
+                'faculty' => $nullify($row['faculty'] ?? null),
+                'department' => $nullify($row['department'] ?? null),
+            ];
+        }
+
         return [
             'graduation_year' => (int) $data['graduation_year'],
             'graduation_number' => trim($data['graduation_number']),
@@ -256,10 +278,7 @@ class GraduateController extends Controller
             'full_name' => $firstName.' '.$lastName,
             'phone' => $nullify($data['phone'] ?? null),
             'email' => $nullify($data['email'] ?? null),
-            'notes' => $nullify($data['notes'] ?? null),
-            'institution_name' => $nullify($data['institution_name'] ?? null),
-            'faculty' => $nullify($data['faculty'] ?? null),
-            'department' => $nullify($data['department'] ?? null),
+            'educations' => $educations,
             'company' => $nullify($data['company'] ?? null),
             'job_city' => $nullify($data['job_city'] ?? null),
             'photo' => $request->file('photo'),
@@ -267,27 +286,28 @@ class GraduateController extends Controller
     }
 
     /**
-     * @param  array{institution_name: ?string, faculty: ?string, department: ?string}  $validated
+     * @param  array{educations: array<int, array{id: ?int, city: ?string, institution_name: string, faculty: ?string, department: ?string}>}  $validated
      */
-    private function syncEducation(Person $person, array $validated): void
+    private function syncEducations(Person $person, array $validated): void
     {
-        $education = $person->educations()->first();
+        $kept = [];
+        foreach ($validated['educations'] as $row) {
+            $data = [
+                'city' => $row['city'],
+                'institution_name' => $row['institution_name'],
+                'faculty' => $row['faculty'],
+                'department' => $row['department'],
+            ];
 
-        if ($validated['institution_name'] === null && $validated['faculty'] === null && $validated['department'] === null) {
-            return;
+            if ($row['id'] && ($education = $person->educations()->find($row['id']))) {
+                $education->update($data);
+                $kept[] = $education->id;
+            } else {
+                $kept[] = $person->educations()->create($data)->id;
+            }
         }
 
-        $data = [
-            'institution_name' => $validated['institution_name'] ?? $education?->institution_name ?? '',
-            'faculty' => $validated['faculty'],
-            'department' => $validated['department'],
-        ];
-
-        if ($education) {
-            $education->update($data);
-        } elseif ($validated['institution_name'] !== null) {
-            $person->educations()->create($data);
-        }
+        $person->educations()->whereNotIn('id', $kept)->delete();
     }
 
     /**

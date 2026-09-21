@@ -144,6 +144,16 @@ class RehberExportService
                 ? str_pad($graduate->graduation_number, 3, '0', STR_PAD_LEFT)
                 : $graduate->graduation_number);
             $employment = $graduate->person?->employments->first();
+            $educationLines = $graduate->person?->educations
+                ->map(fn ($item) => implode(' / ', array_filter([
+                    $item->city ?? '',
+                    $item->institution_name ?? '',
+                    $item->faculty ?? '',
+                    $item->department ?? '',
+                ])))
+                ->filter()
+                ->values() ?? collect();
+            $noteLines = $educationLines->slice(1)->values()->all();
             $cards = array_merge($cards, $this->vcard(
                 prefix: $prefix,
                 name: (string) $graduate->person?->full_name,
@@ -153,8 +163,8 @@ class RehberExportService
                 category: "Mezun {$graduate->graduation_year}",
                 photoPath: $withPhoto ? $graduate->person?->photo_path : null,
                 email: $graduate->person?->email,
-                company: $employment?->company_name,
-                note: $graduate->notes,
+                company: $educationLines->first(),
+                note: $noteLines === [] ? null : implode("\n", $noteLines),
             ));
         }
 

@@ -41,7 +41,6 @@ return new class extends Migration
             $table->foreignId('student_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedSmallInteger('graduation_year');
             $table->string('graduation_number');
-            $table->text('notes')->nullable();
             $table->timestamps();
 
             $table->unique(['graduation_year', 'graduation_number']);
