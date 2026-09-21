@@ -40,10 +40,7 @@ return new class extends Migration
             $table->string('institution_name');
             $table->string('faculty')->nullable();
             $table->string('department')->nullable();
-            $table->string('degree_level')->nullable();
-            $table->unsignedSmallInteger('start_year')->nullable();
-            $table->unsignedSmallInteger('graduation_year')->nullable();
-            $table->text('notes')->nullable();
+            $table->string('city')->nullable();
             $table->timestamps();
         });
 
