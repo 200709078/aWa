@@ -29,15 +29,11 @@ import AppLayout from '../Layouts/AppLayout.vue';
             </p>
         </div>
         <div class="flex-1 rounded-lg bg-white p-8 text-center shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.2" stroke="currentColor" aria-hidden="true" class="mx-auto h-20 w-20 text-black">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4Z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6.5 10.5V15c0 1.6 2.5 3 5.5 3s5.5-1.4 5.5-3v-4.5" />
-                <path stroke-linecap="round" d="M21.5 8.5V14" />
-            </svg>
+            <img :src="'/favicon.png'" alt="Mezun Takip" class="mx-auto h-20 w-20 object-contain" />
             <h1 class="mt-4 text-3xl font-bold tracking-tight text-gray-900">Mezun Takip</h1>
             <p class="mx-auto mt-3 max-w-xl text-left text-sm leading-6 text-gray-600">
                 Mezunların iletişim, üniversite ve iş bilgilerini yıllara göre arşivleyin,
-                mezun rehberi oluşturun. Bu bölüm yakında aktif olacak.
+                mezun rehberi oluşturun.
             </p>
         </div>
         </div>
