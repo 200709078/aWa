@@ -2,7 +2,7 @@ import { createApp, h, type DefineComponent } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 
 createInertiaApp({
-    title: (title) => (title ? `aVa | ${title}` : 'aVa | Okul Yönetim Sistemi'),
+    title: (title) => (title ? `aWa | ${title}` : 'aWa | Okul Yönetim Sistemi'),
     resolve: (name) => {
         const pages = import.meta.glob<DefineComponent>('./Pages/**/*.vue', { eager: true });
         const page = pages[`./Pages/${name}.vue`];

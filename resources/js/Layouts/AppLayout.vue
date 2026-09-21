@@ -304,7 +304,7 @@ function logout() {
                 <template v-for="entry in nav" :key="entry.label">
                     <div v-if="isGroup(entry)">
                         <div :class="groupClass(entry)">
-                            <img v-if="entry.icon === 'logo'" :src="'/favicon.png'" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 object-contain" />
+                            <img v-if="entry.icon === 'logo'" :src="'/kelebek.png'" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 object-contain" />
                             <NavIcon v-else :name="entry.icon" />
                             <Link v-if="entry.href" :href="entry.href" class="min-w-0 flex-1 truncate text-left">
                                 {{ entry.label }}
@@ -353,7 +353,7 @@ function logout() {
                     <template v-for="entry in nav" :key="entry.label">
                         <div v-if="isGroup(entry)">
                             <div :class="groupClass(entry)">
-                                <img v-if="entry.icon === 'logo'" :src="'/favicon.png'" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 object-contain" />
+                                <img v-if="entry.icon === 'logo'" :src="'/kelebek.png'" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 object-contain" />
                                 <NavIcon v-else :name="entry.icon" />
                                 <Link v-if="entry.href" :href="entry.href" class="min-w-0 flex-1 truncate text-left">
                                     {{ entry.label }}

@@ -6,7 +6,7 @@ import AppLayout from '../Layouts/AppLayout.vue';
         <AppLayout title="Okul Yönetim Sistemi">
         <div class="flex w-full max-w-[80%] flex-col gap-6 md:flex-row">
         <div class="flex-1 rounded-lg bg-white p-8 text-center shadow-sm">
-            <img :src="'/favicon.png'" alt="Kelebek logosu" class="mx-auto h-20 w-20 object-contain" />
+            <img :src="'/kelebek.png'" alt="Kelebek logosu" class="mx-auto h-20 w-20 object-contain" />
             <h1 class="mt-4 text-3xl font-bold tracking-tight text-gray-900">Kelebek Oturma Planı</h1>
             <p class="mx-auto mt-3 max-w-xl text-left text-sm leading-6 text-gray-600">
                 Sınav oturma planlarını dakikalar içinde hazırlayın: şubeleri ve salonları tanımlayın,
