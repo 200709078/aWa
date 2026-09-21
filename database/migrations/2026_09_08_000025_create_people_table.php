@@ -47,9 +47,9 @@ return new class extends Migration
         Schema::create('person_employments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('person_id')->constrained()->cascadeOnDelete();
+            $table->string('city')->nullable();
             $table->string('company_name');
             $table->string('job_title')->nullable();
-            $table->string('city')->nullable();
             $table->unsignedSmallInteger('start_year')->nullable();
             $table->unsignedSmallInteger('end_year')->nullable();
             $table->boolean('is_current')->default(false);

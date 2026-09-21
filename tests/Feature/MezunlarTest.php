@@ -27,7 +27,6 @@ class MezunlarTest extends TestCase
             'student_id' => null,
             'graduation_year' => $year,
             'graduation_number' => $number,
-            'notes' => $overrides['notes'] ?? null,
         ]);
 
         if (isset($overrides['education'])) {
@@ -90,17 +89,19 @@ class MezunlarTest extends TestCase
             'last_name' => 'Mezun',
             'phone' => '05320000000',
             'email' => 'yeni@example.com',
-            'institution_name' => 'Hitit Üniversitesi',
-            'department' => 'Tıp',
+            'educations' => [
+                ['city' => 'Çorum', 'institution_name' => 'Hitit Üniversitesi', 'faculty' => null, 'department' => 'Tıp'],
+            ],
             'company' => 'Hastane',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('people', ['full_name' => 'Yeni Mezun', 'first_name' => 'Yeni', 'last_name' => 'Mezun']);
         $this->assertDatabaseHas('graduates', ['graduation_year' => 2024, 'graduation_number' => '10']);
-        $this->assertDatabaseHas('person_educations', ['institution_name' => 'Hitit Üniversitesi']);
+        $this->assertDatabaseHas('person_educations', ['institution_name' => 'Hitit Üniversitesi', 'city' => 'Çorum']);
         $this->assertDatabaseHas('person_employments', ['company_name' => 'Hastane']);
 
         $graduate = Graduate::where('graduation_number', '10')->first();
+        $educationId = $graduate->person->educations()->first()->id;
 
         $this->actingAs($user)->post('/mezunlar', [
             'graduation_year' => 2024,
@@ -115,11 +116,18 @@ class MezunlarTest extends TestCase
             'first_name' => 'Yeni Mezun',
             'last_name' => 'Güncel',
             'phone' => '',
+            'educations' => [
+                ['id' => $educationId, 'city' => 'Samsun', 'institution_name' => 'Hitit Üniversitesi', 'faculty' => null, 'department' => 'Tıp'],
+                ['id' => null, 'city' => null, 'institution_name' => 'Anadolu Üniversitesi', 'faculty' => null, 'department' => null],
+            ],
             'company' => '',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('graduates', ['id' => $graduate->id, 'graduation_number' => '11']);
         $this->assertDatabaseHas('people', ['id' => $graduate->person_id, 'phone' => null]);
+        $this->assertDatabaseHas('person_educations', ['id' => $educationId, 'city' => 'Samsun']);
+        $this->assertDatabaseHas('person_educations', ['institution_name' => 'Anadolu Üniversitesi']);
+        $this->assertEquals(2, $graduate->person->educations()->count());
         // Şirket temizlenince iş kaydı boş şirketle kalmamalı, mevcut kayıt korunur
         $this->assertDatabaseHas('person_employments', ['company_name' => 'Hastane']);
 
@@ -148,7 +156,6 @@ class MezunlarTest extends TestCase
             'photo_path' => 'graduates/1.jpg',
             'education' => ['institution_name' => 'Hitit Üniversitesi', 'department' => 'Türk Dili ve Edebiyatı'],
             'company' => 'Artı Eğitim Kurumları',
-            'notes' => 'Şehir: Çorum',
         ]);
         $this->makeGraduate(2009, '5', 'Telefonsuz Mezun');
 
@@ -164,9 +171,9 @@ class MezunlarTest extends TestCase
         $this->assertStringContainsString('N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Dipda=C4=9F;2009-004=20Burcu;;;', $unfolded);
         $this->assertStringContainsString('TEL;CELL:05548339382', $unfolded);
         $this->assertStringContainsString('EMAIL;HOME:burcu@ornek.com', $content);
-        $this->assertStringContainsString('ORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Art=C4=B1=20E=C4=9Fitim=20Kurumlar=C4=B1', $unfolded);
+        $this->assertStringContainsString('ORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Hitit=20=C3=9Cniversitesi=20/=20T=C3=BCrk=20Dili=20ve=20Edebiyat=C4=B1', $unfolded);
         $this->assertStringContainsString('CATEGORIES:Mezun 2009', $content);
-        $this->assertStringContainsString('NOTE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:', $unfolded);
+        $this->assertStringNotContainsString('NOTE;', $content);
         $this->assertEquals(1, substr_count($content, 'PHOTO;ENCODING=b;TYPE=JPEG:'));
         $this->assertStringNotContainsString('Telefonsuz', $content);
 

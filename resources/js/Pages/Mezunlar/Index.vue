@@ -15,13 +15,25 @@ interface Graduate {
     phone: string | null;
     email: string | null;
     photo_path: string | null;
-    notes: string | null;
     educations: string[];
+    education_rows: EduRow[];
     institution_name: string | null;
     faculty: string | null;
     department: string | null;
     company: string | null;
     job_city: string | null;
+}
+
+interface EduRow {
+    id: number | null;
+    city: string;
+    institution_name: string;
+    faculty: string;
+    department: string;
+}
+
+function blankEduRow(): EduRow {
+    return { id: null, city: '', institution_name: '', faculty: '', department: '' };
 }
 
 interface Paginator {
@@ -80,10 +92,7 @@ const createForm = useForm({
     last_name: '',
     phone: '',
     email: '',
-    notes: '',
-    institution_name: '',
-    faculty: '',
-    department: '',
+    educations: [] as EduRow[],
     company: '',
     job_city: '',
     photo: null as File | null,
@@ -102,14 +111,12 @@ function submitCreate() {
                 'last_name',
                 'phone',
                 'email',
-                'notes',
-                'institution_name',
-                'faculty',
-                'department',
+                'educations',
                 'company',
                 'job_city',
                 'photo',
             );
+            createForm.educations = [];
             if (photoInput.value) photoInput.value.value = '';
         },
     });
@@ -140,14 +147,15 @@ const editForm = useForm({
     last_name: '',
     phone: '',
     email: '',
-    notes: '',
-    institution_name: '',
-    faculty: '',
-    department: '',
+    educations: [] as EduRow[],
     company: '',
     job_city: '',
     photo: null as File | null,
 });
+
+function addEducationRow(form: { educations: EduRow[] }) {
+    form.educations.push(blankEduRow());
+}
 
 function openEdit(graduate: Graduate) {
     editing.value = graduate;
@@ -157,10 +165,9 @@ function openEdit(graduate: Graduate) {
     editForm.last_name = graduate.last_name ?? '';
     editForm.phone = graduate.phone ?? '';
     editForm.email = graduate.email ?? '';
-    editForm.notes = graduate.notes ?? '';
-    editForm.institution_name = graduate.institution_name ?? '';
-    editForm.faculty = graduate.faculty ?? '';
-    editForm.department = graduate.department ?? '';
+    editForm.educations = graduate.education_rows.length > 0
+        ? graduate.education_rows.map((row) => ({ ...row }))
+        : [blankEduRow()];
     editForm.company = graduate.company ?? '';
     editForm.job_city = graduate.job_city ?? '';
     editForm.photo = null;
@@ -483,35 +490,80 @@ const downloadUrl = computed(() => {
                         class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                 </div>
-                <div class="col-span-2">
-                    <label for="graduate-institution" class="block text-sm font-medium text-gray-700">Üniversite / Okul</label>
-                    <input
-                        id="graduate-institution"
-                        v-model="createForm.institution_name"
-                        type="text"
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
                 <div>
-                    <label for="graduate-faculty" class="block text-sm font-medium text-gray-700">Fakülte</label>
-                    <input
-                        id="graduate-faculty"
-                        v-model="createForm.faculty"
-                        type="text"
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div>
-                    <label for="graduate-department" class="block text-sm font-medium text-gray-700">Bölüm</label>
-                    <input
-                        id="graduate-department"
-                        v-model="createForm.department"
-                        type="text"
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
+                    <div class="flex items-center justify-between">
+                        <span class="block text-sm font-medium text-gray-700">Eğitim</span>
+                        <button
+                            type="button"
+                            class="inline-flex h-7 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-3 text-xs text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
+                            @click="addEducationRow(createForm)"
+                        >
+                            + Satır Ekle
+                        </button>
+                    </div>
+                    <div
+                        v-for="(row, i) in createForm.educations"
+                        :key="i"
+                        class="mt-2 space-y-3 rounded-md border border-gray-200 p-3"
+                    >
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label :for="`graduate-ecity-${i}`" class="block text-sm font-medium text-gray-700">Şehir</label>
+                                <input
+                                    :id="`graduate-ecity-${i}`"
+                                    v-model="row.city"
+                                    type="text"
+                                    maxlength="100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div>
+                                <label :for="`graduate-einst-${i}`" class="block text-sm font-medium text-gray-700">Üniversite / Okul</label>
+                                <input
+                                    :id="`graduate-einst-${i}`"
+                                    v-model="row.institution_name"
+                                    type="text"
+                                    required
+                                    maxlength="100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label :for="`graduate-efac-${i}`" class="block text-sm font-medium text-gray-700">Fakülte</label>
+                                <input
+                                    :id="`graduate-efac-${i}`"
+                                    v-model="row.faculty"
+                                    type="text"
+                                    maxlength="100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div>
+                                <label :for="`graduate-edep-${i}`" class="block text-sm font-medium text-gray-700">Bölüm</label>
+                                <input
+                                    :id="`graduate-edep-${i}`"
+                                    v-model="row.department"
+                                    type="text"
+                                    maxlength="100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button
+                                type="button"
+                                class="text-xs text-red-600 hover:underline"
+                                @click="createForm.educations.splice(i, 1)"
+                            >
+                                Satırı sil
+                            </button>
+                        </div>
+                    </div>
+                    <p v-if="createForm.errors.educations" class="mt-1 text-sm text-red-600">
+                        {{ createForm.errors.educations }}
+                    </p>
                 </div>
                 <div>
                     <label for="graduate-company" class="block text-sm font-medium text-gray-700">İşyeri</label>
@@ -530,16 +582,6 @@ const downloadUrl = computed(() => {
                         v-model="createForm.job_city"
                         type="text"
                         maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div class="col-span-2">
-                    <label for="graduate-notes" class="block text-sm font-medium text-gray-700">Notlar</label>
-                    <input
-                        id="graduate-notes"
-                        v-model="createForm.notes"
-                        type="text"
-                        maxlength="2000"
                         class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
                 </div>
@@ -682,35 +724,75 @@ const downloadUrl = computed(() => {
                         </div>
                     </div>
                     <div>
-                        <label for="edit-graduate-institution" class="block text-sm font-medium text-gray-700">Üniversite / Okul</label>
-                        <input
-                            id="edit-graduate-institution"
-                            v-model="editForm.institution_name"
-                            type="text"
-                            maxlength="100"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="edit-graduate-faculty" class="block text-sm font-medium text-gray-700">Fakülte</label>
-                            <input
-                                id="edit-graduate-faculty"
-                                v-model="editForm.faculty"
-                                type="text"
-                                maxlength="100"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
+                        <div class="flex items-center justify-between">
+                            <span class="block text-sm font-medium text-gray-700">Eğitim</span>
+                            <button
+                                type="button"
+                                class="inline-flex h-7 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-3 text-xs text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
+                                @click="addEducationRow(editForm)"
+                            >
+                                + Satır Ekle
+                            </button>
                         </div>
-                        <div>
-                            <label for="edit-graduate-department" class="block text-sm font-medium text-gray-700">Bölüm</label>
-                            <input
-                                id="edit-graduate-department"
-                                v-model="editForm.department"
-                                type="text"
-                                maxlength="100"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
+                        <div
+                            v-for="(row, i) in editForm.educations"
+                            :key="row.id ?? `yeni-${i}`"
+                            class="mt-2 space-y-3 rounded-md border border-gray-200 p-3"
+                        >
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label :for="`edit-ecity-${i}`" class="block text-sm font-medium text-gray-700">Şehir</label>
+                                    <input
+                                        :id="`edit-ecity-${i}`"
+                                        v-model="row.city"
+                                        type="text"
+                                        maxlength="100"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label :for="`edit-einst-${i}`" class="block text-sm font-medium text-gray-700">Üniversite / Okul</label>
+                                    <input
+                                        :id="`edit-einst-${i}`"
+                                        v-model="row.institution_name"
+                                        type="text"
+                                        required
+                                        maxlength="100"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label :for="`edit-efac-${i}`" class="block text-sm font-medium text-gray-700">Fakülte</label>
+                                    <input
+                                        :id="`edit-efac-${i}`"
+                                        v-model="row.faculty"
+                                        type="text"
+                                        maxlength="100"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label :for="`edit-edep-${i}`" class="block text-sm font-medium text-gray-700">Bölüm</label>
+                                    <input
+                                        :id="`edit-edep-${i}`"
+                                        v-model="row.department"
+                                        type="text"
+                                        maxlength="100"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button
+                                    type="button"
+                                    class="text-xs text-red-600 hover:underline"
+                                    @click="editForm.educations.splice(i, 1)"
+                                >
+                                    Satırı sil
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
@@ -734,16 +816,6 @@ const downloadUrl = computed(() => {
                                 class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
-                    </div>
-                    <div>
-                        <label for="edit-graduate-notes" class="block text-sm font-medium text-gray-700">Notlar</label>
-                        <input
-                            id="edit-graduate-notes"
-                            v-model="editForm.notes"
-                            type="text"
-                            maxlength="2000"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
                     </div>
                 </form>
             </div>
