@@ -37,10 +37,10 @@ return new class extends Migration
         Schema::create('person_educations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('person_id')->constrained()->cascadeOnDelete();
+            $table->string('city')->nullable();
             $table->string('institution_name');
             $table->string('faculty')->nullable();
             $table->string('department')->nullable();
-            $table->string('city')->nullable();
             $table->timestamps();
         });
 
