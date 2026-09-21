@@ -70,7 +70,7 @@ const nav = computed<NavEntry[]>(() => {
                 { label: 'Sınıflar', href: '/branches', icon: 'users' },
                 { label: 'Öğrenciler', href: '/students', icon: 'user' },
                 { label: 'Rehber Aktarma', href: '/rehber-aktarma', icon: 'book' },
-                { label: 'Mezunlar', href: '/mezunlar', icon: 'cap' },
+                { label: 'Mezunlar', href: '/mezunlar', icon: 'favicon' },
             ],
         },
         {
@@ -249,7 +249,7 @@ function logout() {
                     </button>
                     <Link href="/" class="flex items-center gap-2">
                         <img :src="'/favicon.png'" alt="Kelebek logosu" class="h-8 w-8 object-contain" />
-                        <span class="text-sm font-semibold leading-none text-gray-900">Okul Yönetim Sistemi</span>
+                        <span class="text-sm font-semibold leading-none text-gray-900">aWa | Okul Yönetim Sistemi</span>
                     </Link>
                 </div>
                 <div class="flex items-center gap-3">
@@ -333,7 +333,8 @@ function logout() {
                                     {{ child.label }}
                                 </span>
                                 <Link v-else :href="child.href" :class="[linkClass(child.href), 'flex items-center gap-2']">
-                                    <NavIcon :name="child.icon" />
+                                    <img v-if="child.icon === 'favicon'" :src="'/favicon.png'" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 object-contain" />
+                                    <NavIcon v-else :name="child.icon" />
                                     {{ child.label }}
                                 </Link>
                             </template>
@@ -382,7 +383,8 @@ function logout() {
                                         {{ child.label }}
                                     </span>
                                     <Link v-else :href="child.href" :class="[linkClass(child.href), 'flex items-center gap-2']">
-                                        <NavIcon :name="child.icon" />
+                                        <img v-if="child.icon === 'favicon'" :src="'/favicon.png'" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 object-contain" />
+                                        <NavIcon v-else :name="child.icon" />
                                         {{ child.label }}
                                     </Link>
                                 </template>
