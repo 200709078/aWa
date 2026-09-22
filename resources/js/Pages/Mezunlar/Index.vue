@@ -254,9 +254,10 @@ const downloadUrl = computed(() => {
                     Mezun Ekle
                 </button>
             </div>
+        </div>
 
-            <div class="mt-4 overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+        <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
+            <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Yıl</th>
@@ -313,9 +314,9 @@ const downloadUrl = computed(() => {
                         </tr>
                     </tbody>
                 </table>
-            </div>
+        </div>
 
-            <div class="mt-4 flex items-center gap-2">
+        <div class="mt-4 flex w-full max-w-[80%] items-center text-sm text-gray-600">
                 <div class="flex w-24 justify-start">
                     <Link
                         v-if="graduates.prev_page_url"
@@ -351,7 +352,6 @@ const downloadUrl = computed(() => {
                     </span>
                 </div>
             </div>
-        </div>
 
         <div v-if="creating" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow">
@@ -470,25 +470,27 @@ const downloadUrl = computed(() => {
                         {{ createForm.errors.photo }}
                     </p>
                 </div>
-                <div>
-                    <label for="graduate-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
-                    <input
-                        id="graduate-phone"
-                        v-model="createForm.phone"
-                        type="text"
-                        maxlength="30"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div>
-                    <label for="graduate-email" class="block text-sm font-medium text-gray-700">E-posta</label>
-                    <input
-                        id="graduate-email"
-                        v-model="createForm.email"
-                        type="email"
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="graduate-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                        <input
+                            id="graduate-phone"
+                            v-model="createForm.phone"
+                            type="text"
+                            maxlength="30"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                    </div>
+                    <div>
+                        <label for="graduate-email" class="block text-sm font-medium text-gray-700">E-posta</label>
+                        <input
+                            id="graduate-email"
+                            v-model="createForm.email"
+                            type="email"
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                    </div>
                 </div>
                 <div>
                     <div class="flex items-center justify-between">
@@ -566,16 +568,6 @@ const downloadUrl = computed(() => {
                     </p>
                 </div>
                 <div>
-                    <label for="graduate-company" class="block text-sm font-medium text-gray-700">İşyeri</label>
-                    <input
-                        id="graduate-company"
-                        v-model="createForm.company"
-                        type="text"
-                        maxlength="100"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div>
                     <label for="graduate-city" class="block text-sm font-medium text-gray-700">Şehir</label>
                     <input
                         id="graduate-city"
@@ -584,6 +576,16 @@ const downloadUrl = computed(() => {
                         maxlength="100"
                         class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     />
+                </div>
+                <div>
+                    <label for="graduate-company" class="block text-sm font-medium text-gray-700">İşyeri</label>
+                    <textarea
+                        id="graduate-company"
+                        v-model="createForm.company"
+                        rows="2"
+                        maxlength="100"
+                        class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    ></textarea>
                 </div>
                 </form>
             </div>
@@ -797,16 +799,6 @@ const downloadUrl = computed(() => {
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label for="edit-graduate-company" class="block text-sm font-medium text-gray-700">İşyeri</label>
-                            <input
-                                id="edit-graduate-company"
-                                v-model="editForm.company"
-                                type="text"
-                                maxlength="100"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-                        <div>
                             <label for="edit-graduate-city" class="block text-sm font-medium text-gray-700">Şehir</label>
                             <input
                                 id="edit-graduate-city"
@@ -815,6 +807,16 @@ const downloadUrl = computed(() => {
                                 maxlength="100"
                                 class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             />
+                        </div>
+                        <div>
+                            <label for="edit-graduate-company" class="block text-sm font-medium text-gray-700">İşyeri</label>
+                            <textarea
+                                id="edit-graduate-company"
+                                v-model="editForm.company"
+                                rows="2"
+                                maxlength="100"
+                                class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            ></textarea>
                         </div>
                     </div>
                 </form>

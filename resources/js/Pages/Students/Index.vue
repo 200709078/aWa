@@ -679,31 +679,33 @@ function confirmDelete() {
                     <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">
                         {{ editForm.errors.photo }}
                     </p>
-                    <div>
-                        <label for="edit-student-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
-                        <input
-                            id="edit-student-phone"
-                            v-model="editForm.phone"
-                            type="text"
-                            maxlength="30"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <p v-if="editForm.errors.phone" class="mt-1 text-sm text-red-600">
-                            {{ editForm.errors.phone }}
-                        </p>
-                    </div>
-                    <div>
-                        <label for="edit-student-email" class="block text-sm font-medium text-gray-700">E-posta</label>
-                        <input
-                            id="edit-student-email"
-                            v-model="editForm.email"
-                            type="email"
-                            maxlength="100"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        />
-                        <p v-if="editForm.errors.email" class="mt-1 text-sm text-red-600">
-                            {{ editForm.errors.email }}
-                        </p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="edit-student-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                            <input
+                                id="edit-student-phone"
+                                v-model="editForm.phone"
+                                type="text"
+                                maxlength="30"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <p v-if="editForm.errors.phone" class="mt-1 text-sm text-red-600">
+                                {{ editForm.errors.phone }}
+                            </p>
+                        </div>
+                        <div>
+                            <label for="edit-student-email" class="block text-sm font-medium text-gray-700">E-posta</label>
+                            <input
+                                id="edit-student-email"
+                                v-model="editForm.email"
+                                type="email"
+                                maxlength="100"
+                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <p v-if="editForm.errors.email" class="mt-1 text-sm text-red-600">
+                                {{ editForm.errors.email }}
+                            </p>
+                        </div>
                     </div>
                     <div>
                         <label for="edit-student-address" class="block text-sm font-medium text-gray-700">Adres</label>
