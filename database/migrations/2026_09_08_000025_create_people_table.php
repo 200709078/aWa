@@ -53,7 +53,6 @@ return new class extends Migration
             $table->unsignedSmallInteger('start_year')->nullable();
             $table->unsignedSmallInteger('end_year')->nullable();
             $table->boolean('is_current')->default(false);
-            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }
