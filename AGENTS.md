@@ -18,7 +18,7 @@ demek ve ilgili adımı eksiksiz uygulatmaktır.
 
 - Proje kökü: `~/Belgeler/OAL_Kelebek`
 - Uygulama adı: `Kelebek`
-- Production adresi: `https://kelebek.madematik.com`
+- Production adresi: `https://awa.madematik.com`
 - Uygulama kurum içi kullanılacaktır.
 - Başlangıçta yalnızca 1–2 yetkili yönetici kullanacaktır.
 - Öğrenci, veli veya öğretmen portalı yapılmayacaktır.
