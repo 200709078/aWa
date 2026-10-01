@@ -105,9 +105,8 @@ class RehberExportService
         foreach ($this->cardPersons($students, $guardians, $type) as $person) {
             if (self::exportPhone($person['phone']) === null) {
                 $withoutPhone++;
-            } else {
-                $cards++;
             }
+            $cards++;
         }
 
         return [
@@ -135,10 +134,6 @@ class RehberExportService
         $skipped = 0;
         foreach ($graduates as $graduate) {
             $tel = self::exportPhone($graduate->person?->phone);
-            if ($tel === null) {
-                $skipped++;
-                continue;
-            }
             $cardCount++;
             $prefix = $graduate->graduation_year.(ctype_digit($graduate->graduation_number)
                 ? str_pad($graduate->graduation_number, 3, '0', STR_PAD_LEFT)
@@ -191,10 +186,6 @@ class RehberExportService
         $cardCount = 0;
         foreach ($this->cardPersons($students, $guardians, $type) as $person) {
             $tel = self::exportPhone($person['phone']);
-            if ($tel === null) {
-                $skipped++;
-                continue;
-            }
             $cardCount++;
             $cards = array_merge($cards, $this->vcard(
                 prefix: $this->prefix($person['branch'], $person['number']),
@@ -352,7 +343,7 @@ class RehberExportService
     /**
      * @return array<int, string>
      */
-    private function vcard(string $prefix, string $name, string $tel, string $school, string $title, string $category, ?string $photoPath, ?string $email = null, ?string $company = null, ?string $note = null): array
+    private function vcard(string $prefix, string $name, ?string $tel, string $school, string $title, string $category, ?string $photoPath, ?string $email = null, ?string $company = null, ?string $note = null): array
     {
         [$ad, $soyad] = StudentImportController::splitName(trim($name));
         $ad ??= trim($name);
@@ -363,8 +354,11 @@ class RehberExportService
             'VERSION:3.0',
             $this->fold('FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp(trim("{$prefix} {$ad}".($soyad !== '' ? " {$soyad}" : '')))),
             $this->fold('N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($soyad).';'.$this->qp(trim("{$prefix} {$ad}")).';;;'),
-            "TEL;CELL:{$tel}",
         ];
+
+        if ($tel !== null && $tel !== '') {
+            $lines[] = "TEL;CELL:{$tel}";
+        }
 
         if ($email !== null && $email !== '') {
             $lines[] = 'EMAIL;HOME:'.$email;
