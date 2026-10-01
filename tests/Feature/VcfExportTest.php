@@ -97,7 +97,7 @@ class VcfExportTest extends TestCase
         $this->assertStringContainsString('FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:09A-145=20Ahmet=20Bayram=20G=C3=BCn', $content);
         $this->assertStringContainsString('N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:G=C3=BCn;09A-145=20Ahmet=20Bayram;;;', $content);
         $this->assertStringContainsString('TEL;CELL:05321234567', $content);
-        $this->assertStringContainsString('CATEGORIES:9A', $content);
+        $this->assertStringContainsString('CATEGORIES;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:9A=20=C3=96=C4=9Frenci', $content);
         $this->assertStringContainsString('TITLE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=C3=96=C4=9Frenci', $content);
 
         // Veli kartı
