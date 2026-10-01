@@ -193,7 +193,7 @@ class RehberExportService
                 tel: $tel,
                 school: $schoolName,
                 title: $person['title'],
-                category: $person['branch'],
+                category: trim($person['branch'].' '.$person['title']),
                 photoPath: $withPhoto ? $person['photo'] : null,
             ));
         }
@@ -371,7 +371,7 @@ class RehberExportService
         if ($title !== '') {
             $lines[] = $this->fold('TITLE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($title));
         }
-        $lines[] = 'CATEGORIES:'.$category;
+        $lines[] = $this->fold('CATEGORIES;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp($category));
         if ($note !== null && $note !== '') {
             $lines[] = $this->fold('NOTE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:'.$this->qp(str_replace(["\r\n", "\r", "\n"], ' ', $note)));
         }
