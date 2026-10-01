@@ -161,10 +161,10 @@ class MezunlarTest extends TestCase
 
         $response = $this->actingAs($user)->get('/mezunlar/vcf?year=2009&photo=1');
         $response->assertOk();
-        $response->assertDownload('mezunlar-2009-1.vcf');
+        $response->assertDownload('mezunlar-2009-2.vcf');
 
         $content = file_get_contents($response->baseResponse->getFile()->getPathname());
-        $this->assertEquals(1, substr_count($content, 'BEGIN:VCARD'));
+        $this->assertEquals(2, substr_count($content, 'BEGIN:VCARD'));
         $unfolded = str_replace("\r\n ", '', $content);
 
         $this->assertStringContainsString('FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:2009004=20Burcu=20Dipda=C4=9F', $unfolded);
@@ -176,7 +176,8 @@ class MezunlarTest extends TestCase
         $this->assertStringContainsString('NOTE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Art=C4=B1=20E=C4=9Fitim=20Kurumlar=C4=B1', $unfolded);
         $this->assertStringContainsString('CATEGORIES:Mezun 2009', $content);
         $this->assertEquals(1, substr_count($content, 'PHOTO;ENCODING=b;TYPE=JPEG:'));
-        $this->assertStringNotContainsString('Telefonsuz', $content);
+        $this->assertEquals(1, substr_count($content, 'TEL;CELL:'));
+        $this->assertStringContainsString('Telefonsuz', $content);
 
         Storage::disk('public')->delete('graduates/1.jpg');
     }

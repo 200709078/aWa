@@ -66,8 +66,8 @@ class VcfExportTest extends TestCase
             'type' => 'all',
         ]);
         $response->assertOk();
-        // 2 öğrenci + 1 veli; telefonu olmayan 1 öğrenci kart dışı
-        $this->assertEquals(['students' => 2, 'guardians' => 1, 'cards' => 2, 'without_phone' => 1], $response->json());
+        // 2 öğrenci + 1 veli; telefonu olmayan da telsiz yazılır
+        $this->assertEquals(['students' => 2, 'guardians' => 1, 'cards' => 3, 'without_phone' => 1], $response->json());
     }
 
     public function test_vcf_indirme_icerigi_dogrudur(): void
@@ -85,10 +85,10 @@ class VcfExportTest extends TestCase
 
         $response = $this->actingAs($user)->get("/rehber-aktarma/indir?{$query}");
         $response->assertOk();
-        $response->assertDownload('2026-2027-tum-subeler-all-2.vcf');
+        $response->assertDownload('2026-2027-tum-subeler-all-3.vcf');
 
         $content = file_get_contents($response->baseResponse->getFile()->getPathname());
-        $this->assertEquals(2, substr_count($content, 'BEGIN:VCARD'));
+        $this->assertEquals(3, substr_count($content, 'BEGIN:VCARD'));
         // Uzun satırlar 75 sekizlide katlanır; içerik doğrulaması için katlamayı aç
         $this->assertStringContainsString("\r\n ", $content);
         $content = str_replace("\r\n ", '', $content);
@@ -106,8 +106,8 @@ class VcfExportTest extends TestCase
         // Fotoğraf gömülü (öğrencide var, velide yok)
         $this->assertEquals(1, substr_count($content, 'PHOTO;ENCODING=b;TYPE=JPEG:'));
 
-        // Telefonsuz öğrenci dosyada yok
-        $this->assertStringNotContainsString('Fotosuz', $content);
+        // Telefonsuz öğrenci de telsiz yazılır
+        $this->assertStringContainsString('Fotosuz', $content);
 
         Storage::disk('public')->delete('students/vcf-foto.jpg');
     }
@@ -119,7 +119,7 @@ class VcfExportTest extends TestCase
         $branchIds = Branch::where('academic_year_id', $year->id)->pluck('id')->all();
 
         $service = new RehberExportService();
-        $this->assertEquals(1, $service->summary($year->id, $branchIds, 'student')['cards']);
+        $this->assertEquals(2, $service->summary($year->id, $branchIds, 'student')['cards']);
         $this->assertEquals(1, $service->summary($year->id, $branchIds, 'guardian')['cards']);
     }
 
