@@ -202,7 +202,7 @@ function confirmDelete() {
     <AppLayout title="Öğrenciler">
         <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center gap-3">
-                <h1 class="shrink-0 text-2xl font-bold text-gray-900">Öğrenciler</h1>
+                <h1 class="shrink-0 text-2xl font-bold text-gray-900">Öğrenciler ({{ totalStudents }} Kayıt)</h1>
                 <div v-if="totalStudents > 0" class="flex min-w-52 flex-1 items-center justify-center gap-2">
                     <input
                         id="filter-search"

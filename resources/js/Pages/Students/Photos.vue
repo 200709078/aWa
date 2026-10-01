@@ -54,6 +54,8 @@ const props = defineProps<{
 // altında kalmak için partiler küçük tutulur.
 const BATCH_MAX_COUNT = 15;
 const BATCH_MAX_BYTES = 6 * 1024 * 1024;
+// Onayda her istek bu kadar fotoğraf işler (PHP süre limitine takılmamak için).
+const CONFIRM_CHUNK_COUNT = 10;
 
 const academicYearId = ref<number | null>(props.activeYearId ?? null);
 const photoFiles = ref<File[]>([]);
@@ -235,17 +237,48 @@ async function confirmUpload() {
     if (!preview.value || !academicYearId.value) return;
 
     errorMessages.value = [];
+    result.value = null;
     uploading.value = true;
-    statusText.value = 'Yükleniyor…';
 
     try {
-        const fd = new FormData();
-        fd.append('academic_year_id', String(academicYearId.value));
-        fd.append('token', preview.value.token);
-        result.value = (await postBatch('/students/photos/confirm', fd)) as BatchPayload;
+        const token = preview.value.token;
+        const names = preview.value.files.map((f) => f.filename);
+        const total = names.length;
+        doneCount.value = 0;
+        totalCount.value = total;
+
+        let acc: BatchPayload | null = null;
+        for (let i = 0; i < names.length; i += CONFIRM_CHUNK_COUNT) {
+            const chunk = names.slice(i, i + CONFIRM_CHUNK_COUNT);
+            statusText.value = `Kaydediliyor (${Math.min(i + CONFIRM_CHUNK_COUNT, total)}/${total})…`;
+            const fd = new FormData();
+            fd.append('academic_year_id', String(academicYearId.value));
+            fd.append('token', token);
+            for (const name of chunk) fd.append('filenames[]', name);
+            const data = (await postBatch('/students/photos/confirm', fd)) as BatchPayload;
+            acc = acc === null ? data : {
+                ...data,
+                summary: {
+                    eslesen: acc.summary.eslesen + data.summary.eslesen,
+                    eslesmeyen: acc.summary.eslesmeyen + data.summary.eslesmeyen,
+                    fotografsiz: data.summary.fotografsiz,
+                    hatali: acc.summary.hatali + data.summary.hatali,
+                },
+                unmatched: [...acc.unmatched, ...data.unmatched],
+                failed: [...acc.failed, ...data.failed],
+            };
+            doneCount.value = Math.min(i + CONFIRM_CHUNK_COUNT, total);
+        }
+
+        result.value = acc;
         preview.value = null;
         photoFiles.value = [];
         statusText.value = 'Tamamlandı.';
+        window.dispatchEvent(
+            new CustomEvent('kelebek-toast', {
+                detail: { type: 'success', messages: [`Yükleme tamamlandı — ${acc?.summary.eslesen ?? 0} fotoğraf kaydedildi.`] },
+            }),
+        );
         requestAnimationFrame(() => {
             document.getElementById('photo-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -274,6 +307,7 @@ async function confirmUpload() {
                         <DropdownSelect
                             id="photo-year"
                             v-model="academicYearId"
+                            :disabled="uploading"
                             :options="[{ value: null, label: 'Seçin' }, ...years.map((year) => ({ value: year.id, label: `${year.name}${year.is_active ? ' (aktif)' : ''}` }))]"
                             aria-label="Akademik Yıl"
                         />
@@ -295,7 +329,8 @@ async function confirmUpload() {
                     />
                     <button
                         type="button"
-                        class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                        :disabled="uploading"
+                        class="mt-1 flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="openPhotoDialog"
                     >
                         <span class="truncate">{{

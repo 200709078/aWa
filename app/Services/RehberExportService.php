@@ -140,31 +140,31 @@ class RehberExportService
                 continue;
             }
             $cardCount++;
-            $prefix = $graduate->graduation_year.'-'.(ctype_digit($graduate->graduation_number)
+            $prefix = $graduate->graduation_year.(ctype_digit($graduate->graduation_number)
                 ? str_pad($graduate->graduation_number, 3, '0', STR_PAD_LEFT)
                 : $graduate->graduation_number);
             $employment = $graduate->person?->employments->first();
-            $educationLines = $graduate->person?->educations
-                ->map(fn ($item) => implode(' / ', array_filter([
-                    $item->city ?? '',
-                    $item->institution_name ?? '',
-                    $item->faculty ?? '',
-                    $item->department ?? '',
-                ])))
+            $educations = $graduate->person?->educations ?? collect();
+            $orgLines = $educations
+                ->map(fn ($item) => trim(trim($item->city ?? '').' '.trim($item->institution_name ?? '')))
                 ->filter()
-                ->values() ?? collect();
-            $noteLines = $educationLines->slice(1)->values()->all();
+                ->values();
+            $titleLines = $educations
+                ->map(fn ($item) => trim(trim($item->faculty ?? '').' '.trim($item->department ?? '')))
+                ->filter()
+                ->values();
+            $note = trim(trim($employment?->city ?? '').' '.trim($employment?->company_name ?? ''));
             $cards = array_merge($cards, $this->vcard(
                 prefix: $prefix,
                 name: (string) $graduate->person?->full_name,
                 tel: $tel,
                 school: '',
-                title: (string) ($employment?->job_title ?? ''),
+                title: $titleLines->implode(' / '),
                 category: "Mezun {$graduate->graduation_year}",
                 photoPath: $withPhoto ? $graduate->person?->photo_path : null,
                 email: $graduate->person?->email,
-                company: $educationLines->first(),
-                note: $noteLines === [] ? null : implode("\n", $noteLines),
+                company: $orgLines->implode(' / ') ?: null,
+                note: $note === '' ? null : $note,
             ));
         }
 

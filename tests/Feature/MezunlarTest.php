@@ -167,13 +167,14 @@ class MezunlarTest extends TestCase
         $this->assertEquals(1, substr_count($content, 'BEGIN:VCARD'));
         $unfolded = str_replace("\r\n ", '', $content);
 
-        $this->assertStringContainsString('FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:2009-004=20Burcu=20Dipda=C4=9F', $unfolded);
-        $this->assertStringContainsString('N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Dipda=C4=9F;2009-004=20Burcu;;;', $unfolded);
+        $this->assertStringContainsString('FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:2009004=20Burcu=20Dipda=C4=9F', $unfolded);
+        $this->assertStringContainsString('N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Dipda=C4=9F;2009004=20Burcu;;;', $unfolded);
         $this->assertStringContainsString('TEL;CELL:05548339382', $unfolded);
         $this->assertStringContainsString('EMAIL;HOME:burcu@ornek.com', $content);
-        $this->assertStringContainsString('ORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Hitit=20=C3=9Cniversitesi=20/=20T=C3=BCrk=20Dili=20ve=20Edebiyat=C4=B1', $unfolded);
+        $this->assertStringContainsString('ORG;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Hitit=20=C3=9Cniversitesi', $unfolded);
+        $this->assertStringContainsString('TITLE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:T=C3=BCrk=20Dili=20ve=20Edebiyat=C4=B1', $unfolded);
+        $this->assertStringContainsString('NOTE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Art=C4=B1=20E=C4=9Fitim=20Kurumlar=C4=B1', $unfolded);
         $this->assertStringContainsString('CATEGORIES:Mezun 2009', $content);
-        $this->assertStringNotContainsString('NOTE;', $content);
         $this->assertEquals(1, substr_count($content, 'PHOTO;ENCODING=b;TYPE=JPEG:'));
         $this->assertStringNotContainsString('Telefonsuz', $content);
 
