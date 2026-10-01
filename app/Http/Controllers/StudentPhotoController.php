@@ -53,6 +53,7 @@ class StudentPhotoController extends Controller
             'photos.*.image' => 'Yalnızca resim dosyası yükleyin.',
             'photos.*.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp, bmp.',
             'photos.*.max' => 'Her dosya en fazla 10 MB olabilir.',
+            'photos.*.uploaded' => 'Dosya sunucuya yüklenemedi, dosya çok büyük olabilir. Daha küçük dosyalar seçin.',
         ]);
 
         $uploads = request()->file('photos', []);
@@ -107,6 +108,8 @@ class StudentPhotoController extends Controller
         $data = request()->validate([
             'academic_year_id' => ['required', 'integer', Rule::exists('academic_years', 'id')->where('school_id', SchoolScope::id())],
             'token' => ['required', 'string', 'uuid'],
+            'filenames' => ['nullable', 'array', 'max:'.self::MAX_FILES],
+            'filenames.*' => ['string', 'max:255'],
         ], [
             'academic_year_id.required' => 'Akademik yıl seçin.',
             'token.required' => 'Eşleştirme anahtarı gerekli.',
@@ -124,9 +127,28 @@ class StudentPhotoController extends Controller
             Storage::disk('local')->files($dir)
         );
 
+        // Grup grup onayda yalnız istenen dosyalar işlenir, işlenenler silinir.
+        $only = $data['filenames'] ?? null;
+        if (is_array($only)) {
+            $only = array_values(array_unique(array_map('basename', $only)));
+            $candidates = array_values(array_filter(
+                $candidates,
+                fn ($candidate) => in_array($candidate['filename'], $only, true),
+            ));
+        }
+
         $payload = $this->processCandidates($candidates, (int) $data['academic_year_id']);
 
-        Storage::disk('local')->deleteDirectory($dir);
+        if (is_array($only)) {
+            foreach ($candidates as $candidate) {
+                Storage::disk('local')->delete("{$dir}/{$candidate['filename']}");
+            }
+            if (Storage::disk('local')->files($dir) === []) {
+                Storage::disk('local')->deleteDirectory($dir);
+            }
+        } else {
+            Storage::disk('local')->deleteDirectory($dir);
+        }
 
         return response()->json($payload);
     }

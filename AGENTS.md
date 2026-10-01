@@ -1027,6 +1027,41 @@ Kullanıcı istemeden remote oluşturma veya push yapma.
 
 ---
 
+# 22. ÖĞRENCİ BİLGİ FORMU / EVRAK SİSTEMİ (İLERİDE)
+
+**Durum: ⏳ Bekliyor** — kullanıcı düşünüp onaylayınca başlanacak. Kodlama yapılmadı.
+
+## Fikir
+
+Google Form yerine uygulamanın içinde (örn. `awa.madematik.com/form`) öğrencilerin giriş yapıp doldurduğu form sistemi. İlk evrak: Öğrenci Bilgi Formu (~61 alan, 5 sayfa: öğrenci + veli + anne + baba + notlar).
+
+## Kararlaştırılanlar
+
+- Excel ile aktarma yok; öğrenci giriş yapıp formu kendisi doldurur.
+- Ad soyad, sınıf, okul no sabit/salt-okunur; kalanını öğrenci doldurup Kaydet ile veritabanına işler.
+- Profil öğrenci başına tek satır, her yıl üzerine yazılır (upsert, yıllık tarihçe yok).
+- Adres: `awa.madematik.com` altında herkese açık route; `madematik.com` şart değil.
+- Yeni tablolar: `student_profiles` (~30 alan + notes), `guardians` tablosuna +8 kolon (eğitim, meslek, doğum yeri/tarihi, öz mü, sağ mı, engel, hastalık). `document_types` + yayın aralığı ile sonraki evraklar aynı hatta eklenir.
+
+## Bilinen sıkıntılar (çözülmeden başlama)
+
+1. Şifre dağıtım/destek yükü (300+ öğrenci, sıfırlama ekranı gerekir).
+2. Başkası yerine doldurma riski.
+3. Hassas veri (din/sağlık) + KVKK: aydınlatma ve rıza metni şart.
+4. Onay kuyruğu: öğrenci verisi admin onayı olmadan profile işlenmemeli.
+5. Üçüncü şahıs (anne/baba) verisinin doğruluğu ve rızası.
+6. 60 alan tek oturuşta: taslak/otomatik kaydet gerekir.
+7. Mobil-first form şart (öğrenciler telefondan girer).
+8. Yıl devri: mezun hesap kapama + yeni kayıt hesap açma rutini.
+9. Öğrenci guard ile admin paneli yetki ayrımı (sızma olmamalı).
+10. Son gün yığılması (paylaşımlı hosting) + kademeli yayın.
+11. Yayın ortasında soru değişirse versiyonlama.
+12. Hatırlatma kanalı yok (SMS yok), takip manuel.
+
+En kritik üçü: onay kuyruğu, yetki ayrımı, şifre operasyonu.
+
+---
+
 # TEMEL İŞ KURALLARI — KISA REFERANS
 
 ## Terimler

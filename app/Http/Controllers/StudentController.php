@@ -314,6 +314,7 @@ class StudentController extends Controller
             'photo.image' => 'Yalnızca resim dosyası yükleyin.',
             'photo.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp.',
             'photo.max' => 'Fotoğraf en fazla 10 MB olabilir.',
+            'photo.uploaded' => 'Fotoğraf yüklenemedi, dosya çok büyük olabilir.',
         ]);
 
         $firstName = trim($data['first_name']);

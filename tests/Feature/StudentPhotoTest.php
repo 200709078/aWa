@@ -72,6 +72,37 @@ class StudentPhotoTest extends TestCase
         ]);
     }
 
+    public function test_gruplu_onay_parca_parca_kaydeder(): void
+    {
+        $year = $this->setupData();
+        $user = User::first() ?? User::factory()->create();
+
+        $match = $this->match($year, [
+            UploadedFile::fake()->image('145.jpg'),
+            UploadedFile::fake()->image('146.jpg'),
+            UploadedFile::fake()->image('999.jpg'),
+        ]);
+        $token = $match['token'];
+
+        $first = $this->actingAs($user)->postJson('/students/photos/confirm', [
+            'academic_year_id' => $year->id,
+            'token' => $token,
+            'filenames' => ['145.jpg'],
+        ])->assertOk();
+        $this->assertEquals(1, $first->json('summary.eslesen'));
+        $this->assertNotNull($this->studentByNumber('145')->person->photo_path);
+        $this->assertNull($this->studentByNumber('146')->person->photo_path);
+
+        $second = $this->actingAs($user)->postJson('/students/photos/confirm', [
+            'academic_year_id' => $year->id,
+            'token' => $token,
+            'filenames' => ['146.jpg', '999.jpg'],
+        ])->assertOk();
+        $this->assertEquals(1, $second->json('summary.eslesen'));
+        $this->assertEquals(['999.jpg'], $second->json('unmatched'));
+        $this->assertNotNull($this->studentByNumber('146')->person->photo_path);
+    }
+
     public function test_eslestirme_kaydetmeden_onizleme_doner(): void
     {
         User::factory()->create();

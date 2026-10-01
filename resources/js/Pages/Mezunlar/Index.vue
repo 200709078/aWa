@@ -203,7 +203,7 @@ const downloadUrl = computed(() => {
     <AppLayout title="Mezunlar">
         <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center gap-3">
-                <h1 class="shrink-0 text-2xl font-bold text-gray-900">Mezunlar</h1>
+                <h1 class="shrink-0 text-2xl font-bold text-gray-900">Mezunlar ({{ totalGraduates }} Kayıt)</h1>
                 <div v-if="totalGraduates > 0" class="flex min-w-52 flex-1 items-center justify-center gap-2">
                     <input
                         id="filter-search"

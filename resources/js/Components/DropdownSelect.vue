@@ -14,12 +14,14 @@ const props = withDefaults(
         title?: string;
         ariaLabel?: string;
         id?: string;
+        disabled?: boolean;
     }>(),
     {
         placeholder: 'Seçin',
         title: undefined,
         ariaLabel: undefined,
         id: undefined,
+        disabled: false,
     },
 );
 
@@ -48,10 +50,11 @@ function choose(value: string | number | null) {
         <button
             :id="id"
             type="button"
+            :disabled="disabled"
             :title="title ?? ariaLabel ?? placeholder"
             :aria-label="ariaLabel ?? title ?? placeholder"
             :aria-expanded="open"
-            class="flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+            class="flex h-9 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 text-sm text-gray-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-50 disabled:hover:text-gray-700"
             @click="open = !open"
         >
             <span class="truncate">{{ selectedLabel }}</span>
