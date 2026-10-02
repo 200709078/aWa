@@ -351,8 +351,8 @@ function confirmDelete() {
                                 </button>
                                 <button
                                     type="button"
-                                    :title="isUsed(student) ? 'Oturma planında kullanılan öğrenci silinemez' : 'Sil'"
-                                    aria-label="Sil"
+                                    :title="isUsed(student) ? 'Oturma planında kullanılan öğrenci arşive gönderilemez' : 'Arşive gönder'"
+                                    aria-label="Arşive gönder"
                                     :disabled="isUsed(student)"
                                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700 focus:border-red-500 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                                     @click="askDelete(student)"
@@ -731,9 +731,9 @@ function confirmDelete() {
 
         <div v-if="deleting" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
-                <h2 class="text-lg font-semibold text-gray-900">Öğrenciyi Sil</h2>
+                <h2 class="text-lg font-semibold text-gray-900">Öğrenciyi Arşive Gönder</h2>
                 <p class="mt-2 text-sm text-gray-600">
-                    {{ deleting.school_number }} — {{ deleting.full_name }} silinsin mi? Bu işlem geri alınamaz.
+                    {{ deleting.school_number }} — {{ deleting.full_name }} arşive gönderilsin mi? Kayıt listeden gizlenir, Arşiv sayfasından geri alınabilir.
                 </p>
                 <div class="mt-4 flex justify-end gap-2">
                     <button
@@ -745,10 +745,10 @@ function confirmDelete() {
                     </button>
                     <button
                         type="button"
-                        class="inline-flex h-9 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+                        class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
                         @click="confirmDelete"
                     >
-                        Sil
+                        Arşive Gönder
                     </button>
                 </div>
             </div>

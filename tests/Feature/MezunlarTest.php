@@ -133,6 +133,11 @@ class MezunlarTest extends TestCase
 
         $personId = $graduate->person_id;
         $this->actingAs($user)->delete("/mezunlar/{$graduate->id}")->assertRedirect();
+        // Sil artık arşive gönderir (SoftDeletes), hard delete Arşiv sayfasından yapılır.
+        $this->assertSoftDeleted('graduates', ['id' => $graduate->id]);
+        $this->actingAs($user)->get('/arsiv?tab=graduates')->assertOk();
+
+        $this->actingAs($user)->delete("/arsiv/mezunlar/{$graduate->id}")->assertRedirect();
         $this->assertDatabaseMissing('graduates', ['id' => $graduate->id]);
         $this->assertDatabaseMissing('people', ['id' => $personId]);
         $this->assertDatabaseMissing('person_educations', ['person_id' => $personId]);

@@ -1062,6 +1062,37 @@ En kritik üçü: onay kuyruğu, yetki ayrımı, şifre operasyonu.
 
 ---
 
+# 23. ARŞİV SİSTEMİ (ÖĞRENCİ + MEZUN)
+
+**Durum: ✅ Yapıldı** — SoftDeletes + `Kurum > Arşiv` (2 sekme), arşiv/geri al/kalıcı sil akışı çalışıyor.
+
+## Fikir
+
+Öğrenci ve mezunlarda hard delete öncesi arşiv adımı olsun. Normal listelerdeki `Sil` kaydı Arşiv'e göndersin. Gerçekten kalıcı silme, geri alma gibi işlemler soldaki `Kurum` bağlantısının altındaki `Arşiv` sayfasından yönetilsin.
+
+## Onaylanan kararlar (2026-10-02 soru-cevap)
+
+1. Oturma planlı öğrenci: **engellensin.** `seating_assignments` kaydı varsa öğrenci ne arşivlenebilsin ne silinebilsin (mevcut engelleme korunur).
+2. Numara rezervi: **arşivdeki numara boşa çıkar.** Aynı `academic_year_id + school_number` ile yeni öğrenci kaydı yapılabilir. Aynı `graduation_year + graduation_number` ile yeni mezun kaydı yapılabilir. Arşivli satır numarayı rezerve tutmaz.
+3. Geri alma çakışması: **arşivde kal + uyarı.** Arşivdeki kayıt geri alınmak istenirken numara artık doluysa geri alma engellenir, `Bu numara artık X kaydında` benzeri Türkçe uyarı verilir. Kullanıcı yeni boş bir numara girerse o numarayla geri alınabilir.
+4. Import: **yeni kayıt açılabilir.** Excel import arşivdeki numarayı boşta sayar, hata vermez. Otomatik geri alma yapmaz; yeni kayıt açar.
+5. Çok rollü kişi: **kişi gizlenmesin.** Sadece `students` / `graduates` satırı arşivlenir. Aynı `person` veli/öğretmen/mezun rolünden görünmeye devam eder.
+6. Fotoğraf: **dosya dursun.** Arşivde fotoğraf saklanır. Dosya yalnızca kalıcı silmede diskten silinir.
+7. Yetki: **mevcut adminler.** Arşivleme, geri alma ve kalıcı silme şu an öğrenci/mezun silebilen adminlerde kalır. `super_admin` kısıtı yok.
+8. Normal liste Sil butonu: **arşive göndersin.** Öğrenciler ve Mezunlar listesindeki `Sil` hard delete yapmaz. Hard delete yalnızca Arşiv sayfasından yapılır.
+9. Toplu işlem: **tek tek yeterli.** Arşiv sayfasında seçmeli toplu işlem yok; her satırda ayrı `Geri Al` / `Kalıcı Sil`.
+10. Arşiv görünümü: **tek sayfa 2 sekme.** `Kurum > Arşiv` altında `Öğrenciler` / `Mezunlar` sekmeli tek sayfa.
+
+## Kodlamaya geçerken dikkat (uygulama notu, karar değil)
+
+- `students`, `graduates` (+ ihtiyaca göre `people`) için `SoftDeletes` (`deleted_at`) düşünülüyor.
+- Unique kontrolleri (`student_enrollments`, `graduates`) arşivlileri dışlamalı; geri almada dolu numara kontrolü + numara değiştirerek alma akışı gerekli.
+- Arşivliler normal liste, arama, dağıtım, import eşleşme, sayı/export dışına çıkmalı; yalnızca Arşiv sayfasında görünmeli.
+- Kapsam: `SchoolScope` + mezun okul filtresi denetlenecek.
+- Kritik kontrol: `migrate:fresh`, liste/arşiv/geri al/kalıcı sil akışı, dağıtım arşivliyi almıyor, `pnpm build`.
+
+---
+
 # TEMEL İŞ KURALLARI — KISA REFERANS
 
 ## Terimler

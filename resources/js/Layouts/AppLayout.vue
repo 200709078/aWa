@@ -71,6 +71,7 @@ const nav = computed<NavEntry[]>(() => {
                 { label: 'Öğrenciler', href: '/students', icon: 'user' },
                 { label: 'Rehber Aktarma', href: '/rehber-aktarma', icon: 'book' },
                 { label: 'Mezunlar', href: '/mezunlar', icon: 'favicon' },
+                { label: 'Arşiv', href: '/arsiv', icon: 'archive' },
             ],
         },
         {

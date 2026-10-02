@@ -11,7 +11,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -199,18 +198,22 @@ class GraduateController extends Controller
         $person = $graduate->person;
 
         DB::transaction(function () use ($graduate, $person) {
+            // Fotoğraf dosyası arşivde saklanır, silinmez.
             $graduate->delete();
 
-            // Kişinin başka rolü (öğrenci/öğretmen/veli) yoksa fotoğrafıyla birlikte kaydını da temizle.
-            if ($person && ! $person->student && ! $person->teacher && ! $person->guardian) {
-                if ($person->photo_path) {
-                    Storage::disk('public')->delete($person->photo_path);
+            // Kişinin başka aktif rolü yoksa kişi de arşivlenir.
+            if ($person) {
+                $hasRole = $person->student()->exists()
+                    || $person->teacher()->exists()
+                    || $person->guardian()->exists()
+                    || $person->graduate()->exists();
+                if (! $hasRole) {
+                    $person->delete();
                 }
-                $person->delete();
             }
         });
 
-        return back()->with('success', $name.' silindi.');
+        return back()->with('success', $name.' arşive gönderildi.');
     }
 
     /**
@@ -222,7 +225,9 @@ class GraduateController extends Controller
             'graduation_year' => ['required', 'integer', 'min:1900', 'max:2100'],
             'graduation_number' => [
                 'required', 'string', 'max:20',
-                Rule::unique('graduates')->where(fn ($query) => $query->where('graduation_year', (int) $request->input('graduation_year')))->ignore($graduate?->id),
+                Rule::unique('graduates', 'graduation_number')
+                    ->where(fn ($query) => $query->where('graduation_year', (int) $request->input('graduation_year'))->whereNull('deleted_at'))
+                    ->ignore($graduate?->id),
             ],
             'first_name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],

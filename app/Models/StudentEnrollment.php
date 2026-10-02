@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['student_id', 'academic_year_id', 'branch_id', 'school_number', 'status'])]
 class StudentEnrollment extends Model
 {
+    use SoftDeletes;
     protected $attributes = [
         'status' => 'active',
     ];

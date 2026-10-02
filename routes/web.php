@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DistributionController;
@@ -72,6 +73,12 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::put('/mezunlar/{graduate}', [GraduateController::class, 'update'])->name('mezunlar.update');
     Route::delete('/mezunlar/{graduate}', [GraduateController::class, 'destroy'])->name('mezunlar.destroy');
     Route::get('/mezunlar/vcf', [GraduateController::class, 'vcf'])->name('mezunlar.vcf');
+
+    Route::get('/arsiv', [ArchiveController::class, 'index'])->name('archive.index');
+    Route::post('/arsiv/ogrenciler/{id}/restore', [ArchiveController::class, 'restoreStudent'])->name('archive.students.restore');
+    Route::delete('/arsiv/ogrenciler/{id}', [ArchiveController::class, 'forceStudent'])->name('archive.students.force');
+    Route::post('/arsiv/mezunlar/{id}/restore', [ArchiveController::class, 'restoreGraduate'])->name('archive.graduates.restore');
+    Route::delete('/arsiv/mezunlar/{id}', [ArchiveController::class, 'forceGraduate'])->name('archive.graduates.force');
 
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
     Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');
