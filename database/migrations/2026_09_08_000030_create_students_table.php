@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('person_id')->constrained()->cascadeOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

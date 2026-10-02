@@ -212,7 +212,7 @@ async function matchFiles() {
         const chunks = chunkFiles(photoFiles.value);
 
         for (let i = 0; i < chunks.length; i++) {
-            statusText.value = `Eşleştiriliyor (${i + 1}/${chunks.length})…`;
+            statusText.value = 'Fotoğraflar eşleştiriliyor';
             const fd = new FormData();
             fd.append('academic_year_id', String(academicYearId.value));
             fd.append('token', token);
@@ -250,7 +250,7 @@ async function confirmUpload() {
         let acc: BatchPayload | null = null;
         for (let i = 0; i < names.length; i += CONFIRM_CHUNK_COUNT) {
             const chunk = names.slice(i, i + CONFIRM_CHUNK_COUNT);
-            statusText.value = `Kaydediliyor (${Math.min(i + CONFIRM_CHUNK_COUNT, total)}/${total})…`;
+            statusText.value = 'Fotoğraflar kaydediliyor';
             const fd = new FormData();
             fd.append('academic_year_id', String(academicYearId.value));
             fd.append('token', token);
@@ -348,7 +348,7 @@ async function confirmUpload() {
                     <div class="h-2 overflow-hidden rounded bg-gray-200">
                         <div class="h-full bg-indigo-600" :style="{ width: `${progressPct}%` }"></div>
                     </div>
-                    <p class="text-sm text-gray-600">{{ statusText }} ({{ doneCount }}/{{ totalCount }})</p>
+                    <p class="text-sm text-gray-600">{{ statusText }}: {{ doneCount }}/{{ totalCount }}</p>
                 </div>
 
                 <button

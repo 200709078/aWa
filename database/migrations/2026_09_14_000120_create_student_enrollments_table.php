@@ -20,8 +20,11 @@ return new class extends Migration
             $table->string('school_number');
             $table->string('status')->default('active');
             $table->timestamps();
+            $table->softDeletes();
 
-            $table->unique(['academic_year_id', 'school_number']);
+            // Arşivdeki numara boşa çıkar (AGENTS.md #23): aktifler arası unique
+            // uygulama katmanında denetlenir, DB'de index olarak tutulur.
+            $table->index(['academic_year_id', 'school_number']);
             $table->unique(['student_id', 'academic_year_id']);
         });
 
@@ -42,8 +45,10 @@ return new class extends Migration
             $table->unsignedSmallInteger('graduation_year');
             $table->string('graduation_number');
             $table->timestamps();
+            $table->softDeletes();
 
-            $table->unique(['graduation_year', 'graduation_number']);
+            // Arşivdeki mezun numarası da boşa çıkar (AGENTS.md #23).
+            $table->index(['graduation_year', 'graduation_number']);
         });
 
         // Eski kurulumlardan gelen kayıtlarda okul bağlantısı boş kalmış olabilir.

@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['school_id', 'first_name', 'last_name', 'full_name', 'phone', 'email', 'address', 'photo_path'])]
 class Person extends Model
 {
+    use SoftDeletes;
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);

@@ -14,7 +14,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -266,19 +265,30 @@ class StudentController extends Controller
     {
         SchoolScope::ensure($student);
         if ($student->seatingAssignments()->exists()) {
-            return back()->withErrors(['student' => 'Bu öğrenci bir oturma planında kullanıldığı için silinemez.']);
+            return back()->withErrors(['student' => 'Bu öğrenci bir oturma planında kullanıldığı için arşive gönderilemez.']);
         }
 
         $name = $student->person?->full_name ?? 'Öğrenci';
+        $person = $student->person;
 
-        if ($student->person?->photo_path) {
-            Storage::disk('public')->delete($student->person->photo_path);
-            $student->person->update(['photo_path' => null]);
-        }
+        DB::transaction(function () use ($student, $person) {
+            // Fotoğraf dosyası arşivde saklanır, silinmez.
+            $student->enrollments()->delete();
+            $student->delete();
 
-        $student->delete();
+            // Kişinin başka aktif rolü yoksa kişi de arşivlenir.
+            if ($person) {
+                $hasRole = $person->student()->exists()
+                    || $person->graduate()->exists()
+                    || $person->teacher()->exists()
+                    || $person->guardian()->exists();
+                if (! $hasRole) {
+                    $person->delete();
+                }
+            }
+        });
 
-        return back()->with('success', $name.' silindi.');
+        return back()->with('success', $name.' arşive gönderildi.');
     }
 
     /**
@@ -294,7 +304,9 @@ class StudentController extends Controller
             'branch_id' => ['required', 'integer', Rule::exists('branches', 'id')->whereIn('academic_year_id', SchoolScope::yearIds())],
             'school_number' => [
                 'required', 'string', 'max:20',
-                Rule::unique('student_enrollments')->where(fn ($query) => $query->where('academic_year_id', $branch->academic_year_id))->ignore($enrollment?->id),
+                Rule::unique('student_enrollments', 'school_number')
+                    ->where(fn ($query) => $query->where('academic_year_id', $branch->academic_year_id)->whereNull('deleted_at'))
+                    ->ignore($enrollment?->id),
             ],
             'first_name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],

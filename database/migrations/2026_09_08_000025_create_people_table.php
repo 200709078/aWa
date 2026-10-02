@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('photo_path')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('guardians', function (Blueprint $table) {
