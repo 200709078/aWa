@@ -75,6 +75,7 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/mezunlar/vcf', [GraduateController::class, 'vcf'])->name('mezunlar.vcf');
 
     Route::get('/personel', [TeacherController::class, 'index'])->name('personel.index');
+    Route::get('/personel/yaka-kartlari', [TeacherController::class, 'badges'])->name('personel.badges');
     Route::post('/personel', [TeacherController::class, 'store'])->name('personel.store');
     Route::put('/personel/{teacher}', [TeacherController::class, 'update'])->name('personel.update');
     Route::post('/personel/{teacher}/activate', [TeacherController::class, 'activate'])->name('personel.activate');

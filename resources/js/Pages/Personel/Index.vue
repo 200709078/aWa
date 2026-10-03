@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import BadgeCard from '../../Components/BadgeCard.vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
 import NavIcon from '../../Components/NavIcon.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
@@ -35,9 +36,74 @@ const props = defineProps<{
     search: string;
     teachers: Paginator;
     totalTeachers: number;
+    school: { name: string; logo_url: string | null };
 }>();
 
 const filterSearch = ref(props.search);
+
+const selected = ref<number[]>([]);
+
+const pageIds = computed(() => props.teachers.data.map((t) => t.id));
+
+const allPageSelected = computed(() => pageIds.value.length > 0 && pageIds.value.every((id) => selected.value.includes(id)));
+
+function toggleOne(id: number) {
+    if (selected.value.includes(id)) {
+        selected.value = selected.value.filter((v) => v !== id);
+    } else {
+        selected.value = [...selected.value, id];
+    }
+}
+
+function toggleAllPage() {
+    if (allPageSelected.value) {
+        selected.value = selected.value.filter((id) => !pageIds.value.includes(id));
+    } else {
+        selected.value = [...new Set([...selected.value, ...pageIds.value])];
+    }
+}
+
+function openBadges() {
+    showPreview.value = true;
+}
+
+function backToList() {
+    showPreview.value = false;
+}
+
+const showPreview = ref(false);
+
+function openPrint(url: string) {
+    const width = 850;
+    const height = 900;
+    const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+    const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+    const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=no,scrollbars=yes`;
+    const win = window.open(url, 'kelebek-print', features);
+    if (!win) window.open(url, '_blank');
+}
+
+function badgeTitleOf(teacher: Teacher): string {
+    return teacher.branch ?? teacher.duty ?? 'Öğretmen';
+}
+
+const cardWidth = ref(85);
+const cardHeight = ref(54);
+
+const widthMm = computed(() => `${Math.min(120, Math.max(50, Number(cardWidth.value) || 85))}mm`);
+const heightMm = computed(() => `${Math.min(90, Math.max(30, Number(cardHeight.value) || 54))}mm`);
+
+const badgeItems = computed(() =>
+    props.teachers.data
+        .filter((t) => selected.value.includes(t.id))
+        .map((t) => ({ id: t.id, full_name: t.full_name, title: badgeTitleOf(t) })),
+);
+
+function printBadges() {
+    if (selected.value.length === 0) return;
+    const ids = selected.value.join(',');
+    openPrint(`/personel/yaka-kartlari?ids=${encodeURIComponent(ids)}&w=${cardWidth.value}&h=${cardHeight.value}`);
+}
 
 function teacherTitle(teacher: Teacher): string | null {
     if (!teacher.branch) return null;
@@ -172,7 +238,7 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
 
 <template>
     <AppLayout title="Personel">
-        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+        <div v-if="!showPreview" class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center gap-3">
                 <h1 class="shrink-0 text-2xl font-bold text-gray-900">Personel ({{ totalTeachers }} Kayıt)</h1>
                 <div v-if="totalTeachers > 0" class="flex min-w-52 flex-1 items-center justify-center gap-2">
@@ -203,6 +269,17 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
                 <div class="ml-auto flex shrink-0 gap-2">
                     <button
                         type="button"
+                        :disabled="selected.length === 0"
+                        title="İncele"
+                        aria-label="İncele"
+                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-50 disabled:hover:text-gray-700"
+                        @click="openBadges()"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                        Yaka Kartları{{ selected.length > 0 ? ` (${selected.length})` : '' }}
+                    </button>
+                    <button
+                        type="button"
                         class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
                         @click="creating = true"
                     >
@@ -212,10 +289,21 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
             </div>
         </div>
 
-        <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
+        <div v-if="!showPreview" class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="w-10 px-4 py-3">
+                            <input
+                                type="checkbox"
+                                :checked="allPageSelected"
+                                :indeterminate="selected.length > 0 && !allPageSelected"
+                                title="Sayfadakileri seç"
+                                aria-label="Sayfadakileri seç"
+                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                @change="toggleAllPage()"
+                            />
+                        </th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Personel</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Göreve Başlama Tarihi</th>
@@ -226,6 +314,15 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     <tr v-for="teacher in teachers.data" :key="teacher.id">
+                        <td class="whitespace-nowrap px-4 py-3">
+                            <input
+                                type="checkbox"
+                                :checked="selected.includes(teacher.id)"
+                                :aria-label="`${teacher.full_name} seç`"
+                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                @change="toggleOne(teacher.id)"
+                            />
+                        </td>
                         <td class="whitespace-nowrap px-4 py-3">
                             <StudentAvatar
                                 :photo-url="teacher.photo_path ? `/storage/${teacher.photo_path}?v=${teacher.photo_version ?? 0}` : null"
@@ -306,13 +403,13 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
                         </td>
                     </tr>
                     <tr v-if="teachers.data.length === 0">
-                        <td colspan="6" class="px-4 py-6 text-center text-gray-500">Kayıt bulunamadı.</td>
+                        <td colspan="7" class="px-4 py-6 text-center text-gray-500">Kayıt bulunamadı.</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <div v-if="teachers.total > 0" class="mt-4 flex w-full max-w-[80%] items-center text-sm text-gray-600">
+        <div v-if="!showPreview && teachers.total > 0" class="mt-4 flex w-full max-w-[80%] items-center text-sm text-gray-600">
             <div class="flex w-24 justify-start">
                 <Link
                     v-if="teachers.prev_page_url"
@@ -333,6 +430,79 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
                 </Link>
             </div>
         </div>
+
+        <template v-if="showPreview">
+            <div id="yaka-karti-onizleme" class="w-full max-w-[80%] scroll-mt-4 rounded-lg bg-white p-6 shadow-sm">
+                <div class="flex flex-wrap items-center gap-3">
+                    <h2 class="shrink-0 text-2xl font-bold text-gray-900">Yaka Kartları ({{ selected.length }} Kayıt)</h2>
+                    <div class="ml-auto flex shrink-0 gap-2">
+                        <button
+                            type="button"
+                            title="Geri dön"
+                            class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                            @click="backToList()"
+                        >
+                            Geri Dön
+                        </button>
+                    </div>
+                </div>
+                <p class="mt-1 text-sm text-gray-500">
+                    Her satırda 1 kişi (solda ön yüz, sağda arka yüz). Yazdırınca ayrı bir pencerede açılır.
+                </p>
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <label class="flex items-center gap-1 text-sm text-gray-700">
+                        Genişlik (mm)
+                        <input
+                            v-model.number="cardWidth"
+                            type="number"
+                            min="50"
+                            max="120"
+                            step="1"
+                            class="block h-9 w-20 rounded-md border-gray-300 bg-gray-50 px-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                    </label>
+                    <label class="flex items-center gap-1 text-sm text-gray-700">
+                        Yükseklik (mm)
+                        <input
+                            v-model.number="cardHeight"
+                            type="number"
+                            min="30"
+                            max="90"
+                            step="1"
+                            class="block h-9 w-20 rounded-md border-gray-300 bg-gray-50 px-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                    </label>
+                    <button
+                        type="button"
+                        :disabled="selected.length === 0"
+                        title="Seçilen kartları yazdır"
+                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-50 disabled:hover:text-gray-700"
+                        @click="printBadges()"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 14h12v8H6z" /></svg>
+                        Yazdır{{ selected.length > 0 ? ` (${selected.length})` : '' }}
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-6 w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+                <div v-if="badgeItems.length === 0" class="rounded-md bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+                    Önizleme için listeden en az 1 kişi seçin.
+                </div>
+                <div v-else class="space-y-[5mm]">
+                    <BadgeCard
+                        v-for="item in badgeItems"
+                        :key="item.id"
+                        :full-name="item.full_name"
+                        :title="item.title"
+                        :school-name="school.name"
+                        :logo-url="school.logo_url"
+                        :width-mm="widthMm"
+                        :height-mm="heightMm"
+                    />
+                </div>
+            </div>
+        </template>
 
         <div v-if="creating" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow">
