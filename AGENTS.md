@@ -1,4 +1,4 @@
-# AGENTS.md — OAL Kelebek
+# AGENTS.md — aWa
 
 Bu dosya `~/Belgeler/OAL_Kelebek` projesinin ana geliştirme rehberidir.
 
@@ -17,7 +17,7 @@ demek ve ilgili adımı eksiksiz uygulatmaktır.
 ## Proje
 
 - Proje kökü: `~/Belgeler/OAL_Kelebek`
-- Uygulama adı: `Kelebek`
+- Uygulama adı: `aWa`
 - Production adresi: `https://awa.madematik.com`
 - Uygulama kurum içi kullanılacaktır.
 - Başlangıçta yalnızca 1–2 yetkili yönetici kullanacaktır.

@@ -116,7 +116,7 @@ watch([selectedBranch, kind], () => {
 
 function notifyDownload(message: string) {
     window.dispatchEvent(
-        new CustomEvent('kelebek-toast', {
+        new CustomEvent('awa-toast', {
             detail: { type: 'success', messages: [message] },
         }),
     );

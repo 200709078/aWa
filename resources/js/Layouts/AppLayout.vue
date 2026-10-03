@@ -182,7 +182,7 @@ function collectToasts(props: unknown) {
 
 onMounted(() => {
     collectToasts(usePage().props);
-    window.addEventListener('kelebek-toast', onKelebekToast);
+    window.addEventListener('awa-toast', onAwaToast);
 });
 
 const offRouterSuccess = router.on('success', (event) => {
@@ -192,10 +192,10 @@ const offRouterSuccess = router.on('success', (event) => {
 
 onUnmounted(() => {
     offRouterSuccess();
-    window.removeEventListener('kelebek-toast', onKelebekToast);
+    window.removeEventListener('awa-toast', onAwaToast);
 });
 
-function onKelebekToast(event: Event) {
+function onAwaToast(event: Event) {
     const detail = (event as CustomEvent<{ type?: unknown; title?: unknown; messages?: unknown; message?: unknown }>).detail ?? {};
     const type = detail.type === 'error' ? 'error' : 'success';
     const messages = Array.isArray(detail.messages)
@@ -250,7 +250,7 @@ function logout() {
                         Menü
                     </button>
                     <Link href="/" class="flex items-center gap-2">
-                        <img :src="'/favicon.png'" alt="Kelebek logosu" class="h-8 w-8 object-contain" />
+                        <img :src="'/favicon.png'" alt="aWa logosu" class="h-8 w-8 object-contain" />
                         <span class="text-sm font-semibold leading-none text-gray-900">aWa | Okul Yönetim Sistemi</span>
                     </Link>
                 </div>
@@ -409,7 +409,7 @@ function logout() {
                 v-for="toast in toasts"
                 :key="toast.id"
                 role="status"
-                class="flex animate-[kelebek-toast-in_250ms_ease] items-start gap-3 rounded-lg border-l-4 bg-white p-4 shadow-xl"
+                class="flex animate-[awa-toast-in_250ms_ease] items-start gap-3 rounded-lg border-l-4 bg-white p-4 shadow-xl"
                 :class="toast.type === 'success' ? 'border-green-600' : 'border-red-600'"
             >
                 <svg
@@ -463,7 +463,7 @@ function logout() {
 </template>
 
 <style>
-@keyframes kelebek-toast-in {
+@keyframes awa-toast-in {
     from {
         opacity: 0;
         transform: translateY(0.75rem);
