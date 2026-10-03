@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Branch;
+use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,6 +49,7 @@ class StudentController extends Controller
         $baseQuery = fn () => Student::with([
             'person:id,first_name,last_name,full_name,phone,email,address,photo_path',
             'enrollments' => fn ($query) => $query->where('academic_year_id', $yearId)->with('branch:id,name'),
+            'guardians.person:id,first_name,last_name,full_name,phone',
         ])
             ->withCount('seatingAssignments')
             ->join('people', 'people.id', '=', 'students.person_id')
@@ -68,6 +71,14 @@ class StudentController extends Controller
                 'id' => $student->enrollments->first()?->branch?->id,
                 'name' => $student->enrollments->first()?->branch?->name ?? '—',
             ],
+            'guardians' => $student->guardians->map(fn ($guardian) => [
+                'id' => $guardian->id,
+                'relation' => $guardian->pivot->relationship,
+                'first_name' => $guardian->person?->first_name,
+                'last_name' => $guardian->person?->last_name,
+                'phone' => $guardian->person?->phone,
+                'is_primary' => (bool) $guardian->pivot->is_primary,
+            ])->values()->all(),
         ];
 
         // Arama varsa yıllara bakılmaksızın düz liste; yoksa her sayfa bir sınıf.
@@ -191,6 +202,8 @@ class StudentController extends Controller
                     'status' => 'active',
                 ]);
 
+                $this->syncGuardians($student, $validated['guardians'], $schoolId);
+
                 if ($validated['photo']) {
                     $this->storePersonPhoto($person, $student, $validated['photo']);
                 }
@@ -233,6 +246,7 @@ class StudentController extends Controller
                     'address' => $validated['address'],
                 ]);
                 $student->update(['is_active' => $validated['is_active']]);
+                $this->syncGuardians($student, $validated['guardians'], $student->school_id);
 
                 if ($validated['photo'] && $student->person) {
                     $this->storePersonPhoto($student->person, $student, $validated['photo']);
@@ -292,7 +306,7 @@ class StudentController extends Controller
     }
 
     /**
-     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, first_name: string, last_name: string, full_name: string, phone: ?string, email: ?string, address: ?string, photo: ?UploadedFile, is_active: bool}
+     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, first_name: string, last_name: string, full_name: string, phone: ?string, email: ?string, address: ?string, photo: ?UploadedFile, is_active: bool, guardians: array<int, array{id: ?int, relation: ?string, first_name: string, last_name: string, phone: ?string, is_primary: bool}>}
      */
     private function validated(Request $request, ?Student $student = null): array
     {
@@ -315,6 +329,13 @@ class StudentController extends Controller
             'address' => ['nullable', 'string', 'max:500'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'is_active' => ['sometimes', 'boolean'],
+            'guardians' => ['nullable', 'array', 'max:4'],
+            'guardians.*.id' => ['nullable', 'integer', 'exists:guardians,id'],
+            'guardians.*.relation' => ['nullable', Rule::in(['anne', 'baba', 'veli', 'vasi'])],
+            'guardians.*.first_name' => ['nullable', 'string', 'max:50'],
+            'guardians.*.last_name' => ['nullable', 'string', 'max:50'],
+            'guardians.*.phone' => ['nullable', 'string', 'max:30'],
+            'guardians.*.is_primary' => ['sometimes', 'boolean'],
         ], [
             'branch_id.required' => 'Şube seçin.',
             'branch_id.exists' => 'Seçilen şube bulunamadı.',
@@ -327,7 +348,30 @@ class StudentController extends Controller
             'photo.mimes' => 'Desteklenen formatlar: jpg, jpeg, png, webp.',
             'photo.max' => 'Fotoğraf en fazla 10 MB olabilir.',
             'photo.uploaded' => 'Fotoğraf yüklenemedi, dosya çok büyük olabilir.',
+            'guardians.*.relation.in' => 'Veli yakınlığı geçersiz.',
         ]);
+
+        $guardians = [];
+        foreach ($data['guardians'] ?? [] as $row) {
+            $first = trim((string) ($row['first_name'] ?? ''));
+            $last = trim((string) ($row['last_name'] ?? ''));
+            $phone = trim((string) ($row['phone'] ?? ''));
+
+            if ($first === '' && $last === '' && $phone === '') {
+                continue;
+            }
+            if ($first === '' || $last === '') {
+                throw ValidationException::withMessages(['guardians' => 'Veli adı ve soyadı gerekli.']);
+            }
+            $guardians[] = [
+                'id' => isset($row['id']) && is_numeric($row['id']) ? (int) $row['id'] : null,
+                'relation' => $row['relation'] ?? null,
+                'first_name' => $first,
+                'last_name' => $last,
+                'phone' => $phone === '' ? null : $phone,
+                'is_primary' => ! empty($row['is_primary']),
+            ];
+        }
 
         $firstName = trim($data['first_name']);
         $lastName = trim($data['last_name']);
@@ -346,7 +390,88 @@ class StudentController extends Controller
             'address' => $nullify($data['address'] ?? null),
             'photo' => $request->file('photo'),
             'is_active' => $request->boolean('is_active', $student?->is_active ?? true),
+            'guardians' => $guardians,
         ];
+    }
+
+    /**
+     * @param  array<int, array{id: ?int, relation: ?string, first_name: string, last_name: string, phone: ?string, is_primary: bool}>  $guardians
+     */
+    private function syncGuardians(Student $student, array $guardians, mixed $schoolId): void
+    {
+        $kept = [];
+        $primaryId = null;
+
+        foreach ($guardians as $row) {
+            $guardian = $row['id'] ? Guardian::find($row['id']) : null;
+
+            if ($guardian && ! $student->guardians()->whereKey($guardian->id)->exists()) {
+                $student->guardians()->attach($guardian->id, [
+                    'relationship' => $row['relation'] ?? 'veli',
+                    'is_primary' => false,
+                ]);
+            }
+
+            if (! $guardian) {
+                [$gFirst, $gLast] = StudentImportController::splitName($row['first_name'].' '.$row['last_name']);
+                $person = Person::create([
+                    'school_id' => $schoolId,
+                    'first_name' => $gFirst ?? $row['first_name'],
+                    'last_name' => $gLast ?? $row['last_name'],
+                    'full_name' => $row['first_name'].' '.$row['last_name'],
+                    'phone' => $row['phone'],
+                ]);
+                $guardian = Guardian::create(['person_id' => $person->id]);
+                $student->guardians()->attach($guardian->id, [
+                    'relationship' => $row['relation'] ?? 'veli',
+                    'is_primary' => false,
+                ]);
+            } else {
+                $guardian->person?->update([
+                    'first_name' => $row['first_name'],
+                    'last_name' => $row['last_name'],
+                    'full_name' => $row['first_name'].' '.$row['last_name'],
+                    'phone' => $row['phone'],
+                ]);
+                $student->guardians()->updateExistingPivot($guardian->id, [
+                    'relationship' => $row['relation'] ?? $guardian->pivot->relationship ?? 'veli',
+                ]);
+            }
+
+            $kept[] = $guardian->id;
+            if ($primaryId === null && $row['is_primary']) {
+                $primaryId = $guardian->id;
+            }
+        }
+
+        if ($primaryId === null && $kept !== []) {
+            $primaryId = $kept[0];
+        }
+
+        foreach ($kept as $id) {
+            $student->guardians()->updateExistingPivot($id, ['is_primary' => $id === $primaryId]);
+        }
+
+        $removed = $student->guardians()->whereNotIn('guardians.id', $kept)->get();
+        foreach ($removed as $guardian) {
+            $student->guardians()->detach($guardian->id);
+            $this->cleanupGuardian($guardian);
+        }
+    }
+
+    private function cleanupGuardian(Guardian $guardian): void
+    {
+        if ($guardian->students()->exists()) {
+            return;
+        }
+
+        $person = $guardian->person;
+        $guardian->delete();
+
+        if ($person && ! $person->student()->exists() && ! $person->graduate()->exists()
+            && ! $person->teacher()->exists() && ! $person->guardian()->exists()) {
+            $person->delete();
+        }
     }
 
     private function storePersonPhoto(Person $person, Student $student, UploadedFile $photo): void

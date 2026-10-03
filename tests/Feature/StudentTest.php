@@ -139,6 +139,52 @@ class StudentTest extends TestCase
         $this->assertFalse($student->fresh()->is_active);
     }
 
+    public function test_ogrenci_veli_ile_eklenir_ve_guncellenir(): void
+    {
+        $user = User::factory()->create();
+        $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+
+        $this->actingAs($user)->post('/students', [
+            'branch_id' => $branch->id,
+            'school_number' => '145',
+            'first_name' => 'Ali',
+            'last_name' => 'Veli',
+            'guardians' => [
+                ['relation' => 'anne', 'first_name' => 'Anne', 'last_name' => 'Veli', 'phone' => '05320000001', 'is_primary' => true],
+                ['relation' => 'baba', 'first_name' => 'Baba', 'last_name' => 'Veli', 'phone' => '05320000002'],
+            ],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $student = Student::first();
+        $this->assertCount(2, $student->guardians);
+        $this->assertDatabaseHas('people', ['full_name' => 'Anne Veli', 'phone' => '05320000001']);
+        $this->assertEquals(1, $student->guardians()->wherePivot('is_primary', true)->count());
+
+        $anne = $student->guardians()->wherePivot('relationship', 'anne')->first();
+        $baba = $student->guardians()->wherePivot('relationship', 'baba')->first();
+
+        // Anneyi güncelle, babayı kaldır, dede ekle (birincil değişir).
+        $this->actingAs($user)->put("/students/{$student->id}", [
+            'branch_id' => $branch->id,
+            'school_number' => '145',
+            'first_name' => 'Ali',
+            'last_name' => 'Veli',
+            'guardians' => [
+                ['id' => $anne->id, 'relation' => 'anne', 'first_name' => 'Anne', 'last_name' => 'Veli', 'phone' => '05329999999'],
+                ['relation' => 'veli', 'first_name' => 'Dede', 'last_name' => 'Veli', 'phone' => '', 'is_primary' => true],
+            ],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $student->refresh();
+        $this->assertCount(2, $student->guardians);
+        $this->assertDatabaseHas('people', ['full_name' => 'Anne Veli', 'phone' => '05329999999']);
+        $this->assertDatabaseHas('people', ['full_name' => 'Dede Veli']);
+        // Kaldırılan babanın yetim kaydı temizlenir.
+        $this->assertDatabaseMissing('guardians', ['id' => $baba->id]);
+        $this->assertEquals('Dede Veli', $student->guardians()->wherePivot('is_primary', true)->first()->person->full_name);
+    }
+
     private function makePhoto(string $filename, int $w = 1200, int $h = 900): string
     {
         $path = sys_get_temp_dir().'/'.$filename;
