@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
 import NavIcon from '../../Components/NavIcon.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
@@ -19,6 +19,16 @@ interface ArchivedStudent {
     photo_path: string | null;
     deleted_at: string | null;
     enrollments: StudentEnrollment[];
+}
+
+interface ArchivedTeacher {
+    id: number;
+    full_name: string;
+    phone: string | null;
+    photo_path: string | null;
+    duty: string | null;
+    branch: string | null;
+    deleted_at: string | null;
 }
 
 interface ArchivedGraduate {
@@ -41,17 +51,19 @@ interface Paginator<T> {
 }
 
 const props = defineProps<{
-    tab: 'students' | 'graduates';
+    tab: 'students' | 'teachers' | 'graduates';
     search: string;
     students: Paginator<ArchivedStudent>;
+    teachers: Paginator<ArchivedTeacher>;
     graduates: Paginator<ArchivedGraduate>;
     trashedStudents: number;
+    trashedTeachers: number;
     trashedGraduates: number;
 }>();
 
 const filterSearch = ref(props.search);
 
-function switchTab(tab: 'students' | 'graduates') {
+function switchTab(tab: 'students' | 'teachers' | 'graduates') {
     router.get('/arsiv', { tab, q: filterSearch.value || undefined }, { preserveState: true });
 }
 
@@ -63,6 +75,10 @@ function clearSearch() {
     filterSearch.value = '';
     router.get('/arsiv', { tab: props.tab }, { preserveState: true });
 }
+
+const activeList = computed(() =>
+    props.tab === 'teachers' ? props.teachers : props.tab === 'graduates' ? props.graduates : props.students,
+);
 
 const restoringStudent = ref<ArchivedStudent | null>(null);
 const restoreNumbers = ref<Record<number, string>>({});
@@ -99,7 +115,6 @@ function submitRestoreStudent() {
 }
 
 const forcingStudent = ref<ArchivedStudent | null>(null);
-
 function submitForceStudent() {
     if (!forcingStudent.value) return;
     router.delete(`/arsiv/ogrenciler/${forcingStudent.value.id}`, {
@@ -142,6 +157,31 @@ function submitForceGraduate() {
         onFinish: () => (forcingGraduate.value = null),
     });
 }
+
+const restoringTeacher = ref<ArchivedTeacher | null>(null);
+
+function submitRestoreTeacher() {
+    if (!restoringTeacher.value) return;
+    router.post(
+        `/arsiv/personel/${restoringTeacher.value.id}/restore`,
+        {},
+        {
+            preserveState: true,
+            onSuccess: () => {
+                restoringTeacher.value = null;
+            },
+        },
+    );
+}
+
+const forcingTeacher = ref<ArchivedTeacher | null>(null);
+
+function submitForceTeacher() {
+    if (!forcingTeacher.value) return;
+    router.delete(`/arsiv/personel/${forcingTeacher.value.id}`, {
+        onFinish: () => (forcingTeacher.value = null),
+    });
+}
 </script>
 
 <template>
@@ -161,6 +201,18 @@ function submitForceGraduate() {
                         @click="switchTab('students')"
                     >
                         Öğrenciler ({{ trashedStudents }})
+                    </button>
+                    <button
+                        type="button"
+                        :class="[
+                            'inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-semibold shadow-sm',
+                            tab === 'teachers'
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                : 'border border-gray-300 bg-gray-50 text-gray-700 hover:bg-indigo-100 hover:text-indigo-800',
+                        ]"
+                        @click="switchTab('teachers')"
+                    >
+                        Personel ({{ trashedTeachers }})
                     </button>
                     <button
                         type="button"
@@ -262,6 +314,63 @@ function submitForceGraduate() {
                     </tr>
                     <tr v-if="students.data.length === 0">
                         <td colspan="5" class="px-4 py-6 text-center text-gray-500">Arşivde öğrenci yok.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div v-if="tab === 'teachers'" class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ad Soyad</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Görev</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Branş</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Arşiv Tarihi</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <tr v-for="t in teachers.data" :key="t.id">
+                        <td class="whitespace-nowrap px-4 py-3">
+                            <StudentAvatar
+                                :photo-url="t.photo_path ? `/storage/${t.photo_path}` : null"
+                                :full-name="t.full_name"
+                                img-class="block h-16 w-12 rounded object-cover"
+                                placeholder-class="w-12"
+                                circle-class="w-10 text-sm"
+                            />
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ t.full_name }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ t.duty ?? '—' }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ t.branch ?? '—' }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{{ t.deleted_at ?? '—' }}</td>
+                        <td class="whitespace-nowrap px-4 py-3">
+                            <div class="flex gap-2">
+                                <button
+                                    type="button"
+                                    title="Arşivden çıkar"
+                                    aria-label="Arşivden çıkar"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-green-200 bg-green-50 px-4 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-100 hover:text-green-800 focus:border-green-500 focus:ring-green-500"
+                                    @click="restoringTeacher = t"
+                                >
+                                    <NavIcon name="archive" cls="h-5 w-5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Kalıcı sil"
+                                    aria-label="Kalıcı sil"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700"
+                                    @click="forcingTeacher = t"
+                                >
+                                    <NavIcon name="trash" cls="h-5 w-5" />
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr v-if="teachers.data.length === 0">
+                        <td colspan="6" class="px-4 py-6 text-center text-gray-500">Arşivde personel yok.</td>
                     </tr>
                 </tbody>
             </table>
@@ -423,6 +532,54 @@ function submitForceGraduate() {
             </div>
         </div>
 
+        <div v-if="restoringTeacher" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
+                <h2 class="text-lg font-semibold text-gray-900">Arşivden Çıkar</h2>
+                <p class="mt-2 text-sm text-gray-600">{{ restoringTeacher.full_name }} geri alınsın mı?</p>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100"
+                        @click="restoringTeacher = null"
+                    >
+                        Vazgeç
+                    </button>
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+                        @click="submitRestoreTeacher"
+                    >
+                        Geri Al
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="forcingTeacher" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
+                <h2 class="text-lg font-semibold text-gray-900">Kalıcı Sil</h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    {{ forcingTeacher.full_name }} kalıcı olarak silinsin mi? Fotoğraf da silinir. Bu işlem geri alınamaz.
+                </p>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100"
+                        @click="forcingTeacher = null"
+                    >
+                        Vazgeç
+                    </button>
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+                        @click="submitForceTeacher"
+                    >
+                        Kalıcı Sil
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div v-if="forcingGraduate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
             <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
                 <h2 class="text-lg font-semibold text-gray-900">Kalıcı Sil</h2>
@@ -449,23 +606,23 @@ function submitForceGraduate() {
         </div>
 
         <div
-            v-if="(tab === 'students' ? students.total : graduates.total) > 0"
+            v-if="activeList.total > 0"
             class="mt-4 flex w-full max-w-[80%] items-center text-sm text-gray-600"
         >
             <div class="flex w-24 justify-start">
                 <Link
-                    v-if="(tab === 'students' ? students.prev_page_url : graduates.prev_page_url)"
-                    :href="(tab === 'students' ? students.prev_page_url : graduates.prev_page_url) as string"
+                    v-if="activeList.prev_page_url"
+                    :href="activeList.prev_page_url"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100"
                 >
                     Önceki
                 </Link>
             </div>
-            <span class="flex-1 text-center">Toplam {{ tab === 'students' ? students.total : graduates.total }} arşiv kaydı</span>
+            <span class="flex-1 text-center">Toplam {{ activeList.total }} arşiv kaydı</span>
             <div class="flex w-24 justify-end">
                 <Link
-                    v-if="(tab === 'students' ? students.next_page_url : graduates.next_page_url)"
-                    :href="(tab === 'students' ? students.next_page_url : graduates.next_page_url) as string"
+                    v-if="activeList.next_page_url"
+                    :href="activeList.next_page_url"
                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100"
                 >
                     Sonraki

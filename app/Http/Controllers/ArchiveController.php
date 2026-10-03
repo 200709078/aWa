@@ -6,6 +6,7 @@ use App\Models\Graduate;
 use App\Models\Person;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
+use App\Models\Teacher;
 use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,11 +19,51 @@ class ArchiveController extends Controller
 {
     public function index(Request $request): Response
     {
-        $tab = $request->input('tab') === 'graduates' ? 'graduates' : 'students';
+        $tab = $request->input('tab');
+        $tab = in_array($tab, ['students', 'teachers', 'graduates'], true) ? $tab : 'students';
         $search = trim((string) $request->input('q', ''));
 
         $trashedStudents = Student::onlyTrashed()->where('school_id', SchoolScope::id())->count();
+        $trashedTeachers = Teacher::onlyTrashed()->whereHas('person', fn ($q) => $q->withTrashed()->where('school_id', SchoolScope::id()))->count();
         $trashedGraduates = Graduate::onlyTrashed()->count();
+
+        $emptyStudents = ['data' => [], 'total' => 0];
+        $emptyTeachers = ['data' => [], 'total' => 0];
+        $emptyGraduates = ['data' => [], 'total' => 0];
+
+        if ($tab === 'teachers') {
+            $query = Teacher::onlyTrashed()
+                ->whereHas('person', fn ($q) => $q->withTrashed()->where('school_id', SchoolScope::id()))
+                ->with(['person' => fn ($q) => $q->withTrashed()]);
+
+            if ($search !== '') {
+                $query->whereHas('person', fn ($q) => $q->withTrashed()->where(function ($qq) use ($search) {
+                    $qq->where('full_name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%");
+                }));
+            }
+
+            $paginator = $query->orderByDesc('deleted_at')->paginate(30)->withQueryString();
+            $paginator->setCollection($paginator->getCollection()->map(fn (Teacher $t) => [
+                'id' => $t->id,
+                'full_name' => $t->person?->full_name ?? '—',
+                'phone' => $t->person?->phone,
+                'photo_path' => $t->person?->photo_path,
+                'duty' => $t->duty,
+                'branch' => $t->branch,
+                'deleted_at' => $t->deleted_at?->format('d.m.Y H:i'),
+            ]));
+
+            return Inertia::render('Archive/Index', [
+                'tab' => $tab,
+                'search' => $search,
+                'students' => $emptyStudents,
+                'teachers' => $paginator,
+                'graduates' => $emptyGraduates,
+                'trashedStudents' => $trashedStudents,
+                'trashedTeachers' => $trashedTeachers,
+                'trashedGraduates' => $trashedGraduates,
+            ]);
+        }
 
         if ($tab === 'graduates') {
             $query = Graduate::onlyTrashed()->with(['person' => fn ($q) => $q->withTrashed()]);
@@ -49,8 +90,10 @@ class ArchiveController extends Controller
                 'tab' => $tab,
                 'search' => $search,
                 'students' => ['data' => [], 'total' => 0],
+                'teachers' => ['data' => [], 'total' => 0],
                 'graduates' => $paginator,
                 'trashedStudents' => $trashedStudents,
+                'trashedTeachers' => $trashedTeachers,
                 'trashedGraduates' => $trashedGraduates,
             ]);
         }
@@ -88,8 +131,10 @@ class ArchiveController extends Controller
             'tab' => $tab,
             'search' => $search,
             'students' => $paginator,
+            'teachers' => ['data' => [], 'total' => 0],
             'graduates' => ['data' => [], 'total' => 0],
             'trashedStudents' => $trashedStudents,
+            'trashedTeachers' => $trashedTeachers,
             'trashedGraduates' => $trashedGraduates,
         ]);
     }
@@ -166,6 +211,55 @@ class ArchiveController extends Controller
         DB::transaction(function () use ($student, $person, $photo) {
             $student->enrollments()->withTrashed()->forceDelete();
             $student->forceDelete();
+
+            if ($person) {
+                $hasRole = Student::withTrashed()->where('person_id', $person->id)->exists()
+                    || Graduate::withTrashed()->where('person_id', $person->id)->exists()
+                    || $person->teacher()->exists()
+                    || $person->guardian()->exists();
+
+                if (! $hasRole) {
+                    if ($photo) {
+                        Storage::disk('public')->delete($photo);
+                    }
+                    $person->forceDelete();
+                } elseif ($person->trashed()) {
+                    $person->restore();
+                }
+            }
+        });
+
+        return back()->with('success', $name.' kalıcı olarak silindi.');
+    }
+
+    public function restoreTeacher(int $id): RedirectResponse
+    {
+        $teacher = Teacher::onlyTrashed()->findOrFail($id);
+        abort_unless($teacher->person()->withTrashed()->first()?->school_id === SchoolScope::id(), 404);
+
+        DB::transaction(function () use ($teacher) {
+            $teacher->restore();
+
+            $person = Person::withTrashed()->find($teacher->person_id);
+            $person?->restore();
+        });
+
+        $name = $teacher->person?->full_name ?? 'Personel';
+
+        return back()->with('success', $name.' arşivden çıkarıldı.');
+    }
+
+    public function forceTeacher(int $id): RedirectResponse
+    {
+        $teacher = Teacher::withTrashed()->findOrFail($id);
+        abort_unless($teacher->person()->withTrashed()->first()?->school_id === SchoolScope::id(), 404);
+
+        $person = Person::withTrashed()->find($teacher->person_id);
+        $name = $person?->full_name ?? 'Personel';
+        $photo = $person?->photo_path;
+
+        DB::transaction(function () use ($teacher, $person, $photo) {
+            $teacher->forceDelete();
 
             if ($person) {
                 $hasRole = Student::withTrashed()->where('person_id', $person->id)->exists()

@@ -16,6 +16,7 @@ interface Graduate {
     phone: string | null;
     email: string | null;
     photo_path: string | null;
+    photo_version: number | null;
     educations: string[];
     education_rows: EduRow[];
     institution_name: string | null;
@@ -135,7 +136,7 @@ const createDisplayName = computed(() => `${createForm.first_name} ${createForm.
 
 const editPhotoSrc = computed(() => {
     if (editForm.photo) return URL.createObjectURL(editForm.photo);
-    if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}`;
+    if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}?v=${editing.value.photo_version ?? 0}`;
     return null;
 });
 
@@ -276,7 +277,7 @@ const downloadUrl = computed(() => {
                             <td class="whitespace-nowrap px-4 py-3 text-gray-900">{{ graduate.number }}</td>
                             <td class="px-4 py-3">
                                 <StudentAvatar
-                                    :photo-url="graduate.photo_path ? `/storage/${graduate.photo_path}` : null"
+                                    :photo-url="graduate.photo_path ? `/storage/${graduate.photo_path}?v=${graduate.photo_version ?? 0}` : null"
                                     :full-name="graduate.full_name"
                                     img-class="h-16 w-12 rounded object-cover"
                                 />

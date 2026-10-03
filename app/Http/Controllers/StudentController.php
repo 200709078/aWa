@@ -47,7 +47,7 @@ class StudentController extends Controller
         $search = trim((string) $request->input('q', ''));
 
         $baseQuery = fn () => Student::with([
-            'person:id,first_name,last_name,full_name,phone,email,address,photo_path',
+            'person:id,first_name,last_name,full_name,phone,email,address,photo_path,updated_at',
             'enrollments' => fn ($query) => $query->where('academic_year_id', $yearId)->with('branch:id,name'),
             'guardians.person:id,first_name,last_name,full_name,phone',
         ])
@@ -65,6 +65,7 @@ class StudentController extends Controller
             'email' => $student->person?->email,
             'address' => $student->person?->address,
             'photo_path' => $student->person?->photo_path,
+            'photo_version' => $student->person?->updated_at?->timestamp,
             'is_active' => $student->is_active,
             'seating_assignments_count' => $student->seating_assignments_count,
             'branch' => [
@@ -478,6 +479,8 @@ class StudentController extends Controller
     {
         PhotoService::store($photo, "students/{$student->id}.jpg");
 
-        $person->update(['photo_path' => "students/{$student->id}.jpg"]);
+        // Yol aynı kalsa bile sürüm değişsin ki liste önbelleğe takılmasın.
+        $person->forceFill(['photo_path' => "students/{$student->id}.jpg"])->save();
+        $person->touch();
     }
 }

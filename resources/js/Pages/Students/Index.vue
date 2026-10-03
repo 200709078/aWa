@@ -36,6 +36,7 @@ interface Student {
     email: string | null;
     address: string | null;
     photo_path: string | null;
+    photo_version: number | null;
     is_active: boolean;
     seating_assignments_count: number;
     branch: { id: number | null; name: string };
@@ -164,7 +165,7 @@ const editing = ref<Student | null>(null);
 
 const editPhotoSrc = computed(() => {
     if (editForm.photo) return URL.createObjectURL(editForm.photo);
-    if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}`;
+    if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}?v=${editing.value.photo_version ?? 0}`;
     return null;
 });
 
@@ -298,7 +299,7 @@ function confirmDelete() {
                         href="/students/photos"
                         class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                     >
-                        Toplu Fotoğraf
+                        Toplu Fotoğraf Ekle
                     </Link>
                     <Link
                         href="/students/import"
@@ -335,7 +336,7 @@ function confirmDelete() {
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ student.branch.name }}</td>
                         <td class="whitespace-nowrap px-4 py-3">
                             <StudentAvatar
-                                :photo-url="student.photo_path ? `/storage/${student.photo_path}` : null"
+                                :photo-url="student.photo_path ? `/storage/${student.photo_path}?v=${student.photo_version ?? 0}` : null"
                                 :full-name="student.full_name"
                                 img-class="block h-16 w-12 rounded object-cover"
                                 placeholder-class="w-12"

@@ -5,9 +5,21 @@ namespace Tests;
 use App\Models\School;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Storage;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Testler gerçek diske dokunmasın diye storage sahtelenir.
+     * (Aksi halde sqlite id'leriyle aynı adlı gerçek fotoğraflar ezilir/silinir.)
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('public');
+        Storage::fake('local');
+    }
+
     /**
      * Test kullanıcısını ilk okula bağlar ve oturum okulunu seçer.
      * Böylece mevcut testler okul bağlamı middleware'inden etkilenmez.

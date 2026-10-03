@@ -27,7 +27,7 @@ class GraduateController extends Controller
 
         // Arama varsa yıllara bakılmaksızın düz liste; yoksa her sayfa bir yıl.
         if ($search !== '') {
-            $paginator = Graduate::with(['person:id,first_name,last_name,full_name,phone,email,photo_path', 'person.educations', 'person.employments'])
+            $paginator = Graduate::with(['person:id,first_name,last_name,full_name,phone,email,photo_path,updated_at', 'person.educations', 'person.employments'])
                 ->where(function ($query) use ($search) {
                     $query->whereHas('person', fn ($query) => $query->where('full_name', 'like', "%{$search}%"))
                         ->orWhere('graduation_number', 'like', "%{$search}%");
@@ -54,7 +54,7 @@ class GraduateController extends Controller
 
         $rows = $year === null
             ? collect()
-            : Graduate::with(['person:id,first_name,last_name,full_name,phone,email,photo_path', 'person.educations', 'person.employments'])
+            : Graduate::with(['person:id,first_name,last_name,full_name,phone,email,photo_path,updated_at', 'person.educations', 'person.employments'])
                 ->where('graduation_year', $year)
                 ->orderBy('graduation_number')
                 ->get();
@@ -97,6 +97,7 @@ class GraduateController extends Controller
             'phone' => $graduate->person?->phone,
             'email' => $graduate->person?->email,
             'photo_path' => $graduate->person?->photo_path,
+            'photo_version' => $graduate->person?->updated_at?->timestamp,
             'educations' => $educations
                 ->map(fn ($item) => implode(' / ', array_filter([
                     $item->city ?? '',
@@ -343,7 +344,9 @@ class GraduateController extends Controller
     {
         PhotoService::store($photo, "graduates/{$graduate->id}.jpg");
 
-        $person->update(['photo_path' => "graduates/{$graduate->id}.jpg"]);
+        // Yol aynı kalsa bile sürüm değişsin ki liste önbelleğe takılmasın.
+        $person->forceFill(['photo_path' => "graduates/{$graduate->id}.jpg"])->save();
+        $person->touch();
     }
 
     public function vcf(Request $request): BinaryFileResponse
