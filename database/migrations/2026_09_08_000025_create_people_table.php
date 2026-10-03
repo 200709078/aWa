@@ -31,8 +31,12 @@ return new class extends Migration
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('person_id')->constrained()->cascadeOnDelete();
+            $table->string('duty')->nullable();
+            $table->string('branch')->nullable();
+            $table->date('started_at')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('person_educations', function (Blueprint $table) {

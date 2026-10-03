@@ -16,6 +16,7 @@ use App\Http\Controllers\SeatController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\StudentPhotoController;
+use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -68,15 +69,23 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/rehber-aktarma/indir', [RehberAktarmaController::class, 'download'])->name('rehber.download');
     Route::get('/rehber-aktarma/excel', [RehberAktarmaController::class, 'excel'])->name('rehber.excel');
 
-    Route::get('/mezunlar', [GraduateController::class, 'index'])->name('mezunlar.index');
-    Route::post('/mezunlar', [GraduateController::class, 'store'])->name('mezunlar.store');
+    Route::get('/mezunlar', [GraduateController::class, 'index'])->name('mezunlar.index');    Route::post('/mezunlar', [GraduateController::class, 'store'])->name('mezunlar.store');
     Route::put('/mezunlar/{graduate}', [GraduateController::class, 'update'])->name('mezunlar.update');
     Route::delete('/mezunlar/{graduate}', [GraduateController::class, 'destroy'])->name('mezunlar.destroy');
     Route::get('/mezunlar/vcf', [GraduateController::class, 'vcf'])->name('mezunlar.vcf');
 
+    Route::get('/personel', [TeacherController::class, 'index'])->name('personel.index');
+    Route::post('/personel', [TeacherController::class, 'store'])->name('personel.store');
+    Route::put('/personel/{teacher}', [TeacherController::class, 'update'])->name('personel.update');
+    Route::post('/personel/{teacher}/activate', [TeacherController::class, 'activate'])->name('personel.activate');
+    Route::post('/personel/{teacher}/deactivate', [TeacherController::class, 'deactivate'])->name('personel.deactivate');
+    Route::delete('/personel/{teacher}', [TeacherController::class, 'destroy'])->name('personel.destroy');
+
     Route::get('/arsiv', [ArchiveController::class, 'index'])->name('archive.index');
     Route::post('/arsiv/ogrenciler/{id}/restore', [ArchiveController::class, 'restoreStudent'])->name('archive.students.restore');
     Route::delete('/arsiv/ogrenciler/{id}', [ArchiveController::class, 'forceStudent'])->name('archive.students.force');
+    Route::post('/arsiv/personel/{id}/restore', [ArchiveController::class, 'restoreTeacher'])->name('archive.teachers.restore');
+    Route::delete('/arsiv/personel/{id}', [ArchiveController::class, 'forceTeacher'])->name('archive.teachers.force');
     Route::post('/arsiv/mezunlar/{id}/restore', [ArchiveController::class, 'restoreGraduate'])->name('archive.graduates.restore');
     Route::delete('/arsiv/mezunlar/{id}', [ArchiveController::class, 'forceGraduate'])->name('archive.graduates.force');
 

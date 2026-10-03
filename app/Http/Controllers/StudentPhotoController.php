@@ -183,7 +183,8 @@ class StudentPhotoController extends Controller
             try {
                 $student = $enrollments[$number]->student;
                 PhotoService::store($candidate['source'], "students/{$student->id}.jpg", self::MAX_WIDTH, self::QUALITY);
-                $student->person->update(['photo_path' => "students/{$student->id}.jpg"]);
+                $student->person->forceFill(['photo_path' => "students/{$student->id}.jpg"])->save();
+                $student->person->touch();
                 $matched++;
             } catch (Throwable $e) {
                 $failed[] = ['filename' => $candidate['filename'], 'message' => 'Dosya işlenemedi.'];
