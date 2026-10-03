@@ -9,6 +9,7 @@ use App\Models\Person;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Services\PhotoService;
+use App\Support\PhoneNumber;
 use App\Support\SchoolScope;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -369,7 +370,7 @@ class StudentController extends Controller
                 'relation' => $row['relation'] ?? null,
                 'first_name' => $first,
                 'last_name' => $last,
-                'phone' => $phone === '' ? null : $phone,
+                'phone' => PhoneNumber::normalizeOrFail($phone === '' ? null : $phone, 'guardians', 'Veli telefonu geçersiz (örn. 0532 666 65 49).'),
                 'is_primary' => ! empty($row['is_primary']),
             ];
         }
@@ -386,7 +387,7 @@ class StudentController extends Controller
             'first_name' => $firstName,
             'last_name' => $lastName,
             'full_name' => $firstName.' '.$lastName,
-            'phone' => $nullify($data['phone'] ?? null),
+            'phone' => PhoneNumber::normalizeOrFail($data['phone'] ?? null, 'phone', 'Geçerli bir telefon girin (örn. 0532 666 65 49).'),
             'email' => $nullify($data['email'] ?? null),
             'address' => $nullify($data['address'] ?? null),
             'photo' => $request->file('photo'),

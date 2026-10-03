@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Person;
 use App\Models\Teacher;
 use App\Services\PhotoService;
+use App\Support\PhoneNumber;
 use App\Support\SchoolScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,9 +26,7 @@ class TeacherController extends Controller
                 ->where('full_name', 'like', "%{$search}%")
                 ->orWhere('phone', 'like', "%{$search}%")));
 
-        $teachers = $query->orderBy(
-            Person::select('full_name')->whereColumn('people.id', 'teachers.person_id'), 'asc'
-        )->paginate(30)->withQueryString();
+        $teachers = $query->orderByRaw('started_at IS NULL, started_at ASC')->paginate(30)->withQueryString();
 
         $teachers->setCollection($teachers->getCollection()->map(fn (Teacher $t) => [
             'id' => $t->id,
@@ -195,7 +194,7 @@ class TeacherController extends Controller
             'first_name' => $firstName,
             'last_name' => $lastName,
             'full_name' => $firstName.' '.$lastName,
-            'phone' => $nullify($data['phone'] ?? null),
+            'phone' => PhoneNumber::normalizeOrFail($data['phone'] ?? null, 'phone', 'Geçerli bir telefon girin (örn. 0532 666 65 49).'),
             'email' => $nullify($data['email'] ?? null),
             'address' => $nullify($data['address'] ?? null),
             'duty' => $nullify($data['duty'] ?? null),

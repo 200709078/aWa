@@ -158,7 +158,7 @@ class StudentTest extends TestCase
 
         $student = Student::first();
         $this->assertCount(2, $student->guardians);
-        $this->assertDatabaseHas('people', ['full_name' => 'Anne Veli', 'phone' => '05320000001']);
+        $this->assertDatabaseHas('people', ['full_name' => 'Anne Veli', 'phone' => '+905320000001']);
         $this->assertEquals(1, $student->guardians()->wherePivot('is_primary', true)->count());
 
         $anne = $student->guardians()->wherePivot('relationship', 'anne')->first();
@@ -178,11 +178,40 @@ class StudentTest extends TestCase
 
         $student->refresh();
         $this->assertCount(2, $student->guardians);
-        $this->assertDatabaseHas('people', ['full_name' => 'Anne Veli', 'phone' => '05329999999']);
+        $this->assertDatabaseHas('people', ['full_name' => 'Anne Veli', 'phone' => '+905329999999']);
         $this->assertDatabaseHas('people', ['full_name' => 'Dede Veli']);
         // Kaldırılan babanın yetim kaydı temizlenir.
         $this->assertDatabaseMissing('guardians', ['id' => $baba->id]);
         $this->assertEquals('Dede Veli', $student->guardians()->wherePivot('is_primary', true)->first()->person->full_name);
+    }
+
+    public function test_telefon_her_bicimde_girilip_arti90_kaydedilir(): void
+    {
+        $user = User::factory()->create();
+        $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+
+        $this->actingAs($user)->post('/students', [
+            'branch_id' => $branch->id,
+            'school_number' => '145',
+            'first_name' => 'Ali',
+            'last_name' => 'Veli',
+            'phone' => '0 532 666 6549',
+            'guardians' => [
+                ['relation' => 'anne', 'first_name' => 'Anne', 'last_name' => 'Veli', 'phone' => '9 0 5 3 2 6 6 6 6 5 4 9'],
+            ],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('people', ['full_name' => 'Ali Veli', 'phone' => '+905326666549']);
+        $this->assertDatabaseHas('people', ['full_name' => 'Anne Veli', 'phone' => '+905326666549']);
+
+        $this->actingAs($user)->post('/students', [
+            'branch_id' => $branch->id,
+            'school_number' => '146',
+            'first_name' => 'Bozuk',
+            'last_name' => 'Numara',
+            'phone' => '532666654',
+        ])->assertSessionHasErrors('phone');
     }
 
     private function makePhoto(string $filename, int $w = 1200, int $h = 900): string
@@ -218,7 +247,7 @@ class StudentTest extends TestCase
             'full_name' => 'Ali Veli',
             'first_name' => 'Ali',
             'last_name' => 'Veli',
-            'phone' => '05320000000',
+            'phone' => '+905320000000',
             'email' => 'ali@example.com',
             'address' => 'Örnek Mah.',
         ]);
