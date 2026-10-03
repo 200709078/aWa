@@ -595,7 +595,7 @@ function levelTables(room: RoomData): { label: string; rows: { branch: string; c
                                     </div>
                                     <template v-if="seatMap(room).get(`${row}-${col}`)!.student">
                                         <div class="truncate text-center">
-                                            <template v-if="showNumber">{{ seatMap(room).get(`${row}-${col}`)!.student!.school_number }} </template>{{ seatMap(room).get(`${row}-${col}`)!.student!.full_name }}
+                                            <template v-if="showNumber">{{ seatMap(room).get(`${row}-${col}`)!.student!.school_number }}&nbsp;</template>{{ seatMap(room).get(`${row}-${col}`)!.student!.full_name }}
                                         </div>
                                         <div v-if="showBranch" class="text-center text-gray-500">
                                             {{ seatMap(room).get(`${row}-${col}`)!.student!.branch }}
