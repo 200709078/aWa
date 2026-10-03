@@ -2,6 +2,7 @@
 import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
+import NavIcon from '../../Components/NavIcon.vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 interface StudentEnrollment {
@@ -241,18 +242,20 @@ function submitForceGraduate() {
                                 <button
                                     type="button"
                                     title="Arşivden çıkar"
-                                    class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+                                    aria-label="Arşivden çıkar"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-green-200 bg-green-50 px-4 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-100 hover:text-green-800 focus:border-green-500 focus:ring-green-500"
                                     @click="openRestoreStudent(student)"
                                 >
-                                    Geri Al
+                                    <NavIcon name="archive" cls="h-5 w-5" />
                                 </button>
                                 <button
                                     type="button"
                                     title="Kalıcı sil"
+                                    aria-label="Kalıcı sil"
                                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700"
                                     @click="forcingStudent = student"
                                 >
-                                    Kalıcı Sil
+                                    <NavIcon name="trash" cls="h-5 w-5" />
                                 </button>
                             </div>
                         </td>
@@ -294,18 +297,20 @@ function submitForceGraduate() {
                                 <button
                                     type="button"
                                     title="Arşivden çıkar"
-                                    class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+                                    aria-label="Arşivden çıkar"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-green-200 bg-green-50 px-4 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-100 hover:text-green-800 focus:border-green-500 focus:ring-green-500"
                                     @click="openRestoreGraduate(g)"
                                 >
-                                    Geri Al
+                                    <NavIcon name="archive" cls="h-5 w-5" />
                                 </button>
                                 <button
                                     type="button"
                                     title="Kalıcı sil"
+                                    aria-label="Kalıcı sil"
                                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700"
                                     @click="forcingGraduate = g"
                                 >
-                                    Kalıcı Sil
+                                    <NavIcon name="trash" cls="h-5 w-5" />
                                 </button>
                             </div>
                         </td>

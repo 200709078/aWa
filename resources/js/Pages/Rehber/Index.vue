@@ -232,7 +232,7 @@ void loadBranches();
                         <dd class="font-semibold text-green-700">{{ summary.cards }}</dd>
                     </div>
                     <div class="flex justify-between py-2">
-                        <dt class="text-gray-600">Telefonu olmayan (telsiz yazılacak)</dt>
+                        <dt class="text-gray-600">Telefonu olmayan</dt>
                         <dd class="font-semibold text-yellow-700">{{ summary.without_phone }}</dd>
                     </div>
                 </dl>
