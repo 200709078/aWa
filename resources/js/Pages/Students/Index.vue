@@ -17,6 +17,15 @@ interface BranchOption {
     name: string;
 }
 
+interface StudentGuardian {
+    id: number;
+    relation: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    phone: string | null;
+    is_primary: boolean;
+}
+
 interface Student {
     id: number;
     school_number: string;
@@ -30,6 +39,7 @@ interface Student {
     is_active: boolean;
     seating_assignments_count: number;
     branch: { id: number | null; name: string };
+    guardians: StudentGuardian[];
 }
 
 interface Paginator {
@@ -52,6 +62,26 @@ const props = defineProps<{
     students: Paginator;
     totalStudents: number;
 }>();
+
+interface GuardianForm {
+    id: number | null;
+    relation: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
+    is_primary: boolean;
+}
+
+function blankGuardian(relation = 'veli', is_primary = false): GuardianForm {
+    return { id: null, relation, first_name: '', last_name: '', phone: '', is_primary };
+}
+
+const relationOptions = [
+    { value: 'anne', label: 'Anne' },
+    { value: 'baba', label: 'Baba' },
+    { value: 'veli', label: 'Veli' },
+    { value: 'vasi', label: 'Vasi' },
+];
 
 const filterYear = ref<number | null>(props.yearId);
 const filterBranch = ref<number | null>(props.branchId);
@@ -103,6 +133,7 @@ const createForm = useForm({
     address: '',
     photo: null as File | null,
     is_active: true,
+    guardians: [blankGuardian('anne', true), blankGuardian('baba')] as GuardianForm[],
 });
 
 function submitCreate() {
@@ -110,6 +141,7 @@ function submitCreate() {
         onSuccess: () => {
             creating.value = false;
             createForm.reset('school_number', 'first_name', 'last_name', 'phone', 'email', 'address', 'photo');
+            createForm.guardians = [blankGuardian('anne', true), blankGuardian('baba')];
             if (photoInput.value) photoInput.value.value = '';
         },
     });
@@ -154,6 +186,7 @@ const editForm = useForm({
     address: '',
     photo: null as File | null,
     is_active: true,
+    guardians: [] as GuardianForm[],
 });
 
 function openEdit(student: Student) {
@@ -167,6 +200,17 @@ function openEdit(student: Student) {
     editForm.address = student.address ?? '';
     editForm.photo = null;
     editForm.is_active = student.is_active;
+    editForm.guardians =
+        student.guardians.length > 0
+            ? student.guardians.map((g) => ({
+                  id: g.id,
+                  relation: g.relation ?? 'veli',
+                  first_name: g.first_name ?? '',
+                  last_name: g.last_name ?? '',
+                  phone: g.phone ?? '',
+                  is_primary: g.is_primary,
+              }))
+            : [blankGuardian()];
     editForm.clearErrors();
 }
 
@@ -565,6 +609,83 @@ function confirmDelete() {
                             {{ createForm.errors.address }}
                         </p>
                     </div>
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="block text-sm font-medium text-gray-700">Veliler</span>
+                            <button
+                                v-if="createForm.guardians.length < 4"
+                                type="button"
+                                class="inline-flex h-7 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-3 text-xs text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
+                                @click="createForm.guardians.push(blankGuardian())"
+                            >
+                                + Veli Ekle
+                            </button>
+                        </div>
+                        <div
+                            v-for="(g, i) in createForm.guardians"
+                            :key="i"
+                            class="mt-2 space-y-3 rounded-md border border-gray-200 p-3"
+                        >
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <span class="block text-sm font-medium text-gray-700">Yakınlık</span>
+                                    <div class="mt-1">
+                                        <DropdownSelect
+                                            :id="`student-guardian-rel-${i}`"
+                                            v-model="g.relation"
+                                            :options="relationOptions"
+                                            aria-label="Yakınlık"
+                                        />
+                                    </div>
+                                </div>
+                                <label class="flex items-end gap-2 pb-2 text-sm text-gray-700">
+                                    <input v-model="g.is_primary" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
+                                    Birincil Veli
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <span class="block text-sm font-medium text-gray-700">Ad</span>
+                                    <input
+                                        v-model="g.first_name"
+                                        type="text"
+                                        maxlength="50"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <span class="block text-sm font-medium text-gray-700">Soyad</span>
+                                    <input
+                                        v-model="g.last_name"
+                                        type="text"
+                                        maxlength="50"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <span class="block text-sm font-medium text-gray-700">Telefon</span>
+                                <input
+                                    v-model="g.phone"
+                                    type="text"
+                                    maxlength="30"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div class="flex justify-end">
+                                <button
+                                    type="button"
+                                    class="text-xs text-red-600 hover:underline"
+                                    @click="createForm.guardians.splice(i, 1)"
+                                >
+                                    Veliyi kaldır
+                                </button>
+                            </div>
+                        </div>
+                        <p v-if="createForm.errors.guardians" class="mt-1 text-sm text-red-600">
+                            {{ createForm.errors.guardians }}
+                        </p>
+                    </div>
                 </form>
             </div>
         </div>
@@ -719,6 +840,83 @@ function confirmDelete() {
                         ></textarea>
                         <p v-if="editForm.errors.address" class="mt-1 text-sm text-red-600">
                             {{ editForm.errors.address }}
+                        </p>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="block text-sm font-medium text-gray-700">Veliler</span>
+                            <button
+                                v-if="editForm.guardians.length < 4"
+                                type="button"
+                                class="inline-flex h-7 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-3 text-xs text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
+                                @click="editForm.guardians.push(blankGuardian())"
+                            >
+                                + Veli Ekle
+                            </button>
+                        </div>
+                        <div
+                            v-for="(g, i) in editForm.guardians"
+                            :key="g.id ?? `yeni-${i}`"
+                            class="mt-2 space-y-3 rounded-md border border-gray-200 p-3"
+                        >
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <span class="block text-sm font-medium text-gray-700">Yakınlık</span>
+                                    <div class="mt-1">
+                                        <DropdownSelect
+                                            :id="`edit-student-guardian-rel-${i}`"
+                                            v-model="g.relation"
+                                            :options="relationOptions"
+                                            aria-label="Yakınlık"
+                                        />
+                                    </div>
+                                </div>
+                                <label class="flex items-end gap-2 pb-2 text-sm text-gray-700">
+                                    <input v-model="g.is_primary" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
+                                    Birincil Veli
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <span class="block text-sm font-medium text-gray-700">Ad</span>
+                                    <input
+                                        v-model="g.first_name"
+                                        type="text"
+                                        maxlength="50"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <span class="block text-sm font-medium text-gray-700">Soyad</span>
+                                    <input
+                                        v-model="g.last_name"
+                                        type="text"
+                                        maxlength="50"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <span class="block text-sm font-medium text-gray-700">Telefon</span>
+                                <input
+                                    v-model="g.phone"
+                                    type="text"
+                                    maxlength="30"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div class="flex justify-end">
+                                <button
+                                    type="button"
+                                    class="text-xs text-red-600 hover:underline"
+                                    @click="editForm.guardians.splice(i, 1)"
+                                >
+                                    Veliyi kaldır
+                                </button>
+                            </div>
+                        </div>
+                        <p v-if="editForm.errors.guardians" class="mt-1 text-sm text-red-600">
+                            {{ editForm.errors.guardians }}
                         </p>
                     </div>
                 </form>
