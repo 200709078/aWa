@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Person;
+use App\Models\School;
 use App\Models\Teacher;
 use App\Services\PhotoService;
 use App\Support\PhoneNumber;
@@ -49,7 +50,66 @@ class TeacherController extends Controller
             'search' => $search,
             'teachers' => $teachers,
             'totalTeachers' => Teacher::whereHas('person', fn ($q) => $q->where('school_id', SchoolScope::id()))->count(),
+            'school' => $this->schoolProp(),
         ]);
+    }
+
+    public function badges(Request $request): Response
+    {
+        $schoolId = SchoolScope::id();
+
+        $ids = collect(explode(',', (string) $request->input('ids', '')))
+            ->map(fn ($v) => (int) trim($v))
+            ->filter(fn ($v) => $v > 0)
+            ->unique()
+            ->values();
+
+        $search = trim((string) $request->input('q', ''));
+
+        $query = Teacher::with('person:id,first_name,last_name,full_name')
+            ->whereHas('person', fn ($q) => $q->where('school_id', $schoolId))
+            ->when($ids->isNotEmpty(), fn ($q) => $q->whereIn('teachers.id', $ids->all()))
+            ->when($ids->isEmpty() && $request->boolean('all'), fn ($q) => $q->where('teachers.is_active', true))
+            ->when($ids->isEmpty() && $search !== '', fn ($q) => $q->whereHas('person', fn ($qq) => $qq
+                ->where('full_name', 'like', "%{$search}%")));
+
+        // Seçim yoksa boş liste dön, hata verme.
+        if ($ids->isEmpty() && ! $request->boolean('all') && $search === '') {
+            $teachers = collect();
+        } else {
+            $teachers = $query
+                ->join('people', 'people.id', '=', 'teachers.person_id')
+                ->orderBy('people.full_name')
+                ->select('teachers.*')
+                ->limit(200)
+                ->get();
+        }
+
+        $badges = $teachers->map(fn (Teacher $t) => [
+            'id' => $t->id,
+            'full_name' => $t->person?->full_name ?? '—',
+            'title' => $t->branch ?? ($t->duty ?? 'Öğretmen'),
+        ])->all();
+
+        return Inertia::render('Prints/Badges', [
+            'teachers' => $badges,
+            'school' => $this->schoolProp(),
+        ]);
+    }
+
+    /**
+     * @return array{name: string, logo_url: ?string}
+     */
+    private function schoolProp(): array
+    {
+        $school = School::find(SchoolScope::id());
+
+        return [
+            'name' => $school?->name ?? '',
+            'logo_url' => $school?->photo_path
+                ? '/storage/'.$school->photo_path.'?v='.($school->updated_at?->timestamp ?? 0)
+                : null,
+        ];
     }
 
     public function store(Request $request): RedirectResponse
