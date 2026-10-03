@@ -275,7 +275,7 @@ async function confirmUpload() {
         photoFiles.value = [];
         statusText.value = 'Tamamlandı.';
         window.dispatchEvent(
-            new CustomEvent('kelebek-toast', {
+            new CustomEvent('awa-toast', {
                 detail: { type: 'success', messages: [`Yükleme tamamlandı — ${acc?.summary.eslesen ?? 0} fotoğraf kaydedildi.`] },
             }),
         );

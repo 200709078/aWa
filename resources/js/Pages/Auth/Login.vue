@@ -14,7 +14,7 @@ function submit() {
 <template>
     <main class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div class="w-full max-w-sm rounded-lg bg-white p-8 shadow">
-            <img :src="'/favicon.png'" alt="Kelebek logosu" class="mx-auto h-16 w-16 object-contain" />
+            <img :src="'/favicon.png'" alt="aWa logosu" class="mx-auto h-16 w-16 object-contain" />
             <h1 class="mt-4 text-center text-2xl font-bold text-gray-900">aWa</h1>
             <p class="mt-1 text-center text-sm text-gray-500">Yönetici girişi</p>
 

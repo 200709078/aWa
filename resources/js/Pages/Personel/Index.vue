@@ -79,7 +79,7 @@ function openPrint(url: string) {
     const left = Math.max(0, Math.round((window.screen.width - width) / 2));
     const top = Math.max(0, Math.round((window.screen.height - height) / 2));
     const features = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=no,scrollbars=yes`;
-    const win = window.open(url, 'kelebek-print', features);
+    const win = window.open(url, 'awa-print', features);
     if (!win) window.open(url, '_blank');
 }
 

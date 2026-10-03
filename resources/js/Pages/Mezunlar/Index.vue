@@ -81,7 +81,7 @@ function clearFilters() {
 
 function notifyDownload() {
     window.dispatchEvent(
-        new CustomEvent('kelebek-toast', {
+        new CustomEvent('awa-toast', {
             detail: { type: 'success', messages: ['VCF dosyası indiriliyor.'] },
         }),
     );
