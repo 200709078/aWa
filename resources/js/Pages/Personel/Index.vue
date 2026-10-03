@@ -54,6 +54,25 @@ function clearSearch() {
     router.get('/personel', {}, { preserveState: true });
 }
 
+function tenure(startedAt: string | null): string | null {
+    if (!startedAt) return null;
+    const start = new Date(`${startedAt}T00:00:00`);
+    const now = new Date();
+    let years = now.getFullYear() - start.getFullYear();
+    let months = now.getMonth() - start.getMonth();
+    let days = now.getDate() - start.getDate();
+    if (days < 0) {
+        months -= 1;
+        days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    }
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+    if (years < 0) return null;
+    return `${years} Yıl ${months} Ay ${days} Gün`;
+}
+
 const createForm = useForm({
     first_name: '',
     last_name: '',
@@ -199,6 +218,7 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Personel</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Göreve Başlama Tarihi</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Telefon</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Durum</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
@@ -219,6 +239,10 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
                             <div class="font-medium text-gray-900">{{ teacher.full_name }}</div>
                             <div v-if="teacherTitle(teacher)" class="text-sm text-gray-600">{{ teacherTitle(teacher) }}</div>
                             <div v-if="teacher.duty" class="text-sm text-gray-500">{{ teacher.duty }}</div>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                            <div>{{ teacher.started_at_label ?? '—' }}</div>
+                            <div v-if="tenure(teacher.started_at)" class="text-xs text-gray-500">{{ tenure(teacher.started_at) }}</div>
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ teacher.phone ?? '—' }}</td>
                         <td class="whitespace-nowrap px-4 py-3">
@@ -282,7 +306,7 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
                         </td>
                     </tr>
                     <tr v-if="teachers.data.length === 0">
-                        <td colspan="5" class="px-4 py-6 text-center text-gray-500">Kayıt bulunamadı.</td>
+                        <td colspan="6" class="px-4 py-6 text-center text-gray-500">Kayıt bulunamadı.</td>
                     </tr>
                 </tbody>
             </table>

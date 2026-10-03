@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import StudentAvatar from '../../Components/StudentAvatar.vue';
 
 interface School {
     id: number;
@@ -11,6 +12,8 @@ interface School {
     telefon: string | null;
     mudur: string | null;
     muduryrd: string | null;
+    photo_path: string | null;
+    photo_version: number | null;
     is_active: boolean;
     users_count: number;
     academic_years_count: number;
@@ -26,6 +29,7 @@ const createForm = useForm({
     telefon: '',
     mudur: '',
     muduryrd: '',
+    photo: null as File | null,
     is_active: true,
 });
 
@@ -33,12 +37,34 @@ function submitCreate() {
     createForm.post('/schools', {
         onSuccess: () => {
             creating.value = false;
-            createForm.reset('name', 'kurum_kodu', 'mail', 'telefon', 'mudur', 'muduryrd');
+            createForm.reset('name', 'kurum_kodu', 'mail', 'telefon', 'mudur', 'muduryrd', 'photo');
+            if (photoInput.value) photoInput.value.value = '';
         },
     });
 }
 
 const creating = ref(false);
+const photoInput = ref<HTMLInputElement | null>(null);
+const editPhotoInput = ref<HTMLInputElement | null>(null);
+
+function onPhotoChange(e: Event) {
+    createForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null;
+}
+
+function onEditPhotoChange(e: Event) {
+    editForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null;
+}
+
+const createPhotoSrc = computed(() => {
+    if (createForm.photo) return URL.createObjectURL(createForm.photo);
+    return null;
+});
+
+const editPhotoSrc = computed(() => {
+    if (editForm.photo) return URL.createObjectURL(editForm.photo);
+    if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}?v=${editing.value.photo_version ?? 0}`;
+    return null;
+});
 
 const editing = ref<School | null>(null);
 const editForm = useForm({
@@ -48,6 +74,7 @@ const editForm = useForm({
     telefon: '',
     mudur: '',
     muduryrd: '',
+    photo: null as File | null,
     is_active: true,
 });
 
@@ -59,6 +86,7 @@ function openEdit(school: School) {
     editForm.telefon = school.telefon ?? '';
     editForm.mudur = school.mudur ?? '';
     editForm.muduryrd = school.muduryrd ?? '';
+    editForm.photo = null;
     editForm.is_active = school.is_active;
     editForm.clearErrors();
 }
@@ -105,8 +133,8 @@ function confirmDelete() {
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Okul</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Kurum Kodu</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İletişim</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Müdür</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Müdür Yrd.</th>
@@ -116,8 +144,19 @@ function confirmDelete() {
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     <tr v-for="school in schools" :key="school.id">
-                        <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ school.name }}</td>
-                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ school.kurum_kodu }}</td>
+                        <td class="whitespace-nowrap px-4 py-3">
+                            <StudentAvatar
+                                :photo-url="school.photo_path ? `/storage/${school.photo_path}?v=${school.photo_version ?? 0}` : null"
+                                :full-name="school.name"
+                                img-class="block h-16 w-12 rounded object-cover"
+                                placeholder-class="w-12"
+                                circle-class="w-10 text-sm"
+                            />
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3">
+                            <div class="font-medium text-gray-900">{{ school.name }}</div>
+                            <div class="text-xs text-gray-500">{{ school.kurum_kodu }}</div>
+                        </td>
                         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
                             <div>{{ school.mail ?? '—' }}</div>
                             <div>{{ school.telefon ?? '—' }}</div>
@@ -199,44 +238,71 @@ function confirmDelete() {
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <label for="school-name" class="block text-sm font-medium text-gray-700">Okul Adı</label>
+                    <div class="flex items-start gap-3">
+                        <button
+                            type="button"
+                            title="Fotoğraf seç"
+                            aria-label="Fotoğraf seç"
+                            class="relative block h-[140px] w-[120px] shrink-0 overflow-hidden rounded-md border border-gray-300 bg-gray-50 hover:ring-2 hover:ring-indigo-500"
+                            @click="photoInput?.click()"
+                        >
+                            <StudentAvatar
+                                :photo-url="createPhotoSrc"
+                                :full-name="createForm.name"
+                                img-class="h-full w-full object-cover"
+                                placeholder-class="h-full w-full"
+                                circle-class="w-10 text-sm"
+                            />
+                        </button>
                         <input
-                            id="school-name"
-                            v-model="createForm.name"
-                            type="text"
-                            required
-                            maxlength="100"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            ref="photoInput"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            class="hidden"
+                            @change="onPhotoChange"
                         />
-                        <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="school-code" class="block text-sm font-medium text-gray-700">Kurum Kodu</label>
-                            <input
-                                id="school-code"
-                                v-model="createForm.kurum_kodu"
-                                type="text"
-                                required
-                                maxlength="20"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="createForm.errors.kurum_kodu" class="mt-1 text-sm text-red-600">
-                                {{ createForm.errors.kurum_kodu }}
-                            </p>
+                        <div class="min-w-0 flex-1 space-y-4">
+                            <div>
+                                <label for="school-name" class="block text-sm font-medium text-gray-700">Okul Adı</label>
+                                <input
+                                    id="school-name"
+                                    v-model="createForm.name"
+                                    type="text"
+                                    required
+                                    maxlength="100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                                <p v-if="createForm.errors.name" class="mt-1 text-sm text-red-600">{{ createForm.errors.name }}</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="school-code" class="block text-sm font-medium text-gray-700">Kurum Kodu</label>
+                                    <input
+                                        id="school-code"
+                                        v-model="createForm.kurum_kodu"
+                                        type="text"
+                                        required
+                                        maxlength="20"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                    <p v-if="createForm.errors.kurum_kodu" class="mt-1 text-sm text-red-600">
+                                        {{ createForm.errors.kurum_kodu }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="school-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                                    <input
+                                        id="school-phone"
+                                        v-model="createForm.telefon"
+                                        type="text"
+                                        maxlength="30"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="school-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
-                            <input
-                                id="school-phone"
-                                v-model="createForm.telefon"
-                                type="text"
-                                maxlength="30"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
                     </div>
+                    <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">{{ createForm.errors.photo }}</p>
                     <div>
                         <label for="school-mail" class="block text-sm font-medium text-gray-700">E-posta</label>
                         <input
@@ -300,43 +366,70 @@ function confirmDelete() {
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <label for="edit-school-name" class="block text-sm font-medium text-gray-700">Okul Adı</label>
+                    <div class="flex items-start gap-3">
+                        <button
+                            type="button"
+                            title="Fotoğraf seç"
+                            aria-label="Fotoğraf seç"
+                            class="relative block h-[140px] w-[120px] shrink-0 overflow-hidden rounded-md border border-gray-300 bg-gray-50 hover:ring-2 hover:ring-indigo-500"
+                            @click="editPhotoInput?.click()"
+                        >
+                            <StudentAvatar
+                                :photo-url="editPhotoSrc"
+                                :full-name="editForm.name"
+                                img-class="h-full w-full object-cover"
+                                placeholder-class="h-full w-full"
+                                circle-class="w-10 text-sm"
+                            />
+                        </button>
                         <input
-                            id="edit-school-name"
-                            v-model="editForm.name"
-                            type="text"
-                            required
-                            maxlength="100"
-                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            ref="editPhotoInput"
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp"
+                            class="hidden"
+                            @change="onEditPhotoChange"
                         />
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="edit-school-code" class="block text-sm font-medium text-gray-700">Kurum Kodu</label>
-                            <input
-                                id="edit-school-code"
-                                v-model="editForm.kurum_kodu"
-                                type="text"
-                                required
-                                maxlength="20"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="editForm.errors.kurum_kodu" class="mt-1 text-sm text-red-600">
-                                {{ editForm.errors.kurum_kodu }}
-                            </p>
+                        <div class="min-w-0 flex-1 space-y-4">
+                            <div>
+                                <label for="edit-school-name" class="block text-sm font-medium text-gray-700">Okul Adı</label>
+                                <input
+                                    id="edit-school-name"
+                                    v-model="editForm.name"
+                                    type="text"
+                                    required
+                                    maxlength="100"
+                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                />
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="edit-school-code" class="block text-sm font-medium text-gray-700">Kurum Kodu</label>
+                                    <input
+                                        id="edit-school-code"
+                                        v-model="editForm.kurum_kodu"
+                                        type="text"
+                                        required
+                                        maxlength="20"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                    <p v-if="editForm.errors.kurum_kodu" class="mt-1 text-sm text-red-600">
+                                        {{ editForm.errors.kurum_kodu }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label for="edit-school-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                                    <input
+                                        id="edit-school-phone"
+                                        v-model="editForm.telefon"
+                                        type="text"
+                                        maxlength="30"
+                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="edit-school-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
-                            <input
-                                id="edit-school-phone"
-                                v-model="editForm.telefon"
-                                type="text"
-                                maxlength="30"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
                     </div>
+                    <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">{{ editForm.errors.photo }}</p>
                     <div>
                         <label for="edit-school-mail" class="block text-sm font-medium text-gray-700">E-posta</label>
                         <input

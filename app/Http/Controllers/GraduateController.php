@@ -6,6 +6,7 @@ use App\Models\Graduate;
 use App\Models\Person;
 use App\Services\PhotoService;
 use App\Services\RehberExportService;
+use App\Support\PhoneNumber;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -283,7 +284,7 @@ class GraduateController extends Controller
             'first_name' => $firstName,
             'last_name' => $lastName,
             'full_name' => $firstName.' '.$lastName,
-            'phone' => $nullify($data['phone'] ?? null),
+            'phone' => PhoneNumber::normalizeOrFail($data['phone'] ?? null, 'phone', 'Geçerli bir telefon girin (örn. 0532 666 65 49).'),
             'email' => $nullify($data['email'] ?? null),
             'educations' => $educations,
             'company' => $nullify($data['company'] ?? null),

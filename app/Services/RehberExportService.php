@@ -215,8 +215,13 @@ class RehberExportService
     {
         $s = preg_replace('/[\s\-()]+/', '', trim((string) $phone)) ?? '';
 
-        if ($s === '' || $s === '0' || $s === '00') {
+        if ($s === '' || $s === '0' || $s === '00' || $s === '+') {
             return null;
+        }
+
+        // Veritabani +90 biciminde tutulur; oldugu gibi birak.
+        if (str_starts_with($s, '+')) {
+            return $s;
         }
 
         return str_starts_with($s, '0') ? $s : '0'.$s;

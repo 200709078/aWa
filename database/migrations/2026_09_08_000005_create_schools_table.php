@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('telefon', 30)->nullable();
             $table->string('mudur')->nullable();
             $table->string('muduryrd')->nullable();
+            $table->string('photo_path')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
