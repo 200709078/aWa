@@ -48,6 +48,8 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/', fn () => Inertia::render('Home'));
 
     Route::get('/students', [StudentController::class, 'index'])->name('students.index');
+    Route::get('/students/ekle', [StudentController::class, 'create'])->name('students.create');
+    Route::get('/students/{student}/duzenle', [StudentController::class, 'edit'])->name('students.edit');
     Route::post('/students', [StudentController::class, 'store'])->name('students.store');
     Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
     Route::post('/students/{student}/activate', [StudentController::class, 'activate'])->name('students.activate');
@@ -69,12 +71,16 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/rehber-aktarma/indir', [RehberAktarmaController::class, 'download'])->name('rehber.download');
     Route::get('/rehber-aktarma/excel', [RehberAktarmaController::class, 'excel'])->name('rehber.excel');
 
-    Route::get('/mezunlar', [GraduateController::class, 'index'])->name('mezunlar.index');    Route::post('/mezunlar', [GraduateController::class, 'store'])->name('mezunlar.store');
+    Route::get('/mezunlar', [GraduateController::class, 'index'])->name('mezunlar.index');    Route::get('/mezunlar/ekle', [GraduateController::class, 'create'])->name('mezunlar.create');
+    Route::get('/mezunlar/{graduate}/duzenle', [GraduateController::class, 'edit'])->name('mezunlar.edit');
+    Route::post('/mezunlar', [GraduateController::class, 'store'])->name('mezunlar.store');
     Route::put('/mezunlar/{graduate}', [GraduateController::class, 'update'])->name('mezunlar.update');
     Route::delete('/mezunlar/{graduate}', [GraduateController::class, 'destroy'])->name('mezunlar.destroy');
     Route::get('/mezunlar/vcf', [GraduateController::class, 'vcf'])->name('mezunlar.vcf');
 
     Route::get('/personel', [TeacherController::class, 'index'])->name('personel.index');
+    Route::get('/personel/ekle', [TeacherController::class, 'create'])->name('personel.create');
+    Route::get('/personel/{teacher}/duzenle', [TeacherController::class, 'edit'])->name('personel.edit');
     Route::get('/personel/yaka-kartlari', [TeacherController::class, 'badges'])->name('personel.badges');
     Route::post('/personel', [TeacherController::class, 'store'])->name('personel.store');
     Route::put('/personel/{teacher}', [TeacherController::class, 'update'])->name('personel.update');

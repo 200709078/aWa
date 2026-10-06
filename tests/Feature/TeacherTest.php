@@ -58,4 +58,26 @@ class TeacherTest extends TestCase
         $this->assertDatabaseMissing('teachers', ['id' => $teacher->id]);
         $this->assertDatabaseMissing('people', ['id' => $personId]);
     }
+
+    public function test_ekle_ve_duzenle_sayfalari_acilir(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/personel/ekle')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('backUrl'));
+
+        $this->actingAs($user)->post('/personel', [
+            'first_name' => 'Ayşe',
+            'last_name' => 'Öğretmen',
+        ])->assertRedirect();
+
+        $teacher = Teacher::first();
+
+        $this->actingAs($user)->get("/personel/{$teacher->id}/duzenle")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('teacher.full_name', 'Ayşe Öğretmen')
+                ->has('backUrl'));
+    }
 }

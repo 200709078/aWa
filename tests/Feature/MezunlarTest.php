@@ -186,4 +186,23 @@ class MezunlarTest extends TestCase
 
         Storage::disk('public')->delete('graduates/1.jpg');
     }
+
+    public function test_ekle_ve_duzenle_sayfalari_acilir(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/mezunlar/ekle')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('initialYear')
+                ->has('backUrl'));
+
+        $graduate = $this->makeGraduate(2010, '5', 'Test Mezunu');
+
+        $this->actingAs($user)->get("/mezunlar/{$graduate->id}/duzenle")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('graduate.full_name', 'Test Mezunu')
+                ->has('backUrl'));
+    }
 }

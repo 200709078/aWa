@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router, useForm } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import StudentAvatar from '../../Components/StudentAvatar.vue';
 import NavIcon from '../../Components/NavIcon.vue';
@@ -64,26 +64,6 @@ const props = defineProps<{
     totalStudents: number;
 }>();
 
-interface GuardianForm {
-    id: number | null;
-    relation: string;
-    first_name: string;
-    last_name: string;
-    phone: string;
-    is_primary: boolean;
-}
-
-function blankGuardian(relation = 'veli', is_primary = false): GuardianForm {
-    return { id: null, relation, first_name: '', last_name: '', phone: '', is_primary };
-}
-
-const relationOptions = [
-    { value: 'anne', label: 'Anne' },
-    { value: 'baba', label: 'Baba' },
-    { value: 'veli', label: 'Veli' },
-    { value: 'vasi', label: 'Vasi' },
-];
-
 const filterYear = ref<number | null>(props.yearId);
 const filterBranch = ref<number | null>(props.branchId);
 const filterSearch = ref(props.search);
@@ -124,102 +104,24 @@ function clearFilters() {
     router.get('/students', { academic_year_id: filterYear.value }, { preserveState: true });
 }
 
-const createForm = useForm({
-    branch_id: props.branchId as number | null,
-    school_number: '',
-    first_name: '',
-    last_name: '',
-    phone: '',
-    email: '',
-    address: '',
-    photo: null as File | null,
-    is_active: true,
-    guardians: [blankGuardian('anne', true), blankGuardian('baba')] as GuardianForm[],
+const listQuery = computed(() => {
+    const params = new URLSearchParams();
+    if (props.yearId) params.set('academic_year_id', String(props.yearId));
+    if (props.page > 1) params.set('page', String(props.page));
+    if (props.search) params.set('q', props.search);
+    const query = params.toString();
+    return query ? `?${query}` : '';
 });
 
-function submitCreate() {
-    createForm.post('/students', {
-        onSuccess: () => {
-            creating.value = false;
-            createForm.reset('school_number', 'first_name', 'last_name', 'phone', 'email', 'address', 'photo');
-            createForm.guardians = [blankGuardian('anne', true), blankGuardian('baba')];
-            if (photoInput.value) photoInput.value.value = '';
-        },
-    });
-}
-
-const creating = ref(false);
-
-const photoInput = ref<HTMLInputElement | null>(null);
-const editPhotoInput = ref<HTMLInputElement | null>(null);
-
-function onPhotoChange(e: Event) {
-    createForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null;
-}
-
-function onEditPhotoChange(e: Event) {
-    editForm.photo = (e.target as HTMLInputElement).files?.[0] ?? null;
-}
-
-const editing = ref<Student | null>(null);
-
-const editPhotoSrc = computed(() => {
-    if (editForm.photo) return URL.createObjectURL(editForm.photo);
-    if (editing.value?.photo_path) return `/storage/${editing.value.photo_path}?v=${editing.value.photo_version ?? 0}`;
-    return null;
+const createUrl = computed(() => {
+    const params = new URLSearchParams(listQuery.value.slice(1));
+    if (props.branchId) params.set('branch_id', String(props.branchId));
+    const query = params.toString();
+    return `/students/ekle${query ? `?${query}` : ''}`;
 });
 
-const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_name}`.trim());
-
-const createPhotoSrc = computed(() => {
-    if (createForm.photo) return URL.createObjectURL(createForm.photo);
-    return null;
-});
-
-const createDisplayName = computed(() => `${createForm.first_name} ${createForm.last_name}`.trim());
-const editForm = useForm({
-    branch_id: null as number | null,
-    school_number: '',
-    first_name: '',
-    last_name: '',
-    phone: '',
-    email: '',
-    address: '',
-    photo: null as File | null,
-    is_active: true,
-    guardians: [] as GuardianForm[],
-});
-
-function openEdit(student: Student) {
-    editing.value = student;
-    editForm.branch_id = student.branch.id;
-    editForm.school_number = student.school_number;
-    editForm.first_name = student.first_name ?? '';
-    editForm.last_name = student.last_name ?? '';
-    editForm.phone = student.phone ?? '';
-    editForm.email = student.email ?? '';
-    editForm.address = student.address ?? '';
-    editForm.photo = null;
-    editForm.is_active = student.is_active;
-    editForm.guardians =
-        student.guardians.length > 0
-            ? student.guardians.map((g) => ({
-                  id: g.id,
-                  relation: g.relation ?? 'veli',
-                  first_name: g.first_name ?? '',
-                  last_name: g.last_name ?? '',
-                  phone: g.phone ?? '',
-                  is_primary: g.is_primary,
-              }))
-            : [blankGuardian()];
-    editForm.clearErrors();
-}
-
-function submitEdit() {
-    if (!editing.value) return;
-    editForm.transform((data) => ({ ...data, _method: 'put' })).post(`/students/${editing.value.id}`, {
-        onSuccess: () => (editing.value = null),
-    });
+function editUrl(id: number): string {
+    return `/students/${id}/duzenle${listQuery.value}`;
 }
 
 function toggle(url: string) {
@@ -307,13 +209,12 @@ function confirmDelete() {
                     >
                         İçe Aktar
                     </Link>
-                    <button
-                        type="button"
+                    <Link
+                        :href="createUrl"
                         class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
-                        @click="creating = true"
                     >
                         Öğrenci Ekle
-                    </button>
+                    </Link>
                 </div>
             </div>
         </div>
@@ -386,15 +287,14 @@ function confirmDelete() {
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-left">
                             <div class="flex items-center justify-start gap-2">
-                                <button
-                                    type="button"
+                                <Link
+                                    :href="editUrl(student.id)"
                                     title="Düzenle"
                                     aria-label="Düzenle"
                                     class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
-                                    @click="openEdit(student)"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
-                                </button>
+                                </Link>
                                 <button
                                     type="button"
                                     :title="isUsed(student) ? 'Oturma planında kullanılan öğrenci arşivlenemez' : 'Arşivle'"
@@ -452,475 +352,6 @@ function confirmDelete() {
                 >
                     Sonraki
                 </span>
-            </div>
-        </div>
-
-        <div v-if="creating" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow">
-                <form class="space-y-4" @submit.prevent="submitCreate">
-                    <div class="flex items-center justify-between gap-2">
-                        <h2 class="text-lg font-semibold text-gray-900">Yeni Öğrenci Ekle</h2>
-                        <div class="flex gap-2">
-                            <button
-                                type="submit"
-                                title="Kaydet"
-                                aria-label="Kaydet"
-                                :disabled="createForm.processing"
-                                class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                            </button>
-                            <button
-                                type="button"
-                                title="Vazgeç"
-                                aria-label="Vazgeç"
-                                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
-                                @click="creating = false"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex gap-3">
-                        <button
-                            type="button"
-                            title="Fotoğraf seç"
-                            aria-label="Fotoğraf seç"
-                            class="relative block h-[212px] w-[182px] shrink-0 overflow-hidden rounded-md border border-gray-300 bg-gray-50 hover:ring-2 hover:ring-indigo-500"
-                            @click="photoInput?.click()"
-                        >
-                            <StudentAvatar
-                                :photo-url="createPhotoSrc"
-                                :full-name="createDisplayName"
-                                img-class="h-full w-full object-cover"
-                                placeholder-class="h-full w-full"
-                                circle-class="w-10 text-sm"
-                            />
-                        </button>
-                        <input
-                            id="student-photo"
-                            ref="photoInput"
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp"
-                            class="hidden"
-                            @change="onPhotoChange"
-                        />
-                        <div class="min-w-0 flex-1 space-y-4">
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label for="student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
-                                    <input
-                                        id="student-number"
-                                        v-model="createForm.school_number"
-                                        type="text"
-                                        required
-                                        maxlength="20"
-                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    />
-                                    <p v-if="createForm.errors.school_number" class="mt-1 text-sm text-red-600">
-                                        {{ createForm.errors.school_number }}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label for="student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                                    <div class="mt-1">
-                                        <DropdownSelect
-                                            id="student-branch"
-                                            v-model="createForm.branch_id"
-                                            :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
-                                            aria-label="Sınıf"
-                                        />
-                                    </div>
-                                    <p v-if="createForm.errors.branch_id" class="mt-1 text-sm text-red-600">
-                                        {{ createForm.errors.branch_id }}
-                                    </p>
-                                </div>
-                            </div>
-                            <div>
-                                <label for="student-first" class="block text-sm font-medium text-gray-700">Ad</label>
-                                <input
-                                    id="student-first"
-                                    v-model="createForm.first_name"
-                                    type="text"
-                                    required
-                                    maxlength="50"
-                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                                <p v-if="createForm.errors.first_name" class="mt-1 text-sm text-red-600">
-                                    {{ createForm.errors.first_name }}
-                                </p>
-                            </div>
-                            <div>
-                                <label for="student-last" class="block text-sm font-medium text-gray-700">Soyad</label>
-                                <input
-                                    id="student-last"
-                                    v-model="createForm.last_name"
-                                    type="text"
-                                    required
-                                    maxlength="50"
-                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                                <p v-if="createForm.errors.last_name" class="mt-1 text-sm text-red-600">
-                                    {{ createForm.errors.last_name }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <p v-if="createForm.errors.photo" class="mt-1 text-sm text-red-600">
-                        {{ createForm.errors.photo }}
-                    </p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="student-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
-                            <input
-                                id="student-phone"
-                                v-model="createForm.phone"
-                                type="text"
-                                maxlength="30"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="createForm.errors.phone" class="mt-1 text-sm text-red-600">
-                                {{ createForm.errors.phone }}
-                            </p>
-                        </div>
-                        <div>
-                            <label for="student-email" class="block text-sm font-medium text-gray-700">E-posta</label>
-                            <input
-                                id="student-email"
-                                v-model="createForm.email"
-                                type="email"
-                                maxlength="100"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="createForm.errors.email" class="mt-1 text-sm text-red-600">
-                                {{ createForm.errors.email }}
-                            </p>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="student-address" class="block text-sm font-medium text-gray-700">Adres</label>
-                        <textarea
-                            id="student-address"
-                            v-model="createForm.address"
-                            rows="2"
-                            maxlength="500"
-                            class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        ></textarea>
-                        <p v-if="createForm.errors.address" class="mt-1 text-sm text-red-600">
-                            {{ createForm.errors.address }}
-                        </p>
-                    </div>
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <span class="block text-sm font-medium text-gray-700">Veliler</span>
-                            <button
-                                v-if="createForm.guardians.length < 4"
-                                type="button"
-                                class="inline-flex h-7 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-3 text-xs text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
-                                @click="createForm.guardians.push(blankGuardian())"
-                            >
-                                + Veli Ekle
-                            </button>
-                        </div>
-                        <div
-                            v-for="(g, i) in createForm.guardians"
-                            :key="i"
-                            class="mt-2 space-y-3 rounded-md border border-gray-200 p-3"
-                        >
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <span class="block text-sm font-medium text-gray-700">Yakınlık</span>
-                                    <div class="mt-1">
-                                        <DropdownSelect
-                                            :id="`student-guardian-rel-${i}`"
-                                            v-model="g.relation"
-                                            :options="relationOptions"
-                                            aria-label="Yakınlık"
-                                        />
-                                    </div>
-                                </div>
-                                <label class="flex items-end gap-2 pb-2 text-sm text-gray-700">
-                                    <input v-model="g.is_primary" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
-                                    Birincil Veli
-                                </label>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <span class="block text-sm font-medium text-gray-700">Ad</span>
-                                    <input
-                                        v-model="g.first_name"
-                                        type="text"
-                                        maxlength="50"
-                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <span class="block text-sm font-medium text-gray-700">Soyad</span>
-                                    <input
-                                        v-model="g.last_name"
-                                        type="text"
-                                        maxlength="50"
-                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <span class="block text-sm font-medium text-gray-700">Telefon</span>
-                                <input
-                                    v-model="g.phone"
-                                    type="text"
-                                    maxlength="30"
-                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                            </div>
-                            <div class="flex justify-end">
-                                <button
-                                    type="button"
-                                    class="text-xs text-red-600 hover:underline"
-                                    @click="createForm.guardians.splice(i, 1)"
-                                >
-                                    Veliyi kaldır
-                                </button>
-                            </div>
-                        </div>
-                        <p v-if="createForm.errors.guardians" class="mt-1 text-sm text-red-600">
-                            {{ createForm.errors.guardians }}
-                        </p>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow">
-                <form class="space-y-4" @submit.prevent="submitEdit">
-                    <div class="flex items-center justify-between gap-2">
-                        <h2 class="text-lg font-semibold text-gray-900">Öğrenciyi Düzenle</h2>
-                        <div class="flex gap-2">
-                            <button
-                                type="submit"
-                                title="Kaydet"
-                                aria-label="Kaydet"
-                                :disabled="editForm.processing"
-                                class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                            </button>
-                            <button
-                                type="button"
-                                title="Vazgeç"
-                                aria-label="Vazgeç"
-                                class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
-                                @click="editing = null"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex gap-3">
-                        <button
-                            type="button"
-                            title="Fotoğraf seç"
-                            aria-label="Fotoğraf seç"
-                            class="relative block h-[212px] w-[182px] shrink-0 overflow-hidden rounded-md border border-gray-300 bg-gray-50 hover:ring-2 hover:ring-indigo-500"
-                            @click="editPhotoInput?.click()"
-                        >
-                            <StudentAvatar
-                                :photo-url="editPhotoSrc"
-                                :full-name="editDisplayName"
-                                img-class="h-full w-full object-cover"
-                                placeholder-class="h-full w-full"
-                                circle-class="w-10 text-sm"
-                            />
-                        </button>
-                        <input
-                            id="edit-student-photo"
-                            ref="editPhotoInput"
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp"
-                            class="hidden"
-                            @change="onEditPhotoChange"
-                        />
-                        <div class="min-w-0 flex-1 space-y-4">
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label for="edit-student-number" class="block text-sm font-medium text-gray-700">Okul No</label>
-                                    <input
-                                        id="edit-student-number"
-                                        v-model="editForm.school_number"
-                                        type="text"
-                                        required
-                                        maxlength="20"
-                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    />
-                                    <p v-if="editForm.errors.school_number" class="mt-1 text-sm text-red-600">
-                                        {{ editForm.errors.school_number }}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label for="edit-student-branch" class="block text-sm font-medium text-gray-700">Sınıf</label>
-                                    <div class="mt-1">
-                                        <DropdownSelect
-                                            id="edit-student-branch"
-                                            v-model="editForm.branch_id"
-                                            :options="allBranches.map((branch) => ({ value: branch.id, label: branch.name }))"
-                                            aria-label="Sınıf"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <label for="edit-student-first" class="block text-sm font-medium text-gray-700">Ad</label>
-                                <input
-                                    id="edit-student-first"
-                                    v-model="editForm.first_name"
-                                    type="text"
-                                    required
-                                    maxlength="50"
-                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                                <p v-if="editForm.errors.first_name" class="mt-1 text-sm text-red-600">
-                                    {{ editForm.errors.first_name }}
-                                </p>
-                            </div>
-                            <div>
-                                <label for="edit-student-last" class="block text-sm font-medium text-gray-700">Soyad</label>
-                                <input
-                                    id="edit-student-last"
-                                    v-model="editForm.last_name"
-                                    type="text"
-                                    required
-                                    maxlength="50"
-                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                                <p v-if="editForm.errors.last_name" class="mt-1 text-sm text-red-600">
-                                    {{ editForm.errors.last_name }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <p v-if="editForm.errors.photo" class="mt-1 text-sm text-red-600">
-                        {{ editForm.errors.photo }}
-                    </p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="edit-student-phone" class="block text-sm font-medium text-gray-700">Telefon</label>
-                            <input
-                                id="edit-student-phone"
-                                v-model="editForm.phone"
-                                type="text"
-                                maxlength="30"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="editForm.errors.phone" class="mt-1 text-sm text-red-600">
-                                {{ editForm.errors.phone }}
-                            </p>
-                        </div>
-                        <div>
-                            <label for="edit-student-email" class="block text-sm font-medium text-gray-700">E-posta</label>
-                            <input
-                                id="edit-student-email"
-                                v-model="editForm.email"
-                                type="email"
-                                maxlength="100"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                            <p v-if="editForm.errors.email" class="mt-1 text-sm text-red-600">
-                                {{ editForm.errors.email }}
-                            </p>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="edit-student-address" class="block text-sm font-medium text-gray-700">Adres</label>
-                        <textarea
-                            id="edit-student-address"
-                            v-model="editForm.address"
-                            rows="2"
-                            maxlength="500"
-                            class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        ></textarea>
-                        <p v-if="editForm.errors.address" class="mt-1 text-sm text-red-600">
-                            {{ editForm.errors.address }}
-                        </p>
-                    </div>
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <span class="block text-sm font-medium text-gray-700">Veliler</span>
-                            <button
-                                v-if="editForm.guardians.length < 4"
-                                type="button"
-                                class="inline-flex h-7 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-3 text-xs text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
-                                @click="editForm.guardians.push(blankGuardian())"
-                            >
-                                + Veli Ekle
-                            </button>
-                        </div>
-                        <div
-                            v-for="(g, i) in editForm.guardians"
-                            :key="g.id ?? `yeni-${i}`"
-                            class="mt-2 space-y-3 rounded-md border border-gray-200 p-3"
-                        >
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <span class="block text-sm font-medium text-gray-700">Yakınlık</span>
-                                    <div class="mt-1">
-                                        <DropdownSelect
-                                            :id="`edit-student-guardian-rel-${i}`"
-                                            v-model="g.relation"
-                                            :options="relationOptions"
-                                            aria-label="Yakınlık"
-                                        />
-                                    </div>
-                                </div>
-                                <label class="flex items-end gap-2 pb-2 text-sm text-gray-700">
-                                    <input v-model="g.is_primary" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
-                                    Birincil Veli
-                                </label>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <span class="block text-sm font-medium text-gray-700">Ad</span>
-                                    <input
-                                        v-model="g.first_name"
-                                        type="text"
-                                        maxlength="50"
-                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <span class="block text-sm font-medium text-gray-700">Soyad</span>
-                                    <input
-                                        v-model="g.last_name"
-                                        type="text"
-                                        maxlength="50"
-                                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <span class="block text-sm font-medium text-gray-700">Telefon</span>
-                                <input
-                                    v-model="g.phone"
-                                    type="text"
-                                    maxlength="30"
-                                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                            </div>
-                            <div class="flex justify-end">
-                                <button
-                                    type="button"
-                                    class="text-xs text-red-600 hover:underline"
-                                    @click="editForm.guardians.splice(i, 1)"
-                                >
-                                    Veliyi kaldır
-                                </button>
-                            </div>
-                        </div>
-                        <p v-if="editForm.errors.guardians" class="mt-1 text-sm text-red-600">
-                            {{ editForm.errors.guardians }}
-                        </p>
-                    </div>
-                </form>
             </div>
         </div>
 

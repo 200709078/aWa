@@ -124,6 +124,34 @@ class GraduateController extends Controller
         ];
     }
 
+    public function create(Request $request): Response
+    {
+        return Inertia::render('Mezunlar/Create', [
+            'initialYear' => (int) date('Y'),
+            'backUrl' => $this->listBackUrl($request),
+        ]);
+    }
+
+    public function edit(Request $request, Graduate $graduate): Response
+    {
+        $graduate->load(['person:id,first_name,last_name,full_name,phone,email,photo_path,updated_at', 'person.educations', 'person.employments']);
+
+        return Inertia::render('Mezunlar/Edit', [
+            'graduate' => $this->flatten($graduate),
+            'backUrl' => $this->listBackUrl($request),
+        ]);
+    }
+
+    private function listBackUrl(Request $request): string
+    {
+        $params = array_filter([
+            'page' => $request->integer('page') > 1 ? $request->integer('page') : null,
+            'q' => trim((string) $request->input('q', '')) ?: null,
+        ]);
+
+        return '/mezunlar'.($params === [] ? '' : '?'.http_build_query($params));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validated($request);
@@ -156,7 +184,7 @@ class GraduateController extends Controller
             return back()->withErrors(['graduation_number' => 'Bu yıl ve numarayla zaten bir mezun kayıtlı.'])->withInput();
         }
 
-        return back()->with('success', 'Mezun eklendi.');
+        return redirect()->route('mezunlar.index')->with('success', 'Mezun eklendi.');
     }
 
     public function update(Request $request, Graduate $graduate): RedirectResponse
@@ -191,7 +219,7 @@ class GraduateController extends Controller
             return back()->withErrors(['graduation_number' => 'Bu yıl ve numarayla zaten bir mezun kayıtlı.'])->withInput();
         }
 
-        return back()->with('success', 'Mezun güncellendi.');
+        return redirect()->route('mezunlar.index')->with('success', 'Mezun güncellendi.');
     }
 
     public function destroy(Graduate $graduate): RedirectResponse

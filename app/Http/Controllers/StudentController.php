@@ -172,6 +172,86 @@ class StudentController extends Controller
         ];
     }
 
+    public function create(Request $request): Response
+    {
+        $yearIds = SchoolScope::yearIds();
+
+        $allBranches = Branch::whereIn('academic_year_id', $yearIds)->orderBy('name')->get(['id', 'name']);
+
+        $initialBranchId = $request->integer('branch_id') ?: null;
+        if ($initialBranchId && ! $allBranches->contains('id', $initialBranchId)) {
+            $initialBranchId = null;
+        }
+
+        return Inertia::render('Students/Create', [
+            'allBranches' => $allBranches,
+            'initialBranchId' => $initialBranchId,
+            'backUrl' => $this->listBackUrl($request),
+        ]);
+    }
+
+    public function edit(Request $request, Student $student): Response
+    {
+        SchoolScope::ensure($student);
+
+        $yearIds = SchoolScope::yearIds();
+        $allBranches = Branch::whereIn('academic_year_id', $yearIds)->orderBy('name')->get(['id', 'name']);
+
+        $yearId = $request->integer('academic_year_id') ?: null;
+        if ($yearId && ! AcademicYear::where('id', $yearId)->where('school_id', SchoolScope::id())->exists()) {
+            $yearId = null;
+        }
+
+        $student->load([
+            'person:id,first_name,last_name,full_name,phone,email,address,photo_path,updated_at',
+            'guardians.person:id,first_name,last_name,full_name,phone',
+        ]);
+
+        $enrollment = ($yearId ? $student->enrollmentForYear($yearId) : null)
+            ?? $student->enrollments()->with('branch:id,name')->latest('id')->first();
+
+        return Inertia::render('Students/Edit', [
+            'student' => [
+                'id' => $student->id,
+                'school_number' => $enrollment?->school_number ?? '—',
+                'first_name' => $student->person?->first_name,
+                'last_name' => $student->person?->last_name,
+                'full_name' => $student->person?->full_name ?? '—',
+                'phone' => $student->person?->phone,
+                'email' => $student->person?->email,
+                'address' => $student->person?->address,
+                'photo_path' => $student->person?->photo_path,
+                'photo_version' => $student->person?->updated_at?->timestamp,
+                'is_active' => $student->is_active,
+                'branch' => [
+                    'id' => $enrollment?->branch?->id,
+                    'name' => $enrollment?->branch?->name ?? '—',
+                ],
+                'guardians' => $student->guardians->map(fn ($guardian) => [
+                    'id' => $guardian->id,
+                    'relation' => $guardian->pivot->relationship,
+                    'first_name' => $guardian->person?->first_name,
+                    'last_name' => $guardian->person?->last_name,
+                    'phone' => $guardian->person?->phone,
+                    'is_primary' => (bool) $guardian->pivot->is_primary,
+                ])->values()->all(),
+            ],
+            'allBranches' => $allBranches,
+            'backUrl' => $this->listBackUrl($request),
+        ]);
+    }
+
+    private function listBackUrl(Request $request): string
+    {
+        $params = array_filter([
+            'academic_year_id' => $request->integer('academic_year_id') ?: null,
+            'page' => $request->integer('page') ?: null,
+            'q' => trim((string) $request->input('q', '')) ?: null,
+        ]);
+
+        return '/students'.($params === [] ? '' : '?'.http_build_query($params));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validated($request);
@@ -214,7 +294,9 @@ class StudentController extends Controller
             return back()->withErrors(['school_number' => 'Bu okul numarası bu akademik yılda zaten kayıtlı.'])->withInput();
         }
 
-        return back()->with('success', 'Öğrenci eklendi.');
+        return redirect()
+            ->route('students.index', ['academic_year_id' => $validated['branch']->academic_year_id])
+            ->with('success', 'Öğrenci eklendi.');
     }
 
     public function update(Request $request, Student $student): RedirectResponse
@@ -258,7 +340,9 @@ class StudentController extends Controller
             return back()->withErrors(['school_number' => 'Bu okul numarası bu akademik yılda zaten kayıtlı.'])->withInput();
         }
 
-        return back()->with('success', 'Öğrenci güncellendi.');
+        return redirect()
+            ->route('students.index', ['academic_year_id' => $validated['branch']->academic_year_id])
+            ->with('success', 'Öğrenci güncellendi.');
     }
 
     public function activate(Student $student): RedirectResponse
