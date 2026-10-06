@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import StudentAvatar from './StudentAvatar.vue';
 import DropdownSelect from './DropdownSelect.vue';
-import { blankGuardian, relationOptions, type StudentFormData } from '../types/studentForm';
+import { blankGuardian, bloodTypeOptions, genderOptions, relationOptions, type StudentFormData } from '../types/studentForm';
 
 const props = defineProps<{
     form: StudentFormData;
@@ -147,6 +147,84 @@ function addGuardian() {
                 class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             ></textarea>
             <p v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</p>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+            <div>
+                <span class="block text-sm font-medium text-gray-700">Cinsiyet</span>
+                <div class="mt-1">
+                    <DropdownSelect
+                        :id="`${idPrefix}-gender`"
+                        v-model="form.gender"
+                        :options="genderOptions"
+                        aria-label="Cinsiyet"
+                    />
+                </div>
+                <p v-if="form.errors.gender" class="mt-1 text-sm text-red-600">{{ form.errors.gender }}</p>
+            </div>
+            <div>
+                <label :for="`${idPrefix}-birth-place`" class="block text-sm font-medium text-gray-700">Doğum Yeri</label>
+                <input
+                    :id="`${idPrefix}-birth-place`"
+                    v-model="form.birth_place"
+                    type="text"
+                    maxlength="100"
+                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+            </div>
+            <div>
+                <label :for="`${idPrefix}-birth-date`" class="block text-sm font-medium text-gray-700">Doğum Tarihi</label>
+                <input
+                    :id="`${idPrefix}-birth-date`"
+                    v-model="form.birth_date"
+                    type="date"
+                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+            </div>
+        </div>
+        <div class="grid grid-cols-4 gap-3">
+            <div>
+                <span class="block text-sm font-medium text-gray-700">Kan Grubu</span>
+                <div class="mt-1">
+                    <DropdownSelect
+                        :id="`${idPrefix}-blood`"
+                        v-model="form.blood_type"
+                        :options="bloodTypeOptions"
+                        aria-label="Kan Grubu"
+                    />
+                </div>
+            </div>
+            <div>
+                <label :for="`${idPrefix}-religion`" class="block text-sm font-medium text-gray-700">Din</label>
+                <input
+                    :id="`${idPrefix}-religion`"
+                    v-model="form.religion"
+                    type="text"
+                    maxlength="50"
+                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+            </div>
+            <div>
+                <label :for="`${idPrefix}-height`" class="block text-sm font-medium text-gray-700">Boy (cm)</label>
+                <input
+                    :id="`${idPrefix}-height`"
+                    v-model.number="form.height_cm"
+                    type="number"
+                    min="50"
+                    max="250"
+                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+            </div>
+            <div>
+                <label :for="`${idPrefix}-weight`" class="block text-sm font-medium text-gray-700">Kilo (kg)</label>
+                <input
+                    :id="`${idPrefix}-weight`"
+                    v-model.number="form.weight_kg"
+                    type="number"
+                    min="15"
+                    max="300"
+                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+            </div>
         </div>
         <div>
             <div class="flex items-center justify-between">

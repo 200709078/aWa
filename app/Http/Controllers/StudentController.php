@@ -203,7 +203,7 @@ class StudentController extends Controller
         }
 
         $student->load([
-            'person:id,first_name,last_name,full_name,phone,email,address,photo_path,updated_at',
+            'person:id,first_name,last_name,full_name,phone,email,address,photo_path,updated_at,gender,birth_place,birth_date,blood_type,religion,height_cm,weight_kg',
             'guardians.person:id,first_name,last_name,full_name,phone',
         ]);
 
@@ -220,6 +220,13 @@ class StudentController extends Controller
                 'phone' => $student->person?->phone,
                 'email' => $student->person?->email,
                 'address' => $student->person?->address,
+                'gender' => $student->person?->gender,
+                'birth_place' => $student->person?->birth_place,
+                'birth_date' => $student->person?->birth_date?->format('Y-m-d'),
+                'blood_type' => $student->person?->blood_type,
+                'religion' => $student->person?->religion,
+                'height_cm' => $student->person?->height_cm,
+                'weight_kg' => $student->person?->weight_kg,
                 'photo_path' => $student->person?->photo_path,
                 'photo_version' => $student->person?->updated_at?->timestamp,
                 'is_active' => $student->is_active,
@@ -268,6 +275,13 @@ class StudentController extends Controller
                     'phone' => $validated['phone'],
                     'email' => $validated['email'],
                     'address' => $validated['address'],
+                    'gender' => $validated['gender'],
+                    'birth_place' => $validated['birth_place'],
+                    'birth_date' => $validated['birth_date'],
+                    'blood_type' => $validated['blood_type'],
+                    'religion' => $validated['religion'],
+                    'height_cm' => $validated['height_cm'],
+                    'weight_kg' => $validated['weight_kg'],
                 ]);
 
                 $student = Student::create([
@@ -328,6 +342,13 @@ class StudentController extends Controller
                     'phone' => $validated['phone'],
                     'email' => $validated['email'],
                     'address' => $validated['address'],
+                    'gender' => $validated['gender'],
+                    'birth_place' => $validated['birth_place'],
+                    'birth_date' => $validated['birth_date'],
+                    'blood_type' => $validated['blood_type'],
+                    'religion' => $validated['religion'],
+                    'height_cm' => $validated['height_cm'],
+                    'weight_kg' => $validated['weight_kg'],
                 ]);
                 $student->update(['is_active' => $validated['is_active']]);
                 $this->syncGuardians($student, $validated['guardians'], $student->school_id);
@@ -392,7 +413,7 @@ class StudentController extends Controller
     }
 
     /**
-     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, first_name: string, last_name: string, full_name: string, phone: ?string, email: ?string, address: ?string, photo: ?UploadedFile, is_active: bool, guardians: array<int, array{id: ?int, relation: ?string, first_name: string, last_name: string, phone: ?string, is_primary: bool}>}
+     * @return array{branch: Branch, enrollment: ?StudentEnrollment, school_number: string, first_name: string, last_name: string, full_name: string, phone: ?string, email: ?string, address: ?string, gender: ?string, birth_place: ?string, birth_date: ?string, blood_type: ?string, religion: ?string, height_cm: ?int, weight_kg: ?int, photo: ?UploadedFile, is_active: bool, guardians: array<int, array{id: ?int, relation: ?string, first_name: string, last_name: string, phone: ?string, is_primary: bool}>}
      */
     private function validated(Request $request, ?Student $student = null): array
     {
@@ -413,6 +434,13 @@ class StudentController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:100'],
             'address' => ['nullable', 'string', 'max:500'],
+            'gender' => ['nullable', Rule::in(['Kız', 'Erkek'])],
+            'birth_place' => ['nullable', 'string', 'max:100'],
+            'birth_date' => ['nullable', 'date'],
+            'blood_type' => ['nullable', Rule::in(['A Rh+', 'A Rh-', 'B Rh+', 'B Rh-', 'AB Rh+', 'AB Rh-', '0 Rh+', '0 Rh-'])],
+            'religion' => ['nullable', 'string', 'max:50'],
+            'height_cm' => ['nullable', 'integer', 'min:50', 'max:250'],
+            'weight_kg' => ['nullable', 'integer', 'min:15', 'max:300'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'is_active' => ['sometimes', 'boolean'],
             'guardians' => ['nullable', 'array', 'max:4'],
@@ -474,6 +502,13 @@ class StudentController extends Controller
             'phone' => PhoneNumber::normalizeOrFail($data['phone'] ?? null, 'phone', 'Geçerli bir telefon girin (örn. 0532 666 65 49).'),
             'email' => $nullify($data['email'] ?? null),
             'address' => $nullify($data['address'] ?? null),
+            'gender' => $data['gender'] ?? null,
+            'birth_place' => $nullify($data['birth_place'] ?? null),
+            'birth_date' => $data['birth_date'] ?? null,
+            'blood_type' => $data['blood_type'] ?? null,
+            'religion' => $nullify($data['religion'] ?? null),
+            'height_cm' => $data['height_cm'] ?? null,
+            'weight_kg' => $data['weight_kg'] ?? null,
             'photo' => $request->file('photo'),
             'is_active' => $request->boolean('is_active', $student?->is_active ?? true),
             'guardians' => $guardians,

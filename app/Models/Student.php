@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['school_id', 'person_id', 'is_active'])]
@@ -38,8 +39,13 @@ class Student extends Model
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'student_guardian')
-            ->withPivot('relationship', 'is_primary')
+            ->withPivot('relationship', 'is_primary', 'is_biological')
             ->withTimestamps();
+    }
+
+    public function infoForm(): HasOne
+    {
+        return $this->hasOne(StudentInfoForm::class);
     }
 
     public function seatingAssignments(): HasMany

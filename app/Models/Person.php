@@ -9,10 +9,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['school_id', 'first_name', 'last_name', 'full_name', 'phone', 'email', 'address', 'photo_path'])]
+#[Fillable(['school_id', 'first_name', 'last_name', 'full_name', 'phone', 'email', 'address', 'photo_path', 'gender', 'birth_place', 'birth_date', 'blood_type', 'religion', 'height_cm', 'weight_kg', 'education_level', 'occupation', 'is_alive', 'disability', 'chronic_illness'])]
 class Person extends Model
 {
     use SoftDeletes;
+
+    protected function casts(): array
+    {
+        return [
+            'birth_date' => 'date',
+            'height_cm' => 'integer',
+            'weight_kg' => 'integer',
+            'is_alive' => 'boolean',
+        ];
+    }
+
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);

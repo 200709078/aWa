@@ -64,7 +64,6 @@ function closePage() {
 
 <style>
 @page {
-    size: A4;
     margin: 0;
 }
 </style>
