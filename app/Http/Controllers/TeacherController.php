@@ -113,6 +113,47 @@ class TeacherController extends Controller
         ];
     }
 
+    public function create(Request $request): Response
+    {
+        return Inertia::render('Personel/Create', [
+            'backUrl' => $this->listBackUrl($request),
+        ]);
+    }
+
+    public function edit(Request $request, Teacher $teacher): Response
+    {
+        $this->ensure($teacher);
+
+        $teacher->load('person:id,first_name,last_name,full_name,phone,email,address,photo_path,updated_at');
+
+        return Inertia::render('Personel/Edit', [
+            'teacher' => [
+                'id' => $teacher->id,
+                'first_name' => $teacher->person?->first_name,
+                'last_name' => $teacher->person?->last_name,
+                'full_name' => $teacher->person?->full_name ?? '—',
+                'phone' => $teacher->person?->phone,
+                'email' => $teacher->person?->email,
+                'address' => $teacher->person?->address,
+                'photo_path' => $teacher->person?->photo_path,
+                'photo_version' => $teacher->person?->updated_at?->timestamp,
+                'duty' => $teacher->duty,
+                'branch' => $teacher->branch,
+                'started_at' => $teacher->started_at?->format('Y-m-d'),
+                'started_at_label' => $teacher->started_at?->format('d.m.Y'),
+                'is_active' => $teacher->is_active,
+            ],
+            'backUrl' => $this->listBackUrl($request),
+        ]);
+    }
+
+    private function listBackUrl(Request $request): string
+    {
+        $q = trim((string) $request->input('q', ''));
+
+        return '/personel'.($q === '' ? '' : '?'.http_build_query(['q' => $q]));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validated($request);
@@ -141,7 +182,7 @@ class TeacherController extends Controller
             }
         });
 
-        return back()->with('success', 'Personel eklendi.');
+        return redirect()->route('personel.index')->with('success', 'Personel eklendi.');
     }
 
     public function update(Request $request, Teacher $teacher): RedirectResponse
@@ -171,7 +212,7 @@ class TeacherController extends Controller
             }
         });
 
-        return back()->with('success', 'Personel güncellendi.');
+        return redirect()->route('personel.index')->with('success', 'Personel güncellendi.');
     }
 
     public function activate(Teacher $teacher): RedirectResponse

@@ -308,4 +308,31 @@ class StudentTest extends TestCase
         Storage::disk('public')->delete($person->photo_path);
         unlink($photo);
     }
+
+    public function test_ekle_sayfasi_acilir(): void
+    {
+        $user = User::factory()->create();
+        $this->setupYear();
+
+        $this->actingAs($user)->get('/students/ekle')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('allBranches', 2)
+                ->has('backUrl'));
+    }
+
+    public function test_duzenle_sayfasi_acilir(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $student = $this->makeStudent($year, $branch, '145', 'Ali Veli');
+
+        $this->actingAs($user)->get("/students/{$student->id}/duzenle")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('student.full_name', 'Ali Veli')
+                ->has('allBranches', 2)
+                ->has('backUrl'));
+    }
 }
