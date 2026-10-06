@@ -70,6 +70,21 @@ Tasarım sade, modern, temiz ve yönetim uygulamasına uygun olsun.
 - Bugünden gereksiz SaaS karmaşıklığı kurma.
 - Mevcut çalışan Kelebek özelliklerini yeni veri modeline uyarlarken kırma.
 
+## Canlı veri koruma kuralları (2026-10-06 sonrası zorunlu)
+
+Site canlıda (`awa.madematik.com`) olduğu için:
+
+- Şema değişikliği yalnızca **yeni migration** ile yapılır. Mevcut create migrationları düzenlenmez.
+- Canlıda `migrate:fresh` asla çalıştırılmaz. Yerelde bile fresh yalnız boş kurulum doğrulaması içindir.
+- Canlıya dokunan her işten önce yedek alınır veya kullanıcıya hatırlatılır.
+- Veri silebilecek komutlar (`migrate:fresh`, `migrate:rollback`, truncate, toplu delete) kullanıcı izni olmadan çalıştırılmaz.
+
+## Ekle/düzenle ekran kuralı
+
+- Uzun formlar (Öğrenciler, Personel, Mezunlar, Bilgi Formu) tam sayfa olur: `.../ekle`, `.../{id}/duzenle`, sağ üstte Kaydet + Geri Dön, menü/üst panel sabit.
+- Kısa formlar (yıl, sınıf, salon, sınav haftası, okul, kullanıcı) modal kalır.
+- Arşiv/sil onayları modal kalır.
+
 ## Test yaklaşımı
 
 Gereksiz test aşamaları oluşturma.
@@ -1024,6 +1039,31 @@ Commit etme:
 - hassas dosyalar
 
 Kullanıcı istemeden remote oluşturma veya push yapma.
+
+---
+
+# 24. REHBERLİK / ÖĞRENCİ BİLGİ FORMU SİSTEMİ
+
+**Durum: ✅ Yapıldı** (2026-10-07)
+
+Google Forms çıktısı içe aktarılır, her öğrenci için Bilgi Formu + her sınıf için Sınıf Risk Haritası çıktısı alınır.
+
+## Kararlar (kısa referans)
+
+- Kimlik (sınıf, no, ad-soyad) canlı okunur, form tablosunda kopyası tutulmaz; import asla yazmaz.
+- `people` +12 kolon (cinsiyet, doğum yeri/tarihi, kan grubu, din, boy, kilo, eğitim, meslek, sağ mı, engel, hastalık); `student_guardian` +`is_biological` (özlük ilişkiye aittir).
+- Anne/baba `guardians` + relationship (`anne`/`baba`); tekrar import ilişkiden bulur.
+- Import: yıl seçilir + no ile eşleşir; sınıf uyuşmazsa satır işlenmez + uyarı listesi; tek genel `overwrite` kutusu (kapalı = dolu korunur).
+- Yeni alanlar opsiyonel; Öğrenciler listesine kolon eklenmez.
+- Liste ayrı sayfa (`/bilgi-formlari`), her satırda risk rozeti; düzenleme tam sayfa; çıktı tek sayfa (yönerge basılmaz).
+- Risk haritası: formdan türeyenler otomatik ✓, kalan hücreler elle; `household` otomatiğe girmez.
+- 17 mevcut yanıt modül bitince uçtan uca testle aktarıldı.
+
+## Dosyalar
+
+- Migration: `000130` (people), `000140` (pivot), `000150` (student_info_forms, 21 kolon)
+- `BilgiFormuController` (liste/import/düzenle/yazdırma/risk), route `/bilgi-formlari`
+- Sayfalar: `BilgiFormaleri/{Index,Import,ImportResult,Form}`, `Prints/{BilgiFormu,RiskHaritasi}`
 
 ---
 

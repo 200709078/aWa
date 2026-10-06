@@ -23,6 +23,13 @@ interface Student {
     phone: string | null;
     email: string | null;
     address: string | null;
+    gender: string | null;
+    birth_place: string | null;
+    birth_date: string | null;
+    blood_type: string | null;
+    religion: string | null;
+    height_cm: number | null;
+    weight_kg: number | null;
     photo_path: string | null;
     photo_version: number | null;
     is_active: boolean;
@@ -55,6 +62,13 @@ const form = useForm({
     phone: props.student.phone ?? '',
     email: props.student.email ?? '',
     address: props.student.address ?? '',
+    gender: props.student.gender ?? null,
+    birth_place: props.student.birth_place ?? '',
+    birth_date: props.student.birth_date ?? '',
+    blood_type: props.student.blood_type ?? null,
+    religion: props.student.religion ?? '',
+    height_cm: props.student.height_cm ?? null,
+    weight_kg: props.student.weight_kg ?? null,
     photo: null as File | null,
     is_active: props.student.is_active,
     guardians: props.student.guardians.length > 0 ? props.student.guardians.map(toGuardianForm) : [blankGuardian()],

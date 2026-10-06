@@ -3,6 +3,7 @@
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BilgiFormuController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\ExamController;
@@ -77,6 +78,14 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::put('/mezunlar/{graduate}', [GraduateController::class, 'update'])->name('mezunlar.update');
     Route::delete('/mezunlar/{graduate}', [GraduateController::class, 'destroy'])->name('mezunlar.destroy');
     Route::get('/mezunlar/vcf', [GraduateController::class, 'vcf'])->name('mezunlar.vcf');
+
+    Route::get('/bilgi-formlari', [BilgiFormuController::class, 'index'])->name('bilgi-formlari.index');
+    Route::get('/bilgi-formlari/ice-aktar', [BilgiFormuController::class, 'importShow'])->name('bilgi-formlari.import');
+    Route::post('/bilgi-formlari/ice-aktar', [BilgiFormuController::class, 'importStore'])->name('bilgi-formlari.import.store');
+    Route::get('/bilgi-formlari/yazdir', [BilgiFormuController::class, 'print'])->name('bilgi-formlari.print');
+    Route::get('/bilgi-formlari/risk-haritasi', [BilgiFormuController::class, 'riskMap'])->name('bilgi-formlari.risk');
+    Route::get('/bilgi-formlari/{student}/duzenle', [BilgiFormuController::class, 'edit'])->name('bilgi-formlari.edit');
+    Route::put('/bilgi-formlari/{student}', [BilgiFormuController::class, 'update'])->name('bilgi-formlari.update');
 
     Route::get('/personel', [TeacherController::class, 'index'])->name('personel.index');
     Route::get('/personel/ekle', [TeacherController::class, 'create'])->name('personel.create');
