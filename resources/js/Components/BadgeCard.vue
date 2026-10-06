@@ -8,7 +8,13 @@ const props = defineProps<{
     logoUrl: string | null;
     widthMm: string;
     heightMm: string;
+    duty?: string | null;
 }>();
+
+const isGardenDuty = computed(() => {
+    const d = (props.duty ?? '').toLocaleLowerCase('tr-TR');
+    return d.includes('bahçe') || d.includes('bahce');
+});
 
 const schoolShort = computed(() =>
     props.schoolName
@@ -20,9 +26,9 @@ const schoolShort = computed(() =>
 );
 
 function nameSizeStyle(fullName: string): string {
-    if (fullName.length > 24) return 'font-size:6.3mm;';
-    if (fullName.length > 16) return 'font-size:7.5mm;';
-    return 'font-size:8.5mm;';
+    if (fullName.length > 24) return 'font-size:7mm;';
+    if (fullName.length > 16) return 'font-size:8.5mm;';
+    return 'font-size:9.5mm;';
 }
 
 function titleSizeStyle(title: string): string {
@@ -36,10 +42,10 @@ function titleSizeStyle(title: string): string {
     <div class="badge-row flex flex-wrap gap-[5mm] break-inside-avoid">
         <!-- Ön yüz -->
         <div
-            class="badge-card rounded-[2mm] border-2 border-gray-300 bg-white"
+            class="badge-card border-2 border-gray-300 bg-white"
             :style="{ width: props.widthMm, height: props.heightMm }"
         >
-            <div class="flex h-full flex-col p-[2mm]">
+            <div class="flex h-full flex-col p-[1.5mm]">
                 <div class="relative flex items-center">
                     <img
                         v-if="props.logoUrl"
@@ -67,26 +73,27 @@ function titleSizeStyle(title: string): string {
                     </div>
                     <div
                         class="w-full text-center font-bold uppercase leading-tight text-indigo-900"
-                        style="font-size: 12.1mm"
+                        style="font-size: 13mm"
                     >
                         {{ schoolShort }}
                     </div>
                 </div>
                 <div
-                    class="mt-[3mm] flex flex-1 items-center justify-center rounded-[1mm] bg-red-600 px-[2mm] text-center font-extrabold uppercase leading-[1.05] text-white"
+                    class="mt-[2mm] flex flex-1 items-center justify-center rounded-[1mm] bg-red-600 px-[2mm] text-center font-extrabold uppercase leading-[1.05] text-white"
                     style="font-size: 13.2mm"
                 >
-                    Nöbetçi<br />Öğretmen
+                    <span v-if="isGardenDuty">Bahçe<br />Görevlisi</span>
+                    <span v-else>Nöbetçi<br />Öğretmen</span>
                 </div>
             </div>
         </div>
 
         <!-- Arka yüz -->
         <div
-            class="badge-card rounded-[2mm] border-2 border-gray-300 bg-white"
+            class="badge-card border-2 border-gray-300 bg-white"
             :style="{ width: props.widthMm, height: props.heightMm }"
         >
-            <div class="flex h-full flex-col p-[3mm]">
+            <div class="flex h-full flex-col p-[1.5mm]">
                 <div class="relative flex items-center">
                             <img
                                 v-if="props.logoUrl"
@@ -114,16 +121,16 @@ function titleSizeStyle(title: string): string {
                             </div>
                             <div
                                 class="w-full text-center font-bold uppercase leading-tight text-indigo-900"
-                                style="font-size: 12.1mm"
+                                style="font-size: 13mm"
                             >
                                 {{ schoolShort }}
                             </div>
                 </div>
-                <div class="flex flex-1 flex-col items-center justify-center px-[2mm] text-center">
-                            <div class="break-words font-extrabold uppercase leading-tight text-gray-900" :style="nameSizeStyle(props.fullName)">
+                <div class="mt-[2mm] flex flex-1 flex-col items-center justify-center rounded-[1mm] bg-red-600 px-[2mm] text-center uppercase leading-[1.05] text-white">
+                            <div class="break-words font-extrabold" :style="nameSizeStyle(props.fullName)">
                         {{ props.fullName }}
                     </div>
-                    <div class="mt-[1.5mm] font-semibold uppercase leading-tight text-gray-600" :style="titleSizeStyle(props.title)">
+                    <div class="mt-[1.5mm] font-semibold" :style="titleSizeStyle(props.title)">
                         {{ props.title }}
                     </div>
                 </div>

@@ -96,7 +96,7 @@ const heightMm = computed(() => `${Math.min(90, Math.max(30, Number(cardHeight.v
 const badgeItems = computed(() =>
     props.teachers.data
         .filter((t) => selected.value.includes(t.id))
-        .map((t) => ({ id: t.id, full_name: t.full_name, title: badgeTitleOf(t) })),
+        .map((t) => ({ id: t.id, full_name: t.full_name, title: badgeTitleOf(t), duty: t.duty })),
 );
 
 function printBadges() {
@@ -495,6 +495,7 @@ const editDisplayName = computed(() => `${editForm.first_name} ${editForm.last_n
                         :key="item.id"
                         :full-name="item.full_name"
                         :title="item.title"
+                        :duty="item.duty"
                         :school-name="school.name"
                         :logo-url="school.logo_url"
                         :width-mm="widthMm"

@@ -7,6 +7,7 @@ interface BadgeTeacher {
     id: number;
     full_name: string;
     title: string;
+    duty: string | null;
 }
 
 const props = defineProps<{
@@ -45,6 +46,7 @@ const heightMm = computed(() => `${Math.min(90, Math.max(30, Number(cardHeight.v
                 :key="teacher.id"
                 :full-name="teacher.full_name"
                 :title="teacher.title"
+                :duty="teacher.duty"
                 :school-name="school.name"
                 :logo-url="school.logo_url"
                 :width-mm="widthMm"

@@ -89,6 +89,7 @@ class TeacherController extends Controller
             'id' => $t->id,
             'full_name' => $t->person?->full_name ?? '—',
             'title' => $t->branch ?? ($t->duty ?? 'Öğretmen'),
+            'duty' => $t->duty,
         ])->all();
 
         return Inertia::render('Prints/Badges', [
