@@ -36,8 +36,8 @@ class BilgiFormuController extends Controller
         $search = trim((string) $request->input('q', ''));
         $status = $request->input('durum', 'tumu');
 
-        $query = Student::with([
-            'person:id,first_name,last_name,full_name,phone,chronic_illness,disability,updated_at',
+        $baseQuery = fn () => Student::with([
+            'person:id,first_name,last_name,full_name,phone,photo_path,chronic_illness,disability,updated_at',
             'enrollments' => fn ($q) => $q->where('academic_year_id', $yearId)->with('branch:id,name'),
             'infoForm',
             'guardians.person:id,first_name,last_name,full_name,education_level,is_alive',
@@ -46,8 +46,6 @@ class BilgiFormuController extends Controller
             ->select('students.*')
             ->when($yearId, fn ($q) => $q->whereHas('enrollments', fn ($qq) => $qq->where('academic_year_id', $yearId)),
                 fn ($q) => $q->whereRaw('0 = 1'))
-            ->when($branchId, fn ($q) => $q->whereHas('enrollments', fn ($qq) => $qq
-                ->where('academic_year_id', $yearId)->where('branch_id', $branchId)))
             ->when($search !== '', fn ($q) => $q->where(function ($qq) use ($search, $yearId) {
                 $qq->where('people.full_name', 'like', "%{$search}%")
                     ->orWhereHas('enrollments', fn ($qqq) => $qqq
@@ -55,22 +53,98 @@ class BilgiFormuController extends Controller
                         ->where('school_number', 'like', "%{$search}%"));
             }))
             ->when($status === 'var', fn ($q) => $q->whereHas('infoForm'))
-            ->when($status === 'yok', fn ($q) => $q->whereDoesntHave('infoForm'))
-            ->orderBy('people.full_name');
+            ->when($status === 'yok', fn ($q) => $q->whereDoesntHave('infoForm'));
 
-        $paginator = $query->paginate(30)->withQueryString();
-        $paginator->setCollection($paginator->getCollection()->map(fn (Student $s) => $this->rowPayload($s)));
+        // Arama varsa yıllara bakılmaksızın düz liste; yoksa her sayfa bir sınıf.
+        if ($search !== '') {
+            $paginator = $baseQuery()->orderBy('people.full_name')->paginate(30)->withQueryString();
+            $paginator->setCollection($paginator->getCollection()->map(fn (Student $s) => $this->rowPayload($s)));
 
-        return Inertia::render('BilgiFormaleri/Index', [
+            return Inertia::render('BilgiFormaleri/Index', $this->indexProps($years, $yearId, $branches, $branchId, 1, $search, $status, $paginator));
+        }
+
+        if ($branchId && ! $branches->contains('id', $branchId)) {
+            $branchId = null;
+        }
+
+        if ($branchId) {
+            $page = max(1, $branches->search(fn ($branch) => $branch->id === $branchId) + 1);
+        } else {
+            $page = $request->integer('page', 0) ?: 0;
+        }
+
+        if ($page < 1) {
+            // Açılışta 9A, yoksa ilk sınıf.
+            $default = $branches->firstWhere('name', '9A') ?? $branches->first();
+            $page = $default ? max(1, $branches->search(fn ($branch) => $branch->id === $default->id) + 1) : 1;
+        }
+        $page = min(max(1, $page), max(1, $branches->count()));
+        $branch = $branches->get($page - 1);
+        $branchId = $branch?->id;
+
+        $rows = $branch
+            ? $baseQuery()
+                ->whereHas('enrollments', fn ($q) => $q
+                    ->where('academic_year_id', $yearId)
+                    ->where('branch_id', $branch->id))
+                ->get()
+                ->sort(fn (Student $a, Student $b) => strnatcmp(
+                    $a->enrollments->first()?->school_number ?? '',
+                    $b->enrollments->first()?->school_number ?? ''
+                ))
+                ->values()
+            : collect();
+
+        $data = $rows->map(fn (Student $s) => $this->rowPayload($s))->all();
+        $total = count($data);
+
+        $students = [
+            'data' => $data,
+            'from' => $total > 0 ? 1 : null,
+            'to' => $total,
+            'total' => $total,
+            'prev_page_url' => $this->branchPageUrl($yearId, $status, $page - 1, $page > 1),
+            'next_page_url' => $this->branchPageUrl($yearId, $status, $page + 1, $page < $branches->count()),
+        ];
+
+        return Inertia::render('BilgiFormaleri/Index', $this->indexProps($years, $yearId, $branches, $branchId, $page, $search, $status, $students));
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, mixed>  $branches
+     */
+    private function indexProps($years, $yearId, $branches, $branchId, int $page, string $search, string $status, $students): array
+    {
+        $totalStudents = $years->pluck('id')->isNotEmpty()
+            ? Student::whereHas('enrollments', fn ($q) => $q->whereIn('academic_year_id', $years->pluck('id')))->count()
+            : 0;
+
+        return [
             'years' => $years,
             'yearId' => $yearId,
             'branches' => $branches,
             'branchId' => $branchId,
+            'page' => $page,
             'search' => $search,
             'status' => $status,
-            'students' => $paginator,
-            'totalStudents' => $paginator->total(),
+            'students' => $students,
+            'totalStudents' => $totalStudents,
+        ];
+    }
+
+    private function branchPageUrl(?int $yearId, string $status, int $page, bool $enabled): ?string
+    {
+        if (! $enabled) {
+            return null;
+        }
+
+        $params = array_filter([
+            'academic_year_id' => $yearId,
+            'page' => $page,
+            'durum' => $status !== 'tumu' ? $status : null,
         ]);
+
+        return '/bilgi-formlari?'.http_build_query($params);
     }
 
     /**
@@ -105,6 +179,7 @@ class BilgiFormuController extends Controller
             'full_name' => $student->person?->full_name ?? '—',
             'branch_name' => $student->enrollments->first()?->branch?->name ?? '—',
             'photo_path' => $student->person?->photo_path,
+            'photo_version' => $student->person?->updated_at?->timestamp,
             'has_form' => $student->infoForm !== null,
             'form_updated_at' => $student->infoForm?->updated_at?->format('d.m.Y'),
             'badges' => $badges,
@@ -149,6 +224,15 @@ class BilgiFormuController extends Controller
     private function guardianByRelation(Student $student, string $relation): ?Guardian
     {
         return $student->guardians->first(fn (Guardian $g) => $g->pivot->relationship === $relation);
+    }
+
+    private function findGuardianByName(Student $student, string $name): ?Guardian
+    {
+        $key = preg_replace('/\s+/u', ' ', mb_strtolower(trim($name), 'UTF-8')) ?? '';
+
+        return $student->guardians->first(
+            fn (Guardian $g) => (preg_replace('/\s+/u', ' ', mb_strtolower(trim((string) $g->person?->full_name), 'UTF-8')) ?? '') === $key
+        );
     }
 
     private function norm(?string $value): string
@@ -571,6 +655,16 @@ class BilgiFormuController extends Controller
     private function applyGuardianBlock(Student $student, string $relation, array $vals, bool $overwrite, bool $allowNameless = false): ?Guardian
     {
         $link = $student->guardians->first(fn (Guardian $g) => $g->pivot->relationship === $relation);
+
+        // Aynı kişi farklı ilişkiyle kayıtlıysa (örn. önce veli açılmış) yeni kişi açma, mevcut kaydı devral.
+        if (! $link && ! empty($vals['name'])) {
+            $link = $this->findGuardianByName($student, (string) $vals['name']);
+            if ($link && $link->pivot->relationship !== $relation) {
+                $student->guardians()->updateExistingPivot($link->id, ['relationship' => $relation]);
+                $student->load('guardians.person');
+                $link = $student->guardians->first(fn (Guardian $g) => $g->id === $link->id);
+            }
+        }
 
         if (! $link) {
             if (! $this->blockFilled($vals)) {
@@ -1011,6 +1105,16 @@ class BilgiFormuController extends Controller
     {
         $student->loadMissing('guardians.person');
         $link = $existing ?? $student->guardians->first(fn (Guardian $g) => $g->pivot->relationship === $relation);
+
+        $name = $nullify($input['name'] ?? null);
+        if (! $link && $name !== null) {
+            $link = $this->findGuardianByName($student, $name);
+            if ($link && $link->pivot->relationship !== $relation) {
+                $student->guardians()->updateExistingPivot($link->id, ['relationship' => $relation]);
+                $student->load('guardians.person');
+                $link = $student->guardians->first(fn (Guardian $g) => $g->id === $link->id);
+            }
+        }
 
         $filled = $link !== null;
         if (! $filled) {

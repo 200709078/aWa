@@ -22,6 +22,7 @@ interface Row {
     full_name: string;
     branch_name: string;
     photo_path: string | null;
+    photo_version: number | null;
     has_form: boolean;
     form_updated_at: string | null;
     badges: string[];
@@ -41,6 +42,7 @@ const props = defineProps<{
     yearId: number | null;
     branches: BranchOption[];
     branchId: number | null;
+    page: number;
     search: string;
     status: string;
     students: Paginator;
@@ -83,7 +85,33 @@ function clearFilters() {
     router.get('/bilgi-formlari', { academic_year_id: filterYear.value }, { preserveState: true });
 }
 
+function jumpToBranch() {
+    const index = props.branches.findIndex((b) => b.id === filterBranch.value);
+    router.get(
+        '/bilgi-formlari',
+        {
+            academic_year_id: filterYear.value,
+            page: index >= 0 ? index + 1 : 1,
+        },
+        { preserveState: true },
+    );
+}
+
+const currentBranchName = computed(() => props.branches.find((b) => b.id === props.branchId)?.name ?? '');
+
 const selected = ref<number[]>([]);
+
+const pageIds = computed(() => props.students.data.map((r) => r.id));
+
+const allPageSelected = computed(() => pageIds.value.length > 0 && pageIds.value.every((id) => selected.value.includes(id)));
+
+function toggleAllPage() {
+    if (allPageSelected.value) {
+        selected.value = selected.value.filter((id) => !pageIds.value.includes(id));
+    } else {
+        selected.value = [...new Set([...selected.value, ...pageIds.value])];
+    }
+}
 
 function toggleOne(id: number) {
     selected.value = selected.value.includes(id)
@@ -135,74 +163,24 @@ function editUrl(id: number): string {
         <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center gap-3">
                 <h1 class="shrink-0 text-2xl font-bold text-gray-900">Bilgi Formları ({{ totalStudents }} Kayıt)</h1>
-                <div class="flex min-w-52 flex-1 flex-wrap items-center justify-center gap-2">
-                    <input
-                        v-model="filterSearch"
-                        type="text"
-                        placeholder="Numara veya ad ara"
-                        aria-label="Öğrenci ara"
-                        class="block h-9 w-56 rounded-md border-gray-300 bg-gray-50 px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        @keydown.enter.prevent="applyFilters()"
-                    />
-                    <div class="w-36">
-                        <DropdownSelect
-                            id="bf-year"
-                            v-model="filterYear"
-                            :options="years.map((y) => ({ value: y.id, label: y.name }))"
-                            aria-label="Akademik Yıl"
-                            @change="changeYear"
-                        />
-                    </div>
-                    <div class="w-28">
-                        <DropdownSelect
-                            id="bf-branch"
-                            v-model="filterBranch"
-                            :options="branches.map((b) => ({ value: b.id, label: b.name }))"
-                            aria-label="Sınıf"
-                            @change="applyFilters"
-                        />
-                    </div>
-                    <div class="w-36">
-                        <DropdownSelect
-                            id="bf-status"
-                            v-model="filterStatus"
-                            :options="statusOptions"
-                            aria-label="Durum"
-                            @change="applyFilters"
-                        />
-                    </div>
-                    <button
-                        type="button"
-                        class="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
-                        @click="applyFilters()"
-                    >
-                        Ara
-                    </button>
-                    <button
-                        v-if="search || status !== 'tumu' || branchId"
-                        type="button"
-                        class="inline-flex h-9 shrink-0 items-center justify-center rounded-md px-2 text-sm text-gray-500 hover:text-indigo-700 hover:underline"
-                        @click="clearFilters()"
-                    >
-                        Temizle
-                    </button>
-                </div>
                 <div class="ml-auto flex shrink-0 gap-2">
                     <button
-                        v-if="riskUrl"
                         type="button"
-                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
+                        :disabled="!riskUrl"
+                        title="Seçili sınıfın risk haritası"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="printRisk()"
                     >
                         Risk Haritası
                     </button>
                     <button
-                        v-if="printUrl"
                         type="button"
-                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
+                        :disabled="!printUrl"
+                        title="Seçilenleri yazdır"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="printSelected()"
                     >
-                        Yazdır ({{ selected.length }})
+                        Yazdır{{ selected.length > 0 ? ` (${selected.length})` : '' }}
                     </button>
                     <Link
                         href="/bilgi-formlari/ice-aktar"
@@ -212,13 +190,77 @@ function editUrl(id: number): string {
                     </Link>
                 </div>
             </div>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <div class="flex shrink-0 items-center gap-2">
+                    <input
+                        v-model="filterSearch"
+                        type="text"
+                        placeholder="Numara veya ad ara"
+                        aria-label="Öğrenci ara"
+                        class="block h-9 w-56 rounded-md border-gray-300 bg-gray-50 px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        @keydown.enter.prevent="applyFilters()"
+                    />
+                    <button
+                        type="button"
+                        class="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
+                        @click="applyFilters()"
+                    >
+                        Ara
+                    </button>
+                    <button
+                        v-if="search || status !== 'tumu'"
+                        type="button"
+                        class="inline-flex h-9 shrink-0 items-center justify-center rounded-md px-2 text-sm text-gray-500 hover:text-indigo-700 hover:underline"
+                        @click="clearFilters()"
+                    >
+                        Temizle
+                    </button>
+                </div>
+                <div class="w-36">
+                    <DropdownSelect
+                        id="bf-year"
+                        v-model="filterYear"
+                        :options="years.map((y) => ({ value: y.id, label: y.name }))"
+                        aria-label="Akademik Yıl"
+                        @change="changeYear"
+                    />
+                </div>
+                <div class="w-28">
+                    <DropdownSelect
+                        id="bf-branch"
+                        v-model="filterBranch"
+                        :options="branches.map((b) => ({ value: b.id, label: b.name }))"
+                        aria-label="Sınıf"
+                        @change="jumpToBranch"
+                    />
+                </div>
+                <div class="w-36">
+                    <DropdownSelect
+                        id="bf-status"
+                        v-model="filterStatus"
+                        :options="statusOptions"
+                        aria-label="Durum"
+                        @change="applyFilters"
+                    />
+                </div>
+            </div>
         </div>
 
         <div class="mt-6 w-full max-w-[80%] overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="w-10 px-4 py-3"></th>
+                        <th class="w-10 px-4 py-3">
+                            <input
+                                type="checkbox"
+                                :checked="allPageSelected"
+                                :indeterminate="selected.length > 0 && !allPageSelected"
+                                title="Sayfadakileri seç"
+                                aria-label="Sayfadakileri seç"
+                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                @change="toggleAllPage()"
+                            />
+                        </th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Okul No</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sınıf</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fotoğraf</th>
@@ -243,7 +285,7 @@ function editUrl(id: number): string {
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ row.branch_name }}</td>
                         <td class="whitespace-nowrap px-4 py-3">
                             <StudentAvatar
-                                :photo-url="row.photo_path ? `/storage/${row.photo_path}` : null"
+                                :photo-url="row.photo_path ? `/storage/${row.photo_path}?v=${row.photo_version ?? 0}` : null"
                                 :full-name="row.full_name"
                                 img-class="block h-16 w-12 rounded object-cover"
                                 placeholder-class="w-12"
@@ -312,7 +354,8 @@ function editUrl(id: number): string {
                     Önceki
                 </Link>
             </div>
-            <span class="flex-1 text-center">{{ students.from }}-{{ students.to }} / Toplam {{ students.total }}</span>
+            <span v-if="search" class="flex-1 text-center">Toplam {{ students.total }} kayıt</span>
+            <span v-else class="flex-1 text-center">[{{ currentBranchName }}] Toplam {{ students.total }} kayıt</span>
             <div class="flex w-24 justify-end">
                 <Link
                     v-if="students.next_page_url"

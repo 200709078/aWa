@@ -71,9 +71,15 @@ const nav = computed<NavEntry[]>(() => {
                 { label: 'Öğrenciler', href: '/students', icon: 'user' },
                 { label: 'Rehber Aktarma', href: '/rehber-aktarma', icon: 'book' },
                 { label: 'Mezunlar', href: '/mezunlar', icon: 'favicon' },
-                { label: 'Bilgi Formları', href: '/bilgi-formlari', icon: 'user' },
                 { label: 'Personel', href: '/personel', icon: 'users' },
                 { label: 'Arşiv', href: '/arsiv', icon: 'archive' },
+            ],
+        },
+        {
+            label: 'Rehberlik',
+            icon: 'book',
+            children: [
+                { label: 'Bilgi Formları', href: '/bilgi-formlari', icon: 'user' },
             ],
         },
         {

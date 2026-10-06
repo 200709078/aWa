@@ -32,17 +32,24 @@ const emit = defineEmits<{
 
 const open = ref(false);
 const trigger = ref<HTMLElement | null>(null);
+const menu = ref<HTMLElement | null>(null);
 const menuStyle = ref<Record<string, string>>({});
+
+function onScroll(e: Event) {
+    // Menü içindeki kaydırma kapatmasın; dışarıdaki kaydırma kapatsın.
+    if (menu.value && menu.value.contains(e.target as Node)) return;
+    close();
+}
 
 function close() {
     if (!open.value) return;
     open.value = false;
-    window.removeEventListener('scroll', close, true);
+    window.removeEventListener('scroll', onScroll, true);
     window.removeEventListener('resize', close);
 }
 
 onUnmounted(() => {
-    window.removeEventListener('scroll', close, true);
+    window.removeEventListener('scroll', onScroll, true);
     window.removeEventListener('resize', close);
 });
 
@@ -54,7 +61,7 @@ async function toggle() {
     open.value = true;
     await nextTick();
     place();
-    window.addEventListener('scroll', close, true);
+    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close);
 }
 
@@ -105,6 +112,7 @@ function choose(value: string | number | null) {
         <Teleport to="body">
             <div
                 v-if="open"
+                ref="menu"
                 :style="menuStyle"
                 class="fixed z-[60] max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-xl"
                 @keydown.escape="close"
