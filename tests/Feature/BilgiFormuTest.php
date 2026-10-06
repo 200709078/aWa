@@ -46,7 +46,7 @@ class BilgiFormuTest extends TestCase
             'E-posta Adresi', 'Adınız Soyadınız', 'Cinsiyetiniz', 'Okul Numaranız',
             'Telefon Numaranız', 'Sınıfınız', 'Doğum Yeriniz', 'Kan grubunuz nedir?',
             'Kaç kardeşsiniz?', 'Veliniz kim?', 'Annenizin adını ve soyadını giriniz.',
-            'Annenizin telefon numarasını giriniz.',
+            'Annenizin telefon numarasını giriniz.', 'Anneniz öz mü?',
         ];
     }
 
@@ -151,6 +151,36 @@ class BilgiFormuTest extends TestCase
         ]);
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page->has('errors', 1));
+    }
+
+    public function test_onceki_veli_kaydi_anne_ile_birlesir(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $student = $this->makeStudent($year, $branch, '145', 'Ali Veli');
+
+        // Önceden veli olarak açılmış aynı kişi.
+        $person = \App\Models\Person::create([
+            'full_name' => 'Ayşe Veli', 'first_name' => 'Ayşe', 'last_name' => 'Veli',
+        ]);
+        $guardian = \App\Models\Guardian::create(['person_id' => $person->id]);
+        $student->guardians()->attach($guardian->id, ['relationship' => 'veli', 'is_primary' => true]);
+
+        $this->actingAs($user)->post('/bilgi-formlari/ice-aktar', [
+            'academic_year_id' => $year->id,
+            'file' => $this->makeFile($this->headers(), [[
+                'ali@example.com', 'Ali Veli', 'Erkek', '145', '05320000001', '9A',
+                'Ankara', 'A Rh+', '3', 'Annem', 'Ayşe Veli', '05320000002', 'Evet',
+            ]]),
+        ])->assertOk();
+
+        // Yeni kişi açılmadı, veli kaydı anneye dönüştü, öz bilgisi işlendi.
+        $this->assertEquals(1, \App\Models\Person::where('full_name', 'Ayşe Veli')->count());
+        $this->assertDatabaseHas('student_guardian', [
+            'student_id' => $student->id, 'guardian_id' => $guardian->id,
+            'relationship' => 'anne', 'is_biological' => true,
+        ]);
     }
 
     public function test_sayfalar_acilir(): void
