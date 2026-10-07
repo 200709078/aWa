@@ -64,6 +64,7 @@ function baseParams() {
     return {
         academic_year_id: filterYear.value,
         branch_id: filterBranch.value || undefined,
+        tumu: !filterBranch.value && !filterSearch.value ? 1 : undefined,
         q: filterSearch.value || undefined,
         durum: filterStatus.value !== 'tumu' ? filterStatus.value : undefined,
     };
@@ -75,29 +76,52 @@ function applyFilters() {
 
 function changeYear() {
     filterBranch.value = null;
-    router.get('/bilgi-formlari', { academic_year_id: filterYear.value }, { preserveState: true });
-}
-
-function clearFilters() {
-    filterBranch.value = null;
-    filterSearch.value = '';
-    filterStatus.value = 'tumu';
-    router.get('/bilgi-formlari', { academic_year_id: filterYear.value }, { preserveState: true });
+    selected.value = [];
+    router.get(
+        '/bilgi-formlari',
+        {
+            academic_year_id: filterYear.value,
+            tumu: 1,
+            durum: filterStatus.value !== 'tumu' ? filterStatus.value : undefined,
+        },
+        { preserveState: true },
+    );
 }
 
 function jumpToBranch() {
+    selected.value = [];
+    if (!filterBranch.value) {
+        router.get(
+            '/bilgi-formlari',
+            {
+                academic_year_id: filterYear.value,
+                tumu: 1,
+                durum: filterStatus.value !== 'tumu' ? filterStatus.value : undefined,
+            },
+            { preserveState: true },
+        );
+        return;
+    }
     const index = props.branches.findIndex((b) => b.id === filterBranch.value);
     router.get(
         '/bilgi-formlari',
         {
             academic_year_id: filterYear.value,
             page: index >= 0 ? index + 1 : 1,
+            durum: filterStatus.value !== 'tumu' ? filterStatus.value : undefined,
         },
         { preserveState: true },
     );
 }
 
+const branchOptions = computed(() => [
+    { value: null as number | null, label: 'Tümü' },
+    ...props.branches.map((b) => ({ value: b.id as number | null, label: b.name })),
+]);
+
 const currentBranchName = computed(() => props.branches.find((b) => b.id === props.branchId)?.name ?? '');
+
+const isBranchMode = computed(() => !props.search && props.branchId !== null);
 
 const selected = ref<number[]>([]);
 
@@ -111,12 +135,27 @@ function toggleAllPage() {
     } else {
         selected.value = [...new Set([...selected.value, ...pageIds.value])];
     }
+    afterSelectChange();
 }
 
 function toggleOne(id: number) {
     selected.value = selected.value.includes(id)
         ? selected.value.filter((v) => v !== id)
         : [...selected.value, id];
+    afterSelectChange();
+}
+
+function afterSelectChange() {
+    if (selected.value.length === 0) return;
+    if (filterBranch.value !== null || filterStatus.value !== 'tumu') {
+        filterBranch.value = null;
+        filterStatus.value = 'tumu';
+        router.get(
+            '/bilgi-formlari',
+            { academic_year_id: filterYear.value, tumu: 1 },
+            { preserveState: true, preserveScroll: true },
+        );
+    }
 }
 
 const printUrl = computed(() =>
@@ -167,20 +206,22 @@ function editUrl(id: number): string {
                     <button
                         type="button"
                         :disabled="!riskUrl"
-                        title="Seçili sınıfın risk haritası"
-                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="İncele"
+                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-50 disabled:hover:text-gray-700"
                         @click="printRisk()"
                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
                         Risk Haritası
                     </button>
                     <button
                         type="button"
                         :disabled="!printUrl"
-                        title="Seçilenleri yazdır"
-                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="İncele"
+                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-50 disabled:hover:text-gray-700"
                         @click="printSelected()"
                     >
-                        Yazdır{{ selected.length > 0 ? ` (${selected.length})` : '' }}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                        Öğrenci Bilgi Formu{{ selected.length > 0 ? ` (${selected.length})` : '' }}
                     </button>
                     <Link
                         href="/bilgi-formlari/ice-aktar"
@@ -207,14 +248,6 @@ function editUrl(id: number): string {
                     >
                         Ara
                     </button>
-                    <button
-                        v-if="search || status !== 'tumu'"
-                        type="button"
-                        class="inline-flex h-9 shrink-0 items-center justify-center rounded-md px-2 text-sm text-gray-500 hover:text-indigo-700 hover:underline"
-                        @click="clearFilters()"
-                    >
-                        Temizle
-                    </button>
                 </div>
                 <div class="w-36">
                     <DropdownSelect
@@ -226,14 +259,14 @@ function editUrl(id: number): string {
                     />
                 </div>
                 <div class="w-28">
-                    <DropdownSelect
-                        id="bf-branch"
-                        v-model="filterBranch"
-                        :options="branches.map((b) => ({ value: b.id, label: b.name }))"
-                        aria-label="Sınıf"
-                        @change="jumpToBranch"
-                    />
-                </div>
+                        <DropdownSelect
+                            id="bf-branch"
+                            v-model="filterBranch"
+                            :options="branchOptions"
+                            aria-label="Sınıf"
+                            @change="jumpToBranch"
+                        />
+                    </div>
                 <div class="w-36">
                     <DropdownSelect
                         id="bf-status"
@@ -354,8 +387,8 @@ function editUrl(id: number): string {
                     Önceki
                 </Link>
             </div>
-            <span v-if="search" class="flex-1 text-center">Toplam {{ students.total }} kayıt</span>
-            <span v-else class="flex-1 text-center">[{{ currentBranchName }}] Toplam {{ students.total }} kayıt</span>
+            <span v-if="isBranchMode" class="flex-1 text-center">{{ currentBranchName }} Toplam {{ students.total }} kayıt</span>
+            <span v-else class="flex-1 text-center">Toplam {{ students.total }} kayıt</span>
             <div class="flex w-24 justify-end">
                 <Link
                     v-if="students.next_page_url"
