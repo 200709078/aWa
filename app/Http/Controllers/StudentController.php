@@ -445,7 +445,7 @@ class StudentController extends Controller
             'is_active' => ['sometimes', 'boolean'],
             'guardians' => ['nullable', 'array', 'max:4'],
             'guardians.*.id' => ['nullable', 'integer', 'exists:guardians,id'],
-            'guardians.*.relation' => ['nullable', Rule::in(['anne', 'baba', 'veli', 'vasi'])],
+            'guardians.*.relation' => ['nullable', Rule::in(['anne', 'baba', 'veli', 'vasi', 'dede', 'nine', 'amca', 'dayi', 'teyze', 'hala', 'abi', 'abla', 'diger'])],
             'guardians.*.first_name' => ['nullable', 'string', 'max:50'],
             'guardians.*.last_name' => ['nullable', 'string', 'max:50'],
             'guardians.*.phone' => ['nullable', 'string', 'max:30'],
@@ -471,10 +471,8 @@ class StudentController extends Controller
             $last = trim((string) ($row['last_name'] ?? ''));
             $phone = trim((string) ($row['phone'] ?? ''));
 
-            if ($first === '' && $last === '' && $phone === '') {
-                continue;
-            }
-            if ($first === '' || $last === '') {
+            // Üç veli (anne/baba/diğer) boş da olsa her zaman açılır.
+            if (($first !== '' || $last !== '' || $phone !== '') && ($first === '' || $last === '')) {
                 throw ValidationException::withMessages(['guardians' => 'Veli adı ve soyadı gerekli.']);
             }
             $guardians[] = [
@@ -521,7 +519,7 @@ class StudentController extends Controller
     private function syncGuardians(Student $student, array $guardians, mixed $schoolId): void
     {
         $kept = [];
-        $primaryId = null;
+        $primaries = [];
 
         foreach ($guardians as $row) {
             $guardian = $row['id'] ? Guardian::find($row['id']) : null;
@@ -539,7 +537,7 @@ class StudentController extends Controller
                     'school_id' => $schoolId,
                     'first_name' => $gFirst ?? $row['first_name'],
                     'last_name' => $gLast ?? $row['last_name'],
-                    'full_name' => $row['first_name'].' '.$row['last_name'],
+                    'full_name' => trim($row['first_name'].' '.$row['last_name']),
                     'phone' => $row['phone'],
                 ]);
                 $guardian = Guardian::create(['person_id' => $person->id]);
@@ -551,7 +549,7 @@ class StudentController extends Controller
                 $guardian->person?->update([
                     'first_name' => $row['first_name'],
                     'last_name' => $row['last_name'],
-                    'full_name' => $row['first_name'].' '.$row['last_name'],
+                    'full_name' => trim($row['first_name'].' '.$row['last_name']),
                     'phone' => $row['phone'],
                 ]);
                 $student->guardians()->updateExistingPivot($guardian->id, [
@@ -560,17 +558,18 @@ class StudentController extends Controller
             }
 
             $kept[] = $guardian->id;
-            if ($primaryId === null && $row['is_primary']) {
-                $primaryId = $guardian->id;
+            if ($row['is_primary']) {
+                $primaries[] = $guardian->id;
             }
         }
 
-        if ($primaryId === null && $kept !== []) {
-            $primaryId = $kept[0];
+        // Hiçbiri işaretlenmediyse ilk kayıt birincil kalır; birden fazlasına izin verilir.
+        if ($primaries === [] && $kept !== []) {
+            $primaries[] = $kept[0];
         }
 
         foreach ($kept as $id) {
-            $student->guardians()->updateExistingPivot($id, ['is_primary' => $id === $primaryId]);
+            $student->guardians()->updateExistingPivot($id, ['is_primary' => in_array($id, $primaries, true)]);
         }
 
         $removed = $student->guardians()->whereNotIn('guardians.id', $kept)->get();

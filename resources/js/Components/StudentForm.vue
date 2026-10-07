@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import StudentAvatar from './StudentAvatar.vue';
 import DropdownSelect from './DropdownSelect.vue';
-import { blankGuardian, bloodTypeOptions, genderOptions, relationOptions, type StudentFormData } from '../types/studentForm';
+import { bloodTypeOptions, digerRelationOptions, genderOptions, type StudentFormData } from '../types/studentForm';
 
 const props = defineProps<{
     form: StudentFormData;
@@ -12,14 +12,28 @@ const props = defineProps<{
     idPrefix: string;
 }>();
 
+// Üç bloktan yalnız biri birincil olabilir.
+const found = props.form.guardians.findIndex((g) => g.is_primary);
+const primaryIndex = ref(found >= 0 ? found : 0);
+
+function applyPrimary() {
+    props.form.guardians.forEach((g, idx) => {
+        g.is_primary = idx === primaryIndex.value;
+    });
+}
+
+applyPrimary();
+
 const photoInput = ref<HTMLInputElement | null>(null);
 
 function onPhotoChange(e: Event) {
     props.form.photo = (e.target as HTMLInputElement).files?.[0] ?? null;
 }
 
-function addGuardian() {
-    if (props.form.guardians.length < 4) props.form.guardians.push(blankGuardian());
+function guardianTitle(relation: string): string {
+    if (relation === 'anne') return 'Anne Bilgileri';
+    if (relation === 'baba') return 'Baba Bilgileri';
+    return 'Diğer Veli Bilgileri';
 }
 </script>
 
@@ -82,72 +96,63 @@ function addGuardian() {
                         </p>
                     </div>
                 </div>
-                <div>
-                    <label :for="`${idPrefix}-first`" class="block text-sm font-medium text-gray-700">Ad</label>
-                    <input
-                        :id="`${idPrefix}-first`"
-                        v-model="form.first_name"
-                        type="text"
-                        required
-                        maxlength="50"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="form.errors.first_name" class="mt-1 text-sm text-red-600">
-                        {{ form.errors.first_name }}
-                    </p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label :for="`${idPrefix}-first`" class="block text-sm font-medium text-gray-700">Ad</label>
+                        <input
+                            :id="`${idPrefix}-first`"
+                            v-model="form.first_name"
+                            type="text"
+                            required
+                            maxlength="50"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="form.errors.first_name" class="mt-1 text-sm text-red-600">
+                            {{ form.errors.first_name }}
+                        </p>
+                    </div>
+                    <div>
+                        <label :for="`${idPrefix}-last`" class="block text-sm font-medium text-gray-700">Soyad</label>
+                        <input
+                            :id="`${idPrefix}-last`"
+                            v-model="form.last_name"
+                            type="text"
+                            required
+                            maxlength="50"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="form.errors.last_name" class="mt-1 text-sm text-red-600">
+                            {{ form.errors.last_name }}
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <label :for="`${idPrefix}-last`" class="block text-sm font-medium text-gray-700">Soyad</label>
-                    <input
-                        :id="`${idPrefix}-last`"
-                        v-model="form.last_name"
-                        type="text"
-                        required
-                        maxlength="50"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                    <p v-if="form.errors.last_name" class="mt-1 text-sm text-red-600">
-                        {{ form.errors.last_name }}
-                    </p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label :for="`${idPrefix}-phone`" class="block text-sm font-medium text-gray-700">Telefon</label>
+                        <input
+                            :id="`${idPrefix}-phone`"
+                            v-model="form.phone"
+                            type="text"
+                            maxlength="30"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="form.errors.phone" class="mt-1 text-sm text-red-600">{{ form.errors.phone }}</p>
+                    </div>
+                    <div>
+                        <label :for="`${idPrefix}-email`" class="block text-sm font-medium text-gray-700">E-posta</label>
+                        <input
+                            :id="`${idPrefix}-email`"
+                            v-model="form.email"
+                            type="email"
+                            maxlength="100"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
+                    </div>
                 </div>
             </div>
         </div>
         <p v-if="form.errors.photo" class="mt-1 text-sm text-red-600">{{ form.errors.photo }}</p>
-        <div class="grid grid-cols-2 gap-3">
-            <div>
-                <label :for="`${idPrefix}-phone`" class="block text-sm font-medium text-gray-700">Telefon</label>
-                <input
-                    :id="`${idPrefix}-phone`"
-                    v-model="form.phone"
-                    type="text"
-                    maxlength="30"
-                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                <p v-if="form.errors.phone" class="mt-1 text-sm text-red-600">{{ form.errors.phone }}</p>
-            </div>
-            <div>
-                <label :for="`${idPrefix}-email`" class="block text-sm font-medium text-gray-700">E-posta</label>
-                <input
-                    :id="`${idPrefix}-email`"
-                    v-model="form.email"
-                    type="email"
-                    maxlength="100"
-                    class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
-            </div>
-        </div>
-        <div>
-            <label :for="`${idPrefix}-address`" class="block text-sm font-medium text-gray-700">Adres</label>
-            <textarea
-                :id="`${idPrefix}-address`"
-                v-model="form.address"
-                rows="2"
-                maxlength="500"
-                class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            ></textarea>
-            <p v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</p>
-        </div>
         <div class="grid grid-cols-3 gap-3">
             <div>
                 <span class="block text-sm font-medium text-gray-700">Cinsiyet</span>
@@ -227,40 +232,48 @@ function addGuardian() {
             </div>
         </div>
         <div>
+            <label :for="`${idPrefix}-address`" class="block text-sm font-medium text-gray-700">Adres</label>
+            <textarea
+                :id="`${idPrefix}-address`"
+                v-model="form.address"
+                rows="2"
+                maxlength="500"
+                class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            ></textarea>
+            <p v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</p>
+        </div>
+        <div>
             <div class="flex items-center justify-between">
                 <span class="block text-sm font-medium text-gray-700">Veliler</span>
-                <button
-                    v-if="form.guardians.length < 4"
-                    type="button"
-                    class="inline-flex h-7 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-3 text-xs text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
-                    @click="addGuardian()"
-                >
-                    + Veli Ekle
-                </button>
             </div>
             <div
                 v-for="(g, i) in form.guardians"
                 :key="g.id ?? `yeni-${i}`"
                 class="mt-2 space-y-3 rounded-md border border-gray-200 p-3"
             >
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <span class="block text-sm font-medium text-gray-700">Yakınlık</span>
-                        <div class="mt-1">
-                            <DropdownSelect
-                                :id="`${idPrefix}-guardian-rel-${i}`"
-                                v-model="g.relation"
-                                :options="relationOptions"
-                                aria-label="Yakınlık"
-                            />
-                        </div>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="block shrink-0 text-sm font-medium text-gray-700">{{ guardianTitle(g.relation) }}</span>
+                    <div v-if="g.relation !== 'anne' && g.relation !== 'baba'" class="w-32">
+                        <DropdownSelect
+                            :id="`${idPrefix}-guardian-rel-${i}`"
+                            v-model="g.relation"
+                            :options="digerRelationOptions"
+                            aria-label="Yakınlık"
+                        />
                     </div>
-                    <label class="flex items-end gap-2 pb-2 text-sm text-gray-700">
-                        <input v-model="g.is_primary" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
-                        Birincil Veli
+                    <label class="flex shrink-0 items-center gap-2 text-sm text-gray-700">
+                        <input
+                            v-model="primaryIndex"
+                            :value="i"
+                            :name="`primary-${idPrefix}`"
+                            type="radio"
+                            class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            @change="applyPrimary()"
+                        />
+                        Birincil
                     </label>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-3 gap-3">
                     <div>
                         <span class="block text-sm font-medium text-gray-700">Ad</span>
                         <input
@@ -279,24 +292,15 @@ function addGuardian() {
                             class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         />
                     </div>
-                </div>
-                <div>
-                    <span class="block text-sm font-medium text-gray-700">Telefon</span>
-                    <input
-                        v-model="g.phone"
-                        type="text"
-                        maxlength="30"
-                        class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    />
-                </div>
-                <div class="flex justify-end">
-                    <button
-                        type="button"
-                        class="text-xs text-red-600 hover:underline"
-                        @click="form.guardians.splice(i, 1)"
-                    >
-                        Veliyi kaldır
-                    </button>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-700">Telefon</span>
+                        <input
+                            v-model="g.phone"
+                            type="text"
+                            maxlength="30"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                    </div>
                 </div>
             </div>
             <p v-if="form.errors.guardians" class="mt-1 text-sm text-red-600">{{ form.errors.guardians }}</p>

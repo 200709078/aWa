@@ -183,6 +183,24 @@ class BilgiFormuTest extends TestCase
         ]);
     }
 
+    public function test_uc_veli_birden_birincil_olabilir(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $student = $this->makeStudent($year, $branch, '145', 'Ali Veli');
+
+        $this->actingAs($user)->put("/bilgi-formlari/{$student->id}", [
+            'guardian_relation' => 'veli',
+            'guardian' => ['name' => 'Dede Veli', 'is_primary' => true],
+            'mother' => ['name' => 'Anne Veli', 'is_primary' => true],
+            'father' => ['name' => 'Baba Veli', 'is_primary' => true],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $student->refresh();
+        $this->assertEquals(3, $student->guardians()->wherePivot('is_primary', true)->count());
+    }
+
     public function test_sayfalar_acilir(): void
     {
         $user = User::factory()->create();

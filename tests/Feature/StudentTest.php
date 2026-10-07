@@ -164,6 +164,21 @@ class StudentTest extends TestCase
         $anne = $student->guardians()->wherePivot('relationship', 'anne')->first();
         $baba = $student->guardians()->wherePivot('relationship', 'baba')->first();
 
+        // İkisi birden birincil olabilir.
+        $this->actingAs($user)->put("/students/{$student->id}", [
+            'branch_id' => $branch->id,
+            'school_number' => '145',
+            'first_name' => 'Ali',
+            'last_name' => 'Veli',
+            'guardians' => [
+                ['id' => $anne->id, 'relation' => 'anne', 'first_name' => 'Anne', 'last_name' => 'Veli', 'phone' => '05320000001', 'is_primary' => true],
+                ['id' => $baba->id, 'relation' => 'baba', 'first_name' => 'Baba', 'last_name' => 'Veli', 'phone' => '05320000002', 'is_primary' => true],
+            ],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $student->refresh();
+        $this->assertEquals(2, $student->guardians()->wherePivot('is_primary', true)->count());
+
         // Anneyi güncelle, babayı kaldır, dede ekle (birincil değişir).
         $this->actingAs($user)->put("/students/{$student->id}", [
             'branch_id' => $branch->id,
@@ -183,6 +198,29 @@ class StudentTest extends TestCase
         // Kaldırılan babanın yetim kaydı temizlenir.
         $this->assertDatabaseMissing('guardians', ['id' => $baba->id]);
         $this->assertEquals('Dede Veli', $student->guardians()->wherePivot('is_primary', true)->first()->person->full_name);
+    }
+
+    public function test_bos_veli_bloklariyla_uc_veli_acilir(): void
+    {
+        $user = User::factory()->create();
+        $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+
+        $this->actingAs($user)->post('/students', [
+            'branch_id' => $branch->id,
+            'school_number' => '145',
+            'first_name' => 'Ali',
+            'last_name' => 'Veli',
+            'guardians' => [
+                ['relation' => 'anne', 'first_name' => '', 'last_name' => '', 'phone' => '', 'is_primary' => true],
+                ['relation' => 'baba', 'first_name' => '', 'last_name' => '', 'phone' => '', 'is_primary' => true],
+                ['relation' => 'veli', 'first_name' => '', 'last_name' => '', 'phone' => '', 'is_primary' => true],
+            ],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $student = Student::first();
+        $this->assertCount(3, $student->guardians);
+        $this->assertEquals(3, $student->guardians()->wherePivot('is_primary', true)->count());
     }
 
     public function test_telefon_her_bicimde_girilip_arti90_kaydedilir(): void

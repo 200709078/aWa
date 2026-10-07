@@ -53,3 +53,15 @@ export const relationOptions = [
     { value: 'baba', label: 'Baba' },
     { value: 'veli', label: 'Diğer' },
 ];
+
+export const digerRelationOptions = [
+    { value: 'dede', label: 'Dede' },
+    { value: 'nine', label: 'Nine' },
+    { value: 'amca', label: 'Amca' },
+    { value: 'dayi', label: 'Dayı' },
+    { value: 'teyze', label: 'Teyze' },
+    { value: 'hala', label: 'Hala' },
+    { value: 'abi', label: 'Abi' },
+    { value: 'abla', label: 'Abla' },
+    { value: 'diger', label: 'Diğer' },
+];

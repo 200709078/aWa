@@ -10,7 +10,12 @@ defineProps<{
 
 <template>
     <div class="rounded-md border border-gray-200 p-3">
-        <h3 class="font-semibold text-gray-800">{{ title }}</h3>
+        <div class="flex items-center justify-between gap-2">
+            <h3 class="font-semibold text-gray-800">{{ title }}</h3>
+            <div class="flex shrink-0 items-center gap-2">
+                <slot name="header-extra" />
+            </div>
+        </div>
         <div class="mt-2 grid grid-cols-2 gap-3">
             <div>
                 <span class="block text-sm font-medium text-gray-700">Ad Soyad</span>
