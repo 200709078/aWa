@@ -55,9 +55,30 @@ class BilgiFormuController extends Controller
             ->when($status === 'var', fn ($q) => $q->whereHas('infoForm'))
             ->when($status === 'yok', fn ($q) => $q->whereDoesntHave('infoForm'));
 
-        // Arama varsa yıllara bakılmaksızın düz liste; yoksa her sayfa bir sınıf.
-        if ($search !== '') {
-            $paginator = $baseQuery()->orderBy('people.full_name')->paginate(30)->withQueryString();
+        // Arama, "Tümü" veya parametresiz açılışta düz liste; sınıf/sayfa seçiliyse her sayfa bir sınıf.
+        if ($search !== '' || $request->boolean('tumu') || ($branchId === null && $request->integer('page', 0) < 1)) {
+            if ($branchId && ! $branches->contains('id', $branchId)) {
+                $branchId = null;
+            }
+            $all = $baseQuery()
+                ->when($branchId, fn ($q) => $q->whereHas('enrollments', fn ($qq) => $qq
+                    ->where('academic_year_id', $yearId)->where('branch_id', $branchId)))
+                ->get()
+                ->sort(fn (Student $a, Student $b) => strnatcmp(
+                    $a->enrollments->first()?->school_number ?? '',
+                    $b->enrollments->first()?->school_number ?? ''
+                ))
+                ->values();
+
+            $page = max(1, $request->integer('page', 1));
+            $perPage = 30;
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $all->forPage($page, $perPage)->values(),
+                $all->count(),
+                $perPage,
+                $page,
+                ['path' => '/bilgi-formlari', 'query' => $request->query()]
+            );
             $paginator->setCollection($paginator->getCollection()->map(fn (Student $s) => $this->rowPayload($s)));
 
             return Inertia::render('BilgiFormaleri/Index', $this->indexProps($years, $yearId, $branches, $branchId, 1, $search, $status, $paginator));
@@ -70,13 +91,7 @@ class BilgiFormuController extends Controller
         if ($branchId) {
             $page = max(1, $branches->search(fn ($branch) => $branch->id === $branchId) + 1);
         } else {
-            $page = $request->integer('page', 0) ?: 0;
-        }
-
-        if ($page < 1) {
-            // Açılışta 9A, yoksa ilk sınıf.
-            $default = $branches->firstWhere('name', '9A') ?? $branches->first();
-            $page = $default ? max(1, $branches->search(fn ($branch) => $branch->id === $default->id) + 1) : 1;
+            $page = $request->integer('page', 1);
         }
         $page = min(max(1, $page), max(1, $branches->count()));
         $branch = $branches->get($page - 1);
