@@ -568,17 +568,17 @@ class BilgiFormuController extends Controller
         if ($role === 'anne' || $role === 'baba') {
             $target = $this->applyGuardianBlock($student, $role, $veliVals, $overwrite, true);
             if ($target) {
-                $this->setPrimary($student, $target->id);
+                $this->markPrimary($student, $target->id);
             }
         } elseif ($this->blockFilled($veliVals)) {
             $target = $this->applyGuardianBlock($student, $role ?? 'veli', $veliVals, $overwrite);
             if ($target) {
-                $this->setPrimary($student, $target->id);
+                $this->markPrimary($student, $target->id);
             }
         } elseif ($role) {
             $existing = $student->guardians->first(fn (Guardian $g) => $g->pivot->relationship === $role);
             if ($existing) {
-                $this->setPrimary($student, $existing->id);
+                $this->markPrimary($student, $existing->id);
             }
         }
 
@@ -729,10 +729,17 @@ class BilgiFormuController extends Controller
         return $link;
     }
 
-    private function setPrimary(Student $student, int $guardianId): void
+    private function markPrimary(Student $student, int $guardianId): void
     {
-        foreach ($student->guardians as $guardian) {
-            $student->guardians()->updateExistingPivot($guardian->id, ['is_primary' => $guardian->id === $guardianId]);
+        $student->guardians()->updateExistingPivot($guardianId, ['is_primary' => true]);
+    }
+
+    private function ensurePrimary(Student $student): void
+    {
+        $student->loadMissing('guardians');
+        $hasPrimary = $student->guardians->some(fn (Guardian $g) => (bool) $g->pivot->is_primary);
+        if (! $hasPrimary && ($first = $student->guardians->first())) {
+            $student->guardians()->updateExistingPivot($first->id, ['is_primary' => true]);
         }
     }
 
@@ -943,6 +950,7 @@ class BilgiFormuController extends Controller
                 'alive' => $link?->person?->is_alive,
                 'disability' => $link?->person?->disability ?? '',
                 'illness' => $link?->person?->chronic_illness ?? '',
+                'is_primary' => $link ? (bool) $link->pivot->is_primary : false,
             ];
         };
 
@@ -1010,7 +1018,7 @@ class BilgiFormuController extends Controller
             'person.height_cm' => ['nullable', 'integer', 'min:50', 'max:250'],
             'person.weight_kg' => ['nullable', 'integer', 'min:15', 'max:300'],
             'person.chronic_illness' => ['nullable', 'string', 'max:255'],
-            'guardian_relation' => ['nullable', Rule::in(['anne', 'baba', 'veli', 'vasi'])],
+            'guardian_relation' => ['nullable', Rule::in(['anne', 'baba', 'veli', 'vasi', 'dede', 'nine', 'amca', 'dayi', 'teyze', 'hala', 'abi', 'abla', 'diger'])],
             'guardian.name' => ['nullable', 'string', 'max:100'],
             'guardian.phone' => ['nullable', 'string', 'max:30'],
             'guardian.birth_place' => ['nullable', 'string', 'max:100'],
@@ -1020,6 +1028,7 @@ class BilgiFormuController extends Controller
             'guardian.biological' => ['nullable', 'boolean'],
             'guardian.alive' => ['nullable', 'boolean'],
             'guardian.disability' => ['nullable', 'string', 'max:255'],
+            'guardian.is_primary' => ['sometimes', 'boolean'],
             'guardian.illness' => ['nullable', 'string', 'max:255'],
             'mother.name' => ['nullable', 'string', 'max:100'],
             'mother.phone' => ['nullable', 'string', 'max:30'],
@@ -1030,6 +1039,7 @@ class BilgiFormuController extends Controller
             'mother.biological' => ['nullable', 'boolean'],
             'mother.alive' => ['nullable', 'boolean'],
             'mother.disability' => ['nullable', 'string', 'max:255'],
+            'mother.is_primary' => ['sometimes', 'boolean'],
             'mother.illness' => ['nullable', 'string', 'max:255'],
             'father.name' => ['nullable', 'string', 'max:100'],
             'father.phone' => ['nullable', 'string', 'max:30'],
@@ -1040,6 +1050,7 @@ class BilgiFormuController extends Controller
             'father.biological' => ['nullable', 'boolean'],
             'father.alive' => ['nullable', 'boolean'],
             'father.disability' => ['nullable', 'string', 'max:255'],
+            'father.is_primary' => ['sometimes', 'boolean'],
             'father.illness' => ['nullable', 'string', 'max:255'],
             'form.earthquake_loss' => ['nullable', 'string', 'max:50'],
             'form.family_income' => ['nullable', 'string', 'max:50'],
@@ -1088,16 +1099,12 @@ class BilgiFormuController extends Controller
             $role = $data['guardian_relation'] ?? 'veli';
             if ($role === 'anne' && $mother) {
                 $this->writeGuardianBlock($student, 'anne', $data['guardian'] ?? [], $nullify, $mother);
-                $this->setPrimary($student, $mother->id);
             } elseif ($role === 'baba' && $father) {
                 $this->writeGuardianBlock($student, 'baba', $data['guardian'] ?? [], $nullify, $father);
-                $this->setPrimary($student, $father->id);
             } else {
-                $veli = $this->writeGuardianBlock($student, $role, $data['guardian'] ?? [], $nullify);
-                if ($veli) {
-                    $this->setPrimary($student, $veli->id);
-                }
+                $this->writeGuardianBlock($student, $role, $data['guardian'] ?? [], $nullify);
             }
+            $this->ensurePrimary($student);
 
             $formVals = [];
             foreach ($data['form'] ?? [] as $key => $value) {
@@ -1158,7 +1165,7 @@ class BilgiFormuController extends Controller
                 'phone' => isset($input['phone']) ? PhoneNumber::normalizeOrFail($nullify($input['phone']), 'phone', 'Geçerli bir telefon girin.') : null,
             ]);
             $link = Guardian::create(['person_id' => $person->id]);
-            $student->guardians()->attach($link->id, ['relationship' => $relation, 'is_primary' => false]);
+            $student->guardians()->attach($link->id, ['relationship' => $relation, 'is_primary' => (bool) ($input['is_primary'] ?? false)]);
             $student->load('guardians.person');
             $link = $student->guardians->first(fn (Guardian $g) => $g->pivot->relationship === $relation);
         }
@@ -1185,6 +1192,10 @@ class BilgiFormuController extends Controller
 
             if (array_key_exists('biological', $input)) {
                 $student->guardians()->updateExistingPivot($link->id, ['is_biological' => $input['biological']]);
+            }
+
+            if (array_key_exists('is_primary', $input)) {
+                $student->guardians()->updateExistingPivot($link->id, ['is_primary' => (bool) $input['is_primary']]);
             }
         }
 
@@ -1227,6 +1238,7 @@ class BilgiFormuController extends Controller
         $form = $student->infoForm;
 
         $g = fn (?Guardian $link) => [
+            'id' => $link?->id,
             'name' => $link?->person?->full_name ?? '',
             'phone' => $link?->person?->phone ?? '',
             'birth' => trim(($link?->person?->birth_place ?? '').' / '.($link?->person?->birth_date?->format('d.m.Y') ?? ''), ' /'),

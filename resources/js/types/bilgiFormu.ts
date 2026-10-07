@@ -9,6 +9,7 @@ export interface GuardianBlock {
     alive: boolean | null;
     disability: string;
     illness: string;
+    is_primary: boolean;
 }
 
 export function blankGuardianBlock(): GuardianBlock {
@@ -23,6 +24,7 @@ export function blankGuardianBlock(): GuardianBlock {
         alive: null,
         disability: '',
         illness: '',
+        is_primary: false,
     };
 }
 

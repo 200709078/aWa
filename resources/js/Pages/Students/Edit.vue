@@ -54,6 +54,19 @@ function toGuardianForm(g: StudentGuardian): GuardianForm {
     };
 }
 
+function trioGuardians(list: StudentGuardian[]): GuardianForm[] {
+    const trio = (['anne', 'baba', 'veli'] as const).map((rel) => {
+        const found = list.find((g) => (g.relation ?? 'veli') === rel);
+        if (found) return toGuardianForm(found);
+        return blankGuardian(rel === 'veli' ? 'veli' : rel, true);
+    });
+    // Üçlü dışındaki eski kayıtlar (örn. vasi) kaybolmasın.
+    const extras = list
+        .filter((g) => !['anne', 'baba', 'veli'].includes(g.relation ?? 'veli'))
+        .map(toGuardianForm);
+    return [...trio, ...extras];
+}
+
 const form = useForm({
     branch_id: props.student.branch.id,
     school_number: props.student.school_number === '—' ? '' : props.student.school_number,
@@ -71,7 +84,7 @@ const form = useForm({
     weight_kg: props.student.weight_kg ?? null,
     photo: null as File | null,
     is_active: props.student.is_active,
-    guardians: props.student.guardians.length > 0 ? props.student.guardians.map(toGuardianForm) : [blankGuardian()],
+    guardians: trioGuardians(props.student.guardians),
 });
 
 const photoSrc = computed(() => {

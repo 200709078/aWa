@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import BilgiGuardianForm from '../../Components/BilgiGuardianForm.vue';
 import DropdownSelect from '../../Components/DropdownSelect.vue';
-import { blankGuardianBlock, relationOptions, type GuardianBlock } from '../../types/bilgiFormu';
-import { bloodTypeOptions, genderOptions } from '../../types/studentForm';
+import { blankGuardianBlock, type GuardianBlock } from '../../types/bilgiFormu';
+import { bloodTypeOptions, digerRelationOptions, genderOptions } from '../../types/studentForm';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 const props = defineProps<{
@@ -71,8 +72,27 @@ const form = useForm({
     },
 });
 
-const textFields: { key: string; label: string }[] = [
-    { key: 'earthquake_loss', label: 'Depremde ebeveyn kaybı' },
+// Üç bloktan yalnız biri birincil olabilir (sıra: anne, baba, diğer).
+const blocks = [form.mother, form.father, form.guardian];
+const foundPrimary = blocks.findIndex((b) => b.is_primary);
+const primaryIndex = ref(foundPrimary >= 0 ? foundPrimary : 0);
+
+function applyPrimary() {
+    blocks.forEach((b, idx) => {
+        b.is_primary = idx === primaryIndex.value;
+    });
+}
+
+applyPrimary();
+
+const guardianRelationOptions = [
+    { value: 'anne', label: 'Anne' },
+    { value: 'baba', label: 'Baba' },
+    { value: 'veli', label: 'Veli' },
+    ...digerRelationOptions,
+];
+
+const textFields: { key: string; label: string }[] = [    { key: 'earthquake_loss', label: 'Depremde ebeveyn kaybı' },
     { key: 'family_income', label: 'Aile gelir durumu' },
     { key: 'transport', label: 'Taşıma' },
     { key: 'free_lunch', label: 'Ücretsiz öğle yemeği' },
@@ -180,23 +200,66 @@ function submit() {
                     </div>
                 </section>
 
-                <section>
-                    <h2 class="text-lg font-semibold text-gray-900">Veli</h2>
-                    <div class="mt-2 max-w-xs">
-                        <span class="block text-sm font-medium text-gray-700">Velinin Yakınlığı</span>
-                        <div class="mt-1"><DropdownSelect id="bf-grel" v-model="form.guardian_relation" :options="relationOptions" aria-label="Veli Yakınlığı" /></div>
+                <section class="space-y-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Veliler</h2>
+                    <div class="mt-2">
+                        <BilgiGuardianForm :model="form.mother" id-prefix="bf-m" title="Anne Bilgileri">
+                            <template #header-extra>
+                                <label class="flex items-center gap-2 text-sm text-gray-700">
+                                    <input
+                                        v-model="primaryIndex"
+                                        :value="0"
+                                        name="bf-primary"
+                                        type="radio"
+                                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        @change="applyPrimary()"
+                                    />
+                                    Birincil
+                                </label>
+                            </template>
+                        </BilgiGuardianForm>
                     </div>
-                    <div class="mt-2"><BilgiGuardianForm :model="form.guardian" id-prefix="bf-g" title="Veli Bilgisi" /></div>
-                </section>
-
-                <section class="grid grid-cols-2 gap-4">
-                    <div>
-                        <h2 class="text-lg font-semibold text-gray-900">Anne</h2>
-                        <div class="mt-2"><BilgiGuardianForm :model="form.mother" id-prefix="bf-m" title="Anne Bilgisi" /></div>
+                    <div class="mt-2">
+                        <BilgiGuardianForm :model="form.father" id-prefix="bf-f" title="Baba Bilgileri">
+                            <template #header-extra>
+                                <label class="flex items-center gap-2 text-sm text-gray-700">
+                                    <input
+                                        v-model="primaryIndex"
+                                        :value="1"
+                                        name="bf-primary"
+                                        type="radio"
+                                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        @change="applyPrimary()"
+                                    />
+                                    Birincil
+                                </label>
+                            </template>
+                        </BilgiGuardianForm>
                     </div>
-                    <div>
-                        <h2 class="text-lg font-semibold text-gray-900">Baba</h2>
-                        <div class="mt-2"><BilgiGuardianForm :model="form.father" id-prefix="bf-f" title="Baba Bilgisi" /></div>
+                    <div class="mt-2">
+                        <BilgiGuardianForm :model="form.guardian" id-prefix="bf-g" title="Diğer Veli Bilgileri">
+                            <template #header-extra>
+                                <div class="w-32">
+                                    <DropdownSelect
+                                        id="bf-grel"
+                                        v-model="form.guardian_relation"
+                                        :options="guardianRelationOptions"
+                                        aria-label="Yakınlık"
+                                    />
+                                </div>
+                                <label class="flex items-center gap-2 text-sm text-gray-700">
+                                    <input
+                                        v-model="primaryIndex"
+                                        :value="2"
+                                        name="bf-primary"
+                                        type="radio"
+                                        class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        @change="applyPrimary()"
+                                    />
+                                    Birincil
+                                </label>
+                            </template>
+                        </BilgiGuardianForm>
                     </div>
                 </section>
 

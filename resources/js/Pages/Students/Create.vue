@@ -28,7 +28,7 @@ const form = useForm({
     weight_kg: null as number | null,
     photo: null as File | null,
     is_active: true,
-    guardians: [blankGuardian('anne', true), blankGuardian('baba')],
+    guardians: [blankGuardian('anne', true), blankGuardian('baba', false), blankGuardian('veli', false)],
 });
 
 const photoSrc = computed(() => {
