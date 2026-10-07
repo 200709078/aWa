@@ -29,6 +29,5 @@ export function blankGuardianBlock(): GuardianBlock {
 export const relationOptions = [
     { value: 'anne', label: 'Anne' },
     { value: 'baba', label: 'Baba' },
-    { value: 'veli', label: 'Veli' },
-    { value: 'vasi', label: 'Vasi' },
+    { value: 'veli', label: 'Diğer' },
 ];
