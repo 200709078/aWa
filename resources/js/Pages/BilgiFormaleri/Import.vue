@@ -47,6 +47,8 @@ function submit() {
             <p class="mt-2 text-sm text-gray-600">
                 Google Form çıktısı (.xlsx/.xls) yükleyin. Satırlar <strong>okul numarası</strong> ile eşleştirilir;
                 sınıf, numara ve ad-soyad asla değiştirilmez. Sınıfı uyuşmayan satır işlenmez, kontrol listesine düşer.
+                Dilerseniz boş şablonu indirip doldurun:
+                <a href="/bilgi-formlari/ice-aktar/sablon" class="font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">Excel şablonunu indir</a>.
             </p>
             <form class="mt-4 max-w-lg space-y-4" @submit.prevent="submit">
                 <div>

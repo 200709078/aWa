@@ -225,7 +225,7 @@ function editUrl(id: number): string {
                     </button>
                     <Link
                         href="/bilgi-formlari/ice-aktar"
-                        class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm font-semibold text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         İçe Aktar
                     </Link>

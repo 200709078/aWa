@@ -16,11 +16,107 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BilgiFormuController extends Controller
 {
+    /**
+     * Masaüstündeki Bilgi_Formu_Sablonu.xlsx ile aynı başlıklar.
+     * "Zaman damgası" içe aktarmada kullanılmadığı için şablonda yok.
+     * Bazı başlıklar Google Form çıktısındaki gibi sondaki boşlukla biter.
+     */
+    private const TEMPLATE_HEADERS = [
+        'E-posta Adresi',
+        'Adınız Soyadınız',
+        'Cinsiyetiniz',
+        'Sınıfınız',
+        'Okul Numaranız',
+        'Telefon Numaranız',
+        'Doğrum Yeriniz',
+        'Doğum Tarihiniz',
+        'Kan grubunuz nedir?',
+        'Dininiz nedir?',
+        '6 Şubat Kahramanmaraş merkezli depremlerde anneniz, babanız veya vasiniz vefat etti mi?',
+        'Aile gelir durumunuz nedir?',
+        'Taşıma uygulaması kapsamında mısınız?',
+        'Ücretsiz öğle yemeği hizmetinden faydalanıyor musunuz?',
+        'Şehit, gazi cocuğu musunuz?',
+        'Boyunuz nedir? ',
+        'Kilonuz nedir? ',
+        'İkamet Adresiniz',
+        'Okul öncesi eğitim aldınız mı?',
+        'Sürekli kullandığınız bir ilaç var mı?',
+        'Sürekli kullandığınız tıbbi cihazınız var mı?',
+        'Neler yapmaktan hoşlanırsınız? ',
+        'Sürekli bir hastalığınız var mı?',
+        'Yakın zamanda taşındınız mı?',
+        'Yakın zamanda okul değiştirdiniz mi?',
+        'Ders dışı faaliyetleriniz nelerdir?',
+        'Kendizinize ait teknolojik cihazlarınız var mı?',
+        'Hâlâ etkisinden kurtulamadığınız bir olay yaşadınız mı?',
+        'Kaç kardeşsiniz?',
+        'Ailenizin kaçıncı çocuğusunuz?',
+        'Siz de dahil olmak üzere okula giden kardeş sayınız kaçtır?',
+        'Aile üyelerinde engeli olan var mı?',
+        'Aile üyelerinde sürekli bir hastalığı olan var mı?',
+        'Evinizde sizinle birlikte kim/kimler yaşıyor?',
+        'Veliniz kim? ',
+        'Velinizin adını ve soyadını giriniz. ',
+        'Velinizin telefon numarasını giriniz. ',
+        'Velinizin eğitim durumu nedir? ',
+        'Velinizin mesleği nedir? ',
+        'Velinizin size yakınlığı nedir? ',
+        'Annenizin adını ve soyadını giriniz. ',
+        'Annenizin telefon numarasını giriniz. ',
+        'Annenizin doğum yeri neresidir? ',
+        'Annenizin doğum tarihi nedir? ',
+        'Annenizin eğitim durumu nedir? ',
+        'Annenizin mesleği nedir? ',
+        'Anneniz öz mü? ',
+        'Anneniz sağ mı? ',
+        'Annenizin engeli var mı? ',
+        'Annenizin sürekli bir hastalığı var mı? ',
+        'Babanızın adını ve soyadını giriniz.',
+        'Babanızın telefon numarasını giriniz.',
+        'Babanızın doğum yeri neresidir? ',
+        'Babanızın doğum tarihi nedir? ',
+        'Babanızın eğitim durumu nedir? ',
+        'Babanızın mesleği nedir? ',
+        'Babanız öz mü? ',
+        'Babanız sağ mı? ',
+        'Babanızın engeli var mı? ',
+        'Babanızın sürekli bir hastalığı var mı? ',
+        'Notlar',
+    ];
+
+    public function template(): BinaryFileResponse
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Bilgi Formu');
+        $sheet->fromArray([self::TEMPLATE_HEADERS], null, 'A1', true);
+
+        $lastColumn = Coordinate::stringFromColumnIndex(count(self::TEMPLATE_HEADERS));
+        $sheet->getStyle("A1:{$lastColumn}1")->getFont()->setBold(true);
+        foreach (range(1, count(self::TEMPLATE_HEADERS)) as $index) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($index))->setWidth(30);
+        }
+        $sheet->freezePane('A2');
+
+        $path = tempnam(sys_get_temp_dir(), 'sablon').'.xlsx';
+        (new XlsxWriter($spreadsheet))->save($path);
+        $spreadsheet->disconnectWorksheets();
+
+        return response()->download($path, 'bilgi-formu-sablonu.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend();
+    }
+
     public function index(Request $request): Response
     {
         $years = AcademicYear::where('school_id', SchoolScope::id())->orderByDesc('name')->get(['id', 'name', 'is_active']);
@@ -568,17 +664,17 @@ class BilgiFormuController extends Controller
         if ($role === 'anne' || $role === 'baba') {
             $target = $this->applyGuardianBlock($student, $role, $veliVals, $overwrite, true);
             if ($target) {
-                $this->markPrimary($student, $target->id);
+                $this->markSinglePrimary($student, $target->id);
             }
         } elseif ($this->blockFilled($veliVals)) {
             $target = $this->applyGuardianBlock($student, $role ?? 'veli', $veliVals, $overwrite);
             if ($target) {
-                $this->markPrimary($student, $target->id);
+                $this->markSinglePrimary($student, $target->id);
             }
         } elseif ($role) {
             $existing = $student->guardians->first(fn (Guardian $g) => $g->pivot->relationship === $role);
             if ($existing) {
-                $this->markPrimary($student, $existing->id);
+                $this->markSinglePrimary($student, $existing->id);
             }
         }
 
@@ -729,9 +825,17 @@ class BilgiFormuController extends Controller
         return $link;
     }
 
-    private function markPrimary(Student $student, int $guardianId): void
+    /**
+     * Veliniz kim tek birincil belirler: verilen veli birincil olur,
+     * öğrencinin diğer tüm velileri birincil olmaktan çıkar.
+     */
+    private function markSinglePrimary(Student $student, int $guardianId): void
     {
-        $student->guardians()->updateExistingPivot($guardianId, ['is_primary' => true]);
+        $student->loadMissing('guardians');
+        foreach ($student->guardians as $guardian) {
+            $student->guardians()->updateExistingPivot($guardian->id, ['is_primary' => $guardian->id === $guardianId]);
+        }
+        $student->load('guardians.person');
     }
 
     private function ensurePrimary(Student $student): void
