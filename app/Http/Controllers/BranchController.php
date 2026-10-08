@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Branch;
+use App\Models\Teacher;
 use App\Support\SchoolScope;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -28,16 +29,27 @@ class BranchController extends Controller
         }
 
         $branches = $selectedYearId
-            ? Branch::withCount('students')
+            ? Branch::with(['teacher.person:id,full_name'])
+                ->withCount('students')
                 ->where('academic_year_id', $selectedYearId)
                 ->orderBy('name')
                 ->get()
             : [];
 
+        $teachers = Teacher::with('person:id,full_name')
+            ->where('is_active', true)
+            ->whereHas('person', fn ($query) => $query->where('school_id', SchoolScope::id()))
+            ->get()
+            ->sortBy(fn (Teacher $t) => $t->person?->full_name ?? '')
+            ->map(fn (Teacher $t) => ['id' => $t->id, 'full_name' => $t->person?->full_name ?? '—'])
+            ->values()
+            ->all();
+
         return Inertia::render('Branches/Index', [
             'years' => $years,
             'selectedYearId' => $selectedYearId,
             'branches' => $branches,
+            'teachers' => $teachers,
             'totalBranches' => $selectedYearId === null
                 ? 0
                 : Branch::whereIn('academic_year_id', $years->pluck('id'))->count(),
@@ -97,7 +109,7 @@ class BranchController extends Controller
     }
 
     /**
-     * @return array{academic_year_id: int, name: string, grade_level: int, section: string, is_active: bool}
+     * @return array{academic_year_id: int, name: string, grade_level: int, section: string, teacher_id: int|null, is_active: bool}
      */
     private function validated(Request $request, ?Branch $branch = null): array
     {
@@ -111,6 +123,7 @@ class BranchController extends Controller
             ],
             'grade_level' => ['required', 'integer', 'min:5', 'max:12'],
             'section' => ['required', 'string', 'max:10'],
+            'teacher_id' => ['nullable', 'integer', Rule::exists('teachers', 'id')->whereNull('deleted_at')],
             'is_active' => ['sometimes', 'boolean'],
         ], [
             'academic_year_id.required' => 'Akademik yıl seçin.',
@@ -122,6 +135,7 @@ class BranchController extends Controller
             'grade_level.min' => 'Seviye 5-12 arasında olmalı.',
             'grade_level.max' => 'Seviye 5-12 arasında olmalı.',
             'section.required' => 'Şube gerekli.',
+            'teacher_id.exists' => 'Seçilen öğretmen bulunamadı.',
         ]);
 
         $data['name'] = mb_strtoupper(trim($data['name']));

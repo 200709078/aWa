@@ -80,6 +80,7 @@ const nav = computed<NavEntry[]>(() => {
             icon: 'book',
             children: [
                 { label: 'Bilgi Formları', href: '/bilgi-formlari', icon: 'user' },
+                { label: 'Oturma Planları', href: '/oturme-planlari', icon: 'grid' },
             ],
         },
         {
