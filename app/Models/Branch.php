@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['academic_year_id', 'name', 'grade_level', 'section', 'is_active'])]
+#[Fillable(['academic_year_id', 'name', 'grade_level', 'section', 'teacher_id', 'is_active'])]
 class Branch extends Model
 {
     protected function casts(): array
@@ -21,6 +21,11 @@ class Branch extends Model
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
+    }
+
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(Teacher::class);
     }
 
     public function enrollments(): HasMany

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Branch;
+use App\Models\ClassroomPlanSeat;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Student;
@@ -394,6 +395,8 @@ class StudentController extends Controller
 
         DB::transaction(function () use ($student, $person) {
             // Fotoğraf dosyası arşivde saklanır, silinmez.
+            // Sınıf oturma planındaki koltuğu boşalır (koltuk düzeni korunur).
+            ClassroomPlanSeat::where('student_id', $student->id)->update(['student_id' => null]);
             $student->enrollments()->delete();
             $student->delete();
 

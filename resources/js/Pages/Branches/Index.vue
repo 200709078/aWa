@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import DropdownSelect from '../../Components/DropdownSelect.vue';
 
@@ -16,16 +16,29 @@ interface Branch {
     name: string;
     grade_level: number;
     section: string;
+    teacher_id: number | null;
+    teacher: { id: number; person: { full_name: string | null } | null } | null;
     is_active: boolean;
     students_count: number;
+}
+
+interface TeacherOption {
+    id: number;
+    full_name: string;
 }
 
 const props = defineProps<{
     years: Year[];
     selectedYearId: number | null;
     branches: Branch[];
+    teachers: TeacherOption[];
     totalBranches: number;
 }>();
+
+const teacherOptions = computed(() => [
+    { value: null, label: 'Seçin (yok)' },
+    ...props.teachers.map((t) => ({ value: t.id, label: t.full_name })),
+]);
 
 const filterYear = ref<number | null>(props.selectedYearId);
 
@@ -39,6 +52,7 @@ const createForm = useForm({
     name: '',
     grade_level: null as number | null,
     section: '',
+    teacher_id: null as number | null,
     is_active: true,
 });
 
@@ -46,7 +60,7 @@ function submitCreate() {
     createForm.post('/branches', {
         onSuccess: () => {
             creating.value = false;
-            createForm.reset('name', 'grade_level', 'section');
+            createForm.reset('name', 'grade_level', 'section', 'teacher_id');
         },
     });
 }
@@ -65,6 +79,7 @@ const editForm = useForm({
     name: '',
     grade_level: null as number | null,
     section: '',
+    teacher_id: null as number | null,
     is_active: true,
 });
 
@@ -74,6 +89,7 @@ function openEdit(branch: Branch) {
     editForm.name = branch.name;
     editForm.grade_level = branch.grade_level;
     editForm.section = branch.section;
+    editForm.teacher_id = branch.teacher_id;
     editForm.is_active = branch.is_active;
     editForm.clearErrors();
 }
@@ -141,6 +157,7 @@ function confirmDelete() {
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sınıf</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Seviye</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Şube</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Rehber Öğretmen</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Öğrenci</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Durum</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">İşlemler</th>
@@ -151,6 +168,7 @@ function confirmDelete() {
                         <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ branch.name }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ branch.grade_level }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ branch.section }}</td>
+                        <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ branch.teacher?.person?.full_name ?? '—' }}</td>
                         <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ branch.students_count }}</td>
                         <td class="whitespace-nowrap px-4 py-3">
                             <div class="flex items-center gap-2">
@@ -217,7 +235,7 @@ function confirmDelete() {
                         </td>
                     </tr>
                     <tr v-if="branches.length === 0">
-                        <td colspan="6" class="px-4 py-6 text-center text-gray-500">Bu yılda sınıf bulunmuyor.</td>
+                        <td colspan="7" class="px-4 py-6 text-center text-gray-500">Bu yılda sınıf bulunmuyor.</td>
                     </tr>
                 </tbody>
             </table>
@@ -293,21 +311,35 @@ function confirmDelete() {
                                 {{ createForm.errors.grade_level }}
                             </p>
                         </div>
-                        <div>
-                            <label for="branch-section" class="block text-sm font-medium text-gray-700">Şube</label>
-                            <input
-                                id="branch-section"
-                                v-model="createForm.section"
-                                type="text"
-                                required
-                                maxlength="10"
-                                placeholder="A"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    <div>
+                        <label for="branch-section" class="block text-sm font-medium text-gray-700">Şube</label>
+                        <input
+                            id="branch-section"
+                            v-model="createForm.section"
+                            type="text"
+                            required
+                            maxlength="10"
+                            placeholder="A"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="createForm.errors.section" class="mt-1 text-sm text-red-600">
+                            {{ createForm.errors.section }}
+                        </p>
+                    </div>
+                    <div>
+                        <label for="branch-teacher" class="block text-sm font-medium text-gray-700">Rehber Öğretmen</label>
+                        <div class="mt-1">
+                            <DropdownSelect
+                                id="branch-teacher"
+                                v-model="createForm.teacher_id"
+                                :options="teacherOptions"
+                                aria-label="Rehber Öğretmen"
                             />
-                            <p v-if="createForm.errors.section" class="mt-1 text-sm text-red-600">
-                                {{ createForm.errors.section }}
-                            </p>
                         </div>
+                        <p v-if="createForm.errors.teacher_id" class="mt-1 text-sm text-red-600">
+                            {{ createForm.errors.teacher_id }}
+                        </p>
+                    </div>
                     </div>
                 </form>
             </div>
@@ -378,20 +410,34 @@ function confirmDelete() {
                                 {{ editForm.errors.grade_level }}
                             </p>
                         </div>
-                        <div>
-                            <label for="edit-branch-section" class="block text-sm font-medium text-gray-700">Şube</label>
-                            <input
-                                id="edit-branch-section"
-                                v-model="editForm.section"
-                                type="text"
-                                required
-                                maxlength="10"
-                                class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    <div>
+                        <label for="edit-branch-section" class="block text-sm font-medium text-gray-700">Şube</label>
+                        <input
+                            id="edit-branch-section"
+                            v-model="editForm.section"
+                            type="text"
+                            required
+                            maxlength="10"
+                            class="mt-1 block h-9 w-full rounded-md border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        />
+                        <p v-if="editForm.errors.section" class="mt-1 text-sm text-red-600">
+                            {{ editForm.errors.section }}
+                        </p>
+                    </div>
+                    <div>
+                        <label for="edit-branch-teacher" class="block text-sm font-medium text-gray-700">Rehber Öğretmen</label>
+                        <div class="mt-1">
+                            <DropdownSelect
+                                id="edit-branch-teacher"
+                                v-model="editForm.teacher_id"
+                                :options="teacherOptions"
+                                aria-label="Rehber Öğretmen"
                             />
-                            <p v-if="editForm.errors.section" class="mt-1 text-sm text-red-600">
-                                {{ editForm.errors.section }}
-                            </p>
                         </div>
+                        <p v-if="editForm.errors.teacher_id" class="mt-1 text-sm text-red-600">
+                            {{ editForm.errors.teacher_id }}
+                        </p>
+                    </div>
                     </div>
                 </form>
             </div>

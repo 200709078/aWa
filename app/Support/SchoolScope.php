@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\AcademicYear;
 use App\Models\Branch;
+use App\Models\ClassroomPlan;
 use App\Models\Exam;
 use App\Models\ExamWeek;
 use App\Models\Room;
@@ -46,6 +47,7 @@ final class SchoolScope
             $model instanceof Exam => $model->examWeek && self::inSchoolWeek($model->examWeek, $schoolId),
             $model instanceof SeatingPlan => $model->examWeek && self::inSchoolWeek($model->examWeek, $schoolId),
             $model instanceof Seat => $model->room?->school_id === $schoolId,
+            $model instanceof ClassroomPlan => $model->academicYear?->school_id === $schoolId,
             default => false,
         };
 
