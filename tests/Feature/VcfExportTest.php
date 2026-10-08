@@ -54,6 +54,30 @@ class VcfExportTest extends TestCase
         $this->assertEquals([null, null], StudentImportController::splitName('Tek'));
     }
 
+    public function test_vcf_yalniz_birincil_veliyi_aktarir(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupData();
+        $branchIds = Branch::where('academic_year_id', $year->id)->pluck('id')->all();
+
+        $s1 = \App\Models\Student::first();
+        $gp2 = Person::create(['full_name' => 'Anne Gün', 'phone' => '5320000000']);
+        $g2 = Guardian::create(['person_id' => $gp2->id]);
+        $s1->guardians()->attach($g2->id, ['relationship' => 'anne', 'is_primary' => false]);
+        // İsimsiz kayıt çıktıya girmemeli.
+        $gp3 = Person::create(['full_name' => '', 'phone' => null]);
+        $g3 = Guardian::create(['person_id' => $gp3->id]);
+        $s1->guardians()->attach($g3->id, ['relationship' => 'veli', 'is_primary' => false]);
+
+        $service = app(RehberExportService::class);
+        $result = $service->build($year->id, $branchIds, 'guardian', 'Okul', $year->name, false);
+
+        // 1 birincil baba; anne birincil değil, isimsiz kayıt yok.
+        $this->assertEquals(1, $result['cards']);
+        $this->assertStringContainsString('Bayram', $result['content']);
+        $this->assertStringNotContainsString('Anne', $result['content']);
+    }
+
     public function test_ozet_dogru_sayar(): void
     {
         $user = User::factory()->create();
