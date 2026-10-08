@@ -10,17 +10,31 @@ interface Column {
     header: string;
 }
 
+interface ImportGuardianPreview {
+    relation: string;
+    name: string;
+    phone: string;
+    is_primary: boolean;
+    action: 'add' | 'update' | null;
+}
+
 interface PreviewRow {
     line: number;
     school_number: string;
     full_name: string;
     branch: string;
+    gender: string;
     student_phone: string;
     student_email: string;
+    guardian_selector: string;
+    mother_name: string;
+    mother_phone: string;
+    father_name: string;
+    father_phone: string;
+    other_guardian_name: string;
+    other_guardian_phone: string;
     address: string;
-    guardian_name: string;
-    guardian_phone: string;
-    guardian_email: string;
+    guardians: ImportGuardianPreview[];
     action: 'add' | 'update' | 'skip' | 'error';
     message?: string;
 }
@@ -39,12 +53,17 @@ interface Mapping {
     school_number: number;
     full_name: number;
     branch: number;
+    gender: number | null;
     student_phone: number | null;
     student_email: number | null;
+    guardian_selector: number | null;
+    mother_name: number | null;
+    mother_phone: number | null;
+    father_name: number | null;
+    father_phone: number | null;
+    other_guardian_name: number | null;
+    other_guardian_phone: number | null;
     address: number | null;
-    guardian_name: number | null;
-    guardian_phone: number | null;
-    guardian_email: number | null;
 }
 
 const props = defineProps<{
@@ -75,12 +94,17 @@ const extraErrors = computed(() => form.errors as Record<string, string | undefi
 const columnOptions = computed(() => props.columns.map((col) => ({ value: col.index, label: `${col.letter}: ${col.header || '(boş başlık)'}` })));
 
 const optionalFields: { key: Exclude<keyof Mapping, 'school_number' | 'full_name' | 'branch'>; label: string; id: string }[] = [
+    { key: 'gender', label: 'Cinsiyet Sütunu', id: 'map-gender' },
     { key: 'student_phone', label: 'Öğrenci Telefonu Sütunu', id: 'map-student-phone' },
     { key: 'student_email', label: 'Öğrenci E-postası Sütunu', id: 'map-student-email' },
+    { key: 'guardian_selector', label: 'Velisi Kim Sütunu', id: 'map-guardian-selector' },
+    { key: 'mother_name', label: 'Anne Ad Soyad Sütunu', id: 'map-mother-name' },
+    { key: 'mother_phone', label: 'Anne Telefonu Sütunu', id: 'map-mother-phone' },
+    { key: 'father_name', label: 'Baba Ad Soyad Sütunu', id: 'map-father-name' },
+    { key: 'father_phone', label: 'Baba Telefonu Sütunu', id: 'map-father-phone' },
+    { key: 'other_guardian_name', label: 'Diğer Veli Adı Sütunu', id: 'map-other-guardian-name' },
+    { key: 'other_guardian_phone', label: 'Diğer Veli Telefonu Sütunu', id: 'map-other-guardian-phone' },
     { key: 'address', label: 'Adres Sütunu', id: 'map-address' },
-    { key: 'guardian_name', label: 'Veli Adı Sütunu', id: 'map-guardian-name' },
-    { key: 'guardian_phone', label: 'Veli Telefonu Sütunu', id: 'map-guardian-phone' },
-    { key: 'guardian_email', label: 'Veli E-postası Sütunu', id: 'map-guardian-email' },
 ];
 
 const actionLabel: Record<PreviewRow['action'], string> = {
@@ -211,10 +235,12 @@ const actionClass: Record<PreviewRow['action'], string> = {
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Okul No</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ad Soyad</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Şube</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Cinsiyet</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Öğr. Tel</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Öğr. E-posta</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Veli</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Veli Tel</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Velisi Kim</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Anne</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Baba</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Diğer Veli</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Durum</th>
                     </tr>
                 </thead>
@@ -224,10 +250,24 @@ const actionClass: Record<PreviewRow['action'], string> = {
                         <td class="whitespace-nowrap px-4 py-2 text-gray-900">{{ row.school_number }}</td>
                         <td class="whitespace-nowrap px-4 py-2 text-gray-900">{{ row.full_name }}</td>
                         <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.branch }}</td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.gender }}</td>
                         <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.student_phone }}</td>
-                        <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.student_email }}</td>
-                        <td class="whitespace-nowrap px-4 py-2 text-gray-900">{{ row.guardian_name }}</td>
-                        <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.guardian_phone }}</td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ row.guardian_selector }}</td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-900">
+                            {{ row.mother_name }}
+                            <span v-if="row.mother_name" class="ml-1 text-xs text-gray-500">{{ row.mother_phone }}</span>
+                            <span v-if="row.guardians.some((g) => g.relation === 'anne' && g.is_primary)" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Birincil</span>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-900">
+                            {{ row.father_name }}
+                            <span v-if="row.father_name" class="ml-1 text-xs text-gray-500">{{ row.father_phone }}</span>
+                            <span v-if="row.guardians.some((g) => g.relation === 'baba' && g.is_primary)" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Birincil</span>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-2 text-gray-900">
+                            {{ row.other_guardian_name }}
+                            <span v-if="row.other_guardian_name" class="ml-1 text-xs text-gray-500">{{ row.other_guardian_phone }}</span>
+                            <span v-if="row.guardians.some((g) => g.relation === 'veli' && g.is_primary)" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Birincil</span>
+                        </td>
                         <td class="px-4 py-2">
                             <span
                                 class="rounded-full px-2 py-1 text-xs font-semibold"

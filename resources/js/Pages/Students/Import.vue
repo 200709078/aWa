@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import DropdownSelect from '../../Components/DropdownSelect.vue';
@@ -37,16 +37,27 @@ function onFileChange(e: Event) {
 
 <template>
     <AppLayout title="Excel'den Öğrenci Aktar">
-        <div class="max-w-xl rounded-lg bg-white p-6 shadow-sm">
-            <h1 class="text-2xl font-bold text-gray-900">Excel'den Öğrenci Aktar</h1>
+        <div class="w-full max-w-[80%] rounded-lg bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between gap-2">
+                <h1 class="text-2xl font-bold text-gray-900">Excel'den Öğrenci Aktar</h1>
+                <Link
+                    href="/students"
+                    title="Geri dön"
+                    aria-label="Geri dön"
+                    class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </Link>
+            </div>
             <p class="mt-2 text-sm text-gray-600">
                 .xlsx veya .xls dosyası yükleyin. Sütunlar otomatik eşleştirilir, önizlemede düzeltip onaylarsınız.
-                Numara, ad soyad ve sınıf zorunludur; telefon, e-posta, adres ve veli bilgileri opsiyoneldir.
+                Numara, ad soyad ve sınıf zorunludur; cinsiyet, telefon, e-posta, adres, Velisi Kim ve anne/baba/diğer veli bilgileri opsiyoneldir.
+                Birincil veli "Velisi Kim" sütununa göre belirlenir (Anne/Baba/Diğer).
                 Dilerseniz boş şablonu indirip doldurun:
                 <a href="/students/import/template" class="font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">Excel şablonunu indir</a>.
             </p>
 
-            <form class="mt-4 space-y-4" @submit.prevent="submit">
+            <form class="mt-4 max-w-lg space-y-4" @submit.prevent="submit">
                 <div>
                     <label for="import-year" class="block text-sm font-medium text-gray-700">Akademik Yıl</label>
                     <div class="mt-1">
@@ -83,13 +94,15 @@ function onFileChange(e: Event) {
                     <p v-if="form.errors.file" class="mt-1 text-sm text-red-600">{{ form.errors.file }}</p>
                 </div>
 
-                <button
-                    type="submit"
-                    :disabled="form.processing || !form.file"
-                    class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-100"
-                >
-                    Önizlemeye Devam Et
-                </button>
+                <div>
+                    <button
+                        type="submit"
+                        :disabled="form.processing || !form.file"
+                        class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                        Önizlemeye Devam Et
+                    </button>
+                </div>
             </form>
         </div>
     </AppLayout>

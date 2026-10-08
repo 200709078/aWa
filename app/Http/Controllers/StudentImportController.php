@@ -25,9 +25,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class StudentImportController extends Controller
 {
     private const FIELDS = [
-        'school_number', 'full_name', 'branch',
-        'student_phone', 'student_email', 'address',
-        'guardian_name', 'guardian_phone', 'guardian_email',
+        'school_number', 'full_name', 'branch', 'gender',
+        'student_phone', 'student_email', 'guardian_selector',
+        'mother_name', 'mother_phone', 'father_name', 'father_phone',
+        'other_guardian_name', 'other_guardian_phone', 'address',
     ];
 
     private const REQUIRED_FIELDS = ['school_number', 'full_name', 'branch'];
@@ -36,24 +37,34 @@ class StudentImportController extends Controller
         'school_number' => 'Okul numarası',
         'full_name' => 'Ad soyad',
         'branch' => 'Şube',
+        'gender' => 'Cinsiyet',
         'student_phone' => 'Öğrenci telefonu',
         'student_email' => 'Öğrenci e-postası',
+        'guardian_selector' => 'Velisi kim',
+        'mother_name' => 'Anne ad soyad',
+        'mother_phone' => 'Anne telefonu',
+        'father_name' => 'Baba ad soyad',
+        'father_phone' => 'Baba telefonu',
+        'other_guardian_name' => 'Diğer veli ad soyad',
+        'other_guardian_phone' => 'Diğer veli telefonu',
         'address' => 'Adres',
-        'guardian_name' => 'Veli ad soyad',
-        'guardian_phone' => 'Veli telefonu',
-        'guardian_email' => 'Veli e-postası',
     ];
 
     private const HEADER_MAP = [
         'school_number' => ['okulno', 'ogrencino', 'numara', 'no', 'okulnumarasi', 'ogrencinumarasi'],
         'full_name' => ['adsoyad', 'adisoyadi', 'adsoyadi', 'ogrenciadsoyad', 'isim', 'adi'],
         'branch' => ['sinif', 'sube', 'sinifi', 'subesi', 'sinifsube'],
+        'gender' => ['cinsiyet', 'cinsiyeti', 'cins', 'gender'],
         'student_phone' => ['ogrencitelefon', 'ogrencicep', 'ogrenciceptelefonu', 'ceptelefonu', 'cep', 'telefon', 'ceptel', 'gsm'],
         'student_email' => ['ogrencieposta', 'ogrenciemail', 'eposta', 'email', 'epost'],
+        'guardian_selector' => ['velisikim', 'velikim', 'velisikimi', 'birincilveli'],
+        'mother_name' => ['anneadsoyad', 'anneadisoyadi', 'anneadsoyadi', 'anneadi', 'anneisim', 'annead', 'anne'],
+        'mother_phone' => ['annecep', 'annetelefon', 'anneceptel', 'annegsm', 'annetel', 'anneceptelefonu'],
+        'father_name' => ['babaadsoyad', 'babaadisoyadi', 'babaadsoyadi', 'babaadi', 'babaisim', 'babaad', 'baba'],
+        'father_phone' => ['babacep', 'babatelefon', 'babaceptel', 'babagsm', 'babatel', 'babaceptelefonu'],
+        'other_guardian_name' => ['digerveliadsoyad', 'digerveliadisoyadi', 'digerveliadsoyadi', 'digerveliadi', 'digerveli', 'digeradsoyad', 'digerveliisim', 'veliadsoyad', 'veliadisoyadi', 'veliadsoyadi', 'veliadi', 'veliisim', 'veli'],
+        'other_guardian_phone' => ['digervelicep', 'digervelitelefon', 'digerveliceptel', 'digerveligsm', 'velitelefon', 'velicep', 'veliceptelefonu', 'veligsm', 'veliceptel'],
         'address' => ['adres', 'evadres', 'acikadres', 'ikametgah', 'adresbilgisi'],
-        'guardian_name' => ['veliadsoyad', 'veliadisoyadi', 'veliadsoyadi', 'veliadi', 'veliisim', 'veli'],
-        'guardian_phone' => ['velitelefon', 'velicep', 'veliceptelefonu', 'veligsm', 'veliceptel'],
-        'guardian_email' => ['velieposta', 'veliemail', 'veliepost'],
     ];
 
     public function show(): Response
@@ -72,17 +83,22 @@ class StudentImportController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Öğrenciler');
-        $sheet->fromArray([['Okul No', 'Ad Soyad', 'Sınıf', 'Öğrenci Telefon', 'Öğrenci E-posta', 'Adres', 'Veli Ad Soyad', 'Veli Telefon', 'Veli E-posta']], null, 'A1', true);
-        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+        $sheet->fromArray([['Okul No', 'Ad Soyad', 'Sınıf', 'Cinsiyet', 'Öğrenci Telefon', 'Öğrenci E-posta', 'Velisi Kim', 'Anne Ad Soyad', 'Anne Cep', 'Baba Ad Soyad', 'Baba Cep', 'Diğer Veli Ad Soyad', 'Diğer Veli Cep', 'Adres']], null, 'A1', true);
+        $sheet->getStyle('A1:N1')->getFont()->setBold(true);
         $sheet->getColumnDimension('A')->setWidth(12);
         $sheet->getColumnDimension('B')->setWidth(30);
         $sheet->getColumnDimension('C')->setWidth(10);
-        $sheet->getColumnDimension('D')->setWidth(18);
-        $sheet->getColumnDimension('E')->setWidth(25);
-        $sheet->getColumnDimension('F')->setWidth(35);
-        $sheet->getColumnDimension('G')->setWidth(30);
-        $sheet->getColumnDimension('H')->setWidth(18);
-        $sheet->getColumnDimension('I')->setWidth(25);
+        $sheet->getColumnDimension('D')->setWidth(12);
+        $sheet->getColumnDimension('E')->setWidth(18);
+        $sheet->getColumnDimension('F')->setWidth(25);
+        $sheet->getColumnDimension('G')->setWidth(14);
+        $sheet->getColumnDimension('H')->setWidth(30);
+        $sheet->getColumnDimension('I')->setWidth(18);
+        $sheet->getColumnDimension('J')->setWidth(30);
+        $sheet->getColumnDimension('K')->setWidth(18);
+        $sheet->getColumnDimension('L')->setWidth(30);
+        $sheet->getColumnDimension('M')->setWidth(18);
+        $sheet->getColumnDimension('N')->setWidth(35);
         $sheet->freezePane('A2');
 
         $path = tempnam(sys_get_temp_dir(), 'sablon').'.xlsx';
@@ -150,12 +166,17 @@ class StudentImportController extends Controller
             'mapping.school_number' => ['required', 'integer', 'min:0'],
             'mapping.full_name' => ['required', 'integer', 'min:0'],
             'mapping.branch' => ['required', 'integer', 'min:0'],
+            'mapping.gender' => ['nullable', 'integer', 'min:0'],
             'mapping.student_phone' => ['nullable', 'integer', 'min:0'],
             'mapping.student_email' => ['nullable', 'integer', 'min:0'],
+            'mapping.guardian_selector' => ['nullable', 'integer', 'min:0'],
+            'mapping.mother_name' => ['nullable', 'integer', 'min:0'],
+            'mapping.mother_phone' => ['nullable', 'integer', 'min:0'],
+            'mapping.father_name' => ['nullable', 'integer', 'min:0'],
+            'mapping.father_phone' => ['nullable', 'integer', 'min:0'],
+            'mapping.other_guardian_name' => ['nullable', 'integer', 'min:0'],
+            'mapping.other_guardian_phone' => ['nullable', 'integer', 'min:0'],
             'mapping.address' => ['nullable', 'integer', 'min:0'],
-            'mapping.guardian_name' => ['nullable', 'integer', 'min:0'],
-            'mapping.guardian_phone' => ['nullable', 'integer', 'min:0'],
-            'mapping.guardian_email' => ['nullable', 'integer', 'min:0'],
         ], [
             'mapping.school_number.required' => 'Okul numarası sütunu seçin.',
             'mapping.full_name.required' => 'Ad soyad sütunu seçin.',
@@ -195,6 +216,7 @@ class StudentImportController extends Controller
                             'first_name' => $firstName,
                             'last_name' => $lastName,
                             'full_name' => $row['full_name'],
+                            'gender' => ($row['gender'] ?? '') === '' ? null : $row['gender'],
                             'phone' => $row['student_phone'] === '' ? null : $row['student_phone'],
                             'email' => $row['student_email'] === '' ? null : $row['student_email'],
                             'address' => $row['address'] === '' ? null : $row['address'],
@@ -215,7 +237,7 @@ class StudentImportController extends Controller
                         'status' => 'active',
                     ]);
 
-                    $this->persistGuardian($row, $student, $schoolId, $guardianCache, $addedGuardians, $updatedGuardians);
+                    $this->persistGuardians($row, $student, $schoolId, $guardianCache, $addedGuardians, $updatedGuardians);
                 });
                 $added++;
             } elseif ($row['action'] === 'update') {
@@ -230,7 +252,7 @@ class StudentImportController extends Controller
                     if ($person) {
                         $this->refreshPersonContacts($person, $row);
 
-                        $this->persistGuardian($row, $enrollment->student, $schoolId, $guardianCache, $addedGuardians, $updatedGuardians);
+                        $this->persistGuardians($row, $enrollment->student, $schoolId, $guardianCache, $addedGuardians, $updatedGuardians);
                     }
                 });
                 $updated++;
@@ -432,6 +454,39 @@ class StudentImportController extends Controller
         return preg_replace('/\s+/u', ' ', $value) ?? '';
     }
 
+    private function parseGender(mixed $value): string
+    {
+        return match ($this->normalizeHeader((string) ($value ?? ''))) {
+            'kiz', 'k' => 'Kız',
+            'erkek', 'e' => 'Erkek',
+            default => '',
+        };
+    }
+
+    /**
+     * "Velisi Kim" sütununu pivot ilişkisine çevirir.
+     * Anne -> anne, Baba -> baba, Diğer/Veli -> veli, boş/bilinmeyen -> null.
+     */
+    private function parseGuardianSelector(mixed $value): ?string
+    {
+        $n = $this->normalizeHeader((string) ($value ?? ''));
+
+        if ($n === '') {
+            return null;
+        }
+        if (str_contains($n, 'anne')) {
+            return 'anne';
+        }
+        if (str_contains($n, 'baba')) {
+            return 'baba';
+        }
+        if (str_contains($n, 'diger') || str_contains($n, 'veli') || str_contains($n, 'vasi')) {
+            return 'veli';
+        }
+
+        return null;
+    }
+
     /**
      * @param  array<int, array<int, mixed>>  $rows
      * @param  array<string, int|null>  $mapping
@@ -449,6 +504,7 @@ class StudentImportController extends Controller
             ->keyBy('id');
 
         $cell = fn (array $row, ?int $index): string => $index === null ? '' : trim((string) ($row[$index] ?? ''));
+        $phoneCell = fn (array $row, ?int $index): string => $index === null ? '' : $this->normalizePhone($row[$index] ?? null);
 
         $result = [];
         $seen = [];
@@ -461,26 +517,36 @@ class StudentImportController extends Controller
 
         foreach ($rows as $i => $row) {
             $line = $i + 2;
-            $number = $this->normalizeNumber($mapping['school_number'] === null ? null : ($row[$mapping['school_number']] ?? null));
-            $name = $cell($row, $mapping['full_name']);
-            $branchName = self::normalizeBranch($cell($row, $mapping['branch']));
-            $studentPhone = $this->normalizePhone($mapping['student_phone'] === null ? null : ($row[$mapping['student_phone']] ?? null));
-            $studentEmail = $this->normalizeEmail($cell($row, $mapping['student_email']));
-            $address = $cell($row, $mapping['address']);
-            $guardianName = $cell($row, $mapping['guardian_name']);
-            $guardianPhone = $this->normalizePhone($mapping['guardian_phone'] === null ? null : ($row[$mapping['guardian_phone']] ?? null));
-            $guardianEmail = $this->normalizeEmail($cell($row, $mapping['guardian_email']));
+            $number = $this->normalizeNumber(($mapping['school_number'] ?? null) === null ? null : ($row[$mapping['school_number']] ?? null));
+            $name = $cell($row, $mapping['full_name'] ?? null);
+            $branchName = self::normalizeBranch($cell($row, $mapping['branch'] ?? null));
+            $gender = $this->parseGender(($mapping['gender'] ?? null) === null ? null : ($row[$mapping['gender']] ?? null));
+            $studentPhone = $phoneCell($row, $mapping['student_phone'] ?? null);
+            $studentEmail = $this->normalizeEmail($cell($row, $mapping['student_email'] ?? null));
+            $selectorRaw = $cell($row, $mapping['guardian_selector'] ?? null);
+            $selector = $this->parseGuardianSelector($selectorRaw);
+            $motherName = $cell($row, $mapping['mother_name'] ?? null);
+            $motherPhone = $phoneCell($row, $mapping['mother_phone'] ?? null);
+            $fatherName = $cell($row, $mapping['father_name'] ?? null);
+            $fatherPhone = $phoneCell($row, $mapping['father_phone'] ?? null);
+            $otherName = $cell($row, $mapping['other_guardian_name'] ?? null);
+            $otherPhone = $phoneCell($row, $mapping['other_guardian_phone'] ?? null);
+            $address = $cell($row, $mapping['address'] ?? null);
 
             $entry = [
                 'line' => $line, 'school_number' => $number, 'full_name' => $name, 'branch' => $branchName,
-                'student_phone' => $studentPhone, 'student_email' => $studentEmail, 'address' => $address,
-                'guardian_name' => $guardianName, 'guardian_phone' => $guardianPhone, 'guardian_email' => $guardianEmail,
-                'guardian_action' => null,
+                'gender' => $gender, 'student_phone' => $studentPhone, 'student_email' => $studentEmail,
+                'guardian_selector' => $selectorRaw, 'primary_relation' => null,
+                'mother_name' => $motherName, 'mother_phone' => $motherPhone,
+                'father_name' => $fatherName, 'father_phone' => $fatherPhone,
+                'other_guardian_name' => $otherName, 'other_guardian_phone' => $otherPhone,
+                'address' => $address, 'guardians' => [],
             ];
 
-            $allEmpty = $number === '' && $name === '' && $branchName === '' && $studentPhone === ''
-                && $studentEmail === '' && $address === '' && $guardianName === ''
-                && $guardianPhone === '' && $guardianEmail === '';
+            $allEmpty = $number === '' && $name === '' && $branchName === '' && $gender === ''
+                && $studentPhone === '' && $studentEmail === '' && $selectorRaw === ''
+                && $motherName === '' && $motherPhone === '' && $fatherName === '' && $fatherPhone === ''
+                && $otherName === '' && $otherPhone === '' && $address === '';
 
             if ($allEmpty) {
                 $entry['action'] = 'skip';
@@ -518,21 +584,53 @@ class StudentImportController extends Controller
                     $summary['eklenecek']++;
                 }
 
-                if ($guardianName !== '') {
-                    $guardianKey = $this->normalizeNameKey($guardianName).'|'.$guardianPhone;
-                    $linkedStudent = isset($existing[$number])
-                        ? ($studentsById[$existing[$number]] ?? null)
-                        : ($entry['student_id'] ? Student::with('guardians.person')->find($entry['student_id']) : null);
-                    $matched = $this->findStudentGuardian($linkedStudent, $guardianName) !== null;
+                $candidates = [
+                    ['relation' => 'anne', 'name' => $motherName, 'phone' => $motherPhone],
+                    ['relation' => 'baba', 'name' => $fatherName, 'phone' => $fatherPhone],
+                    ['relation' => 'veli', 'name' => $otherName, 'phone' => $otherPhone],
+                ];
+                $candidates = array_values(array_filter(
+                    $candidates,
+                    fn (array $g) => trim((string) $g['name']) !== ''
+                ));
+
+                $linkedStudent = isset($existing[$number])
+                    ? ($studentsById[$existing[$number]] ?? null)
+                    : ($entry['student_id'] ? Student::with('guardians.person')->find($entry['student_id']) : null);
+
+                $present = array_column($candidates, 'relation');
+                $primaryRelation = $selector !== null && in_array($selector, $present, true) ? $selector : null;
+                $entry['primary_relation'] = $primaryRelation;
+
+                $hasPrimary = (bool) $linkedStudent?->guardians->some(fn (Guardian $g) => (bool) $g->pivot->is_primary);
+
+                foreach ($candidates as $gi => $candidate) {
+                    $guardianKey = $this->normalizeNameKey($candidate['name']).'|'.$candidate['phone'];
+                    $matched = $this->findGuardianForImport($linkedStudent, $candidate['relation'], $candidate['name']) !== null;
+
+                    if ($primaryRelation !== null) {
+                        $isPrimary = $candidate['relation'] === $primaryRelation;
+                    } else {
+                        $isPrimary = ! $hasPrimary && $gi === 0;
+                    }
+
+                    $guardianEntry = [
+                        'relation' => $candidate['relation'],
+                        'name' => $candidate['name'],
+                        'phone' => $candidate['phone'],
+                        'is_primary' => $isPrimary,
+                        'action' => null,
+                    ];
 
                     if ($matched || isset($seenGuardians[$guardianKey])) {
-                        $entry['guardian_action'] = 'update';
+                        $guardianEntry['action'] = 'update';
                         $summary['guncellenecek_veli']++;
                     } else {
-                        $entry['guardian_action'] = 'add';
+                        $guardianEntry['action'] = 'add';
                         $summary['eklenecek_veli']++;
                     }
                     $seenGuardians[$guardianKey] = true;
+                    $entry['guardians'][] = $guardianEntry;
                 }
             }
 
@@ -564,12 +662,33 @@ class StudentImportController extends Controller
         }
 
         $data = array_merge(['full_name' => $row['full_name']], $this->splitNameData($row['full_name']));
+        if (($row['gender'] ?? '') !== '') {
+            $data['gender'] = $row['gender'];
+        }
         foreach (['phone' => $row['student_phone'], 'email' => $row['student_email'], 'address' => $row['address']] as $column => $value) {
             if ($value !== '') {
                 $data[$column] = $value;
             }
         }
         $person->update($data);
+    }
+
+    private function findGuardianForImport(?Student $student, string $relation, string $name): ?Guardian
+    {
+        if (! $student) {
+            return null;
+        }
+
+        if (in_array($relation, ['anne', 'baba'], true)) {
+            $byRelation = $student->guardians->first(
+                fn (Guardian $guardian) => ($guardian->pivot->relationship ?? null) === $relation
+            );
+            if ($byRelation) {
+                return $byRelation;
+            }
+        }
+
+        return $this->findStudentGuardian($student, $name);
     }
 
     private function findStudentGuardian(?Student $student, string $guardianName): ?Guardian
@@ -608,33 +727,78 @@ class StudentImportController extends Controller
     }
 
     /**
-     * Veli adı yoksa hiçbir şey yapmaz. Aynı isimli veli öğrencide
-     * zaten varsa iletişimini tazeler; dosya içinde tekrar eden veliyi
-     * tek kayda bağlar; yoksa yeni kişi + veli + bağlantı oluşturur.
+     * Satırdaki anne/baba/diğer velileri işler. Birincil veli "Velisi Kim"
+     * sütununa göre belirlenir: Anne ise anne, Baba ise baba, Diğer ise
+     * diğer veli birincil olur. Seçim yoksa mevcut birincil korunur;
+     * öğrencinin hiç birincili yoksa ilk veli birincil yapılır.
      *
      * @param  array<string, int>  $guardianCache
      */
-    private function persistGuardian(array $row, Student $student, mixed $schoolId, array &$guardianCache, int &$added, int &$updated): void
+    private function persistGuardians(array $row, Student $student, mixed $schoolId, array &$guardianCache, int &$added, int &$updated): void
     {
-        $name = $row['guardian_name'] ?? '';
+        $entries = array_values(array_filter(
+            $row['guardians'] ?? [],
+            fn ($g) => trim((string) ($g['name'] ?? '')) !== ''
+        ));
+
+        if ($entries === []) {
+            return;
+        }
+
+        $hasInstruction = ($row['primary_relation'] ?? null) !== null;
+
+        foreach ($entries as $entry) {
+            $this->persistGuardianEntry($entry, $student, $schoolId, $guardianCache, $added, $updated, $hasInstruction);
+        }
+
+        $student->loadMissing('guardians');
+        if (! $student->guardians->some(fn (Guardian $g) => (bool) $g->pivot->is_primary)) {
+            $first = $student->guardians->first();
+            if ($first) {
+                $student->guardians()->updateExistingPivot($first->id, ['is_primary' => true]);
+            }
+        }
+    }
+
+    /**
+     * @param  array{relation: string, name: string, phone: string, is_primary: bool}  $entry
+     * @param  array<string, int>  $guardianCache
+     */
+    private function persistGuardianEntry(array $entry, Student $student, mixed $schoolId, array &$guardianCache, int &$added, int &$updated, bool $hasInstruction): void
+    {
+        $relation = $entry['relation'];
+        $name = trim((string) $entry['name']);
+        $phone = trim((string) ($entry['phone'] ?? ''));
         if ($name === '') {
             return;
         }
 
-        $key = $this->normalizeNameKey($name).'|'.($row['guardian_phone'] ?? '');
-        $contactData = [];
-        foreach (['phone' => $row['guardian_phone'] ?? '', 'email' => $row['guardian_email'] ?? ''] as $column => $value) {
-            if ($value !== '') {
-                $contactData[$column] = $value;
-            }
-        }
+        $desiredPrimary = (bool) ($entry['is_primary'] ?? false);
+        $key = $this->normalizeNameKey($name).'|'.$phone;
 
         $student->loadMissing('guardians.person');
-        $match = $this->findStudentGuardian($student, $name);
+        $match = $this->findGuardianForImport($student, $relation, $name);
 
         if ($match) {
-            if ($contactData !== []) {
-                $match->person?->update($contactData);
+            $data = [];
+            if ($this->normalizeNameKey($match->person?->full_name) !== $this->normalizeNameKey($name)) {
+                $data = array_merge(['full_name' => $name], $this->splitNameData($name));
+            }
+            if ($phone !== '') {
+                $data['phone'] = $phone;
+            }
+            if ($data !== []) {
+                $match->person?->update($data);
+            }
+            $updates = [];
+            if (($match->pivot->relationship ?? null) !== $relation) {
+                $updates['relationship'] = $relation;
+            }
+            if ($hasInstruction) {
+                $updates['is_primary'] = $desiredPrimary;
+            }
+            if ($updates !== []) {
+                $student->guardians()->updateExistingPivot($match->id, $updates);
             }
             $guardianCache[$key] = $match->id;
             $updated++;
@@ -644,13 +808,19 @@ class StudentImportController extends Controller
 
         if (isset($guardianCache[$key]) && ($guardian = Guardian::find($guardianCache[$key]))) {
             if (! $student->guardians()->whereKey($guardian->id)->exists()) {
+                $isPrimary = $hasInstruction ? $desiredPrimary : ! $student->guardians()->exists();
                 $student->guardians()->attach($guardian->id, [
-                    'relationship' => 'veli',
-                    'is_primary' => ! $student->guardians()->exists(),
+                    'relationship' => $relation,
+                    'is_primary' => $isPrimary,
+                ]);
+            } elseif ($hasInstruction) {
+                $student->guardians()->updateExistingPivot($guardian->id, [
+                    'relationship' => $relation,
+                    'is_primary' => $desiredPrimary,
                 ]);
             }
-            if ($contactData !== []) {
-                $guardian->person?->update($contactData);
+            if ($phone !== '') {
+                $guardian->person?->update(['phone' => $phone]);
             }
             $updated++;
 
@@ -663,14 +833,13 @@ class StudentImportController extends Controller
             'first_name' => $firstName,
             'last_name' => $lastName,
             'full_name' => $name,
-            'phone' => ($row['guardian_phone'] ?? '') === '' ? null : $row['guardian_phone'],
-            'email' => ($row['guardian_email'] ?? '') === '' ? null : $row['guardian_email'],
+            'phone' => $phone === '' ? null : $phone,
         ]);
 
         $guardian = Guardian::create(['person_id' => $person->id]);
-        $isPrimary = $student->guardians()->count() === 0;
+        $isPrimary = $hasInstruction ? $desiredPrimary : ! $student->guardians()->exists();
         $student->guardians()->attach($guardian->id, [
-            'relationship' => 'veli',
+            'relationship' => $relation,
             'is_primary' => $isPrimary,
         ]);
 

@@ -201,6 +201,104 @@ class BilgiFormuTest extends TestCase
         $this->assertEquals(3, $student->guardians()->wherePivot('is_primary', true)->count());
     }
 
+    public function test_sablon_indirilir_ve_zaman_damgasi_icermez(): void
+    {
+        $user = User::factory()->create();
+        $this->setupYear();
+
+        $response = $this->actingAs($user)->get('/bilgi-formlari/ice-aktar/sablon');
+        $response->assertOk();
+        $response->assertDownload('bilgi-formu-sablonu.xlsx');
+
+        $path = $response->baseResponse->getFile()->getPathname();
+        $data = (new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($path)->getActiveSheet()->toArray(null, true, true, false);
+        $headers = array_values($data[0]);
+
+        // Zaman damgası içe aktarmada kullanılmadığı için şablonda yok.
+        $this->assertNotContains('Zaman damgası', $headers);
+        $this->assertSame('E-posta Adresi', $headers[0]);
+        $this->assertSame('Notlar', $headers[count($headers) - 1]);
+        $this->assertCount(61, $headers);
+
+        // Boş şablon içe aktarmada hata vermeden sıfır satır işler.
+        $preview = $this->actingAs($user)->post('/bilgi-formlari/ice-aktar', [
+            'academic_year_id' => AcademicYear::first()->id,
+            'file' => new UploadedFile($path, 'bilgi-formu-sablonu.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
+        ]);
+        $preview->assertOk();
+        $preview->assertInertia(fn ($page) => $page->where('summary.toplam', 0));
+    }
+
+    public function test_veliniz_kim_tek_birincil_yapar_digerlerini_dusurur(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $student = $this->makeStudent($year, $branch, '145', 'Ali Veli');
+
+        $annePerson = \App\Models\Person::create(['full_name' => 'Anne Veli']);
+        $anne = \App\Models\Guardian::create(['person_id' => $annePerson->id]);
+        $babaPerson = \App\Models\Person::create(['full_name' => 'Baba Veli']);
+        $baba = \App\Models\Guardian::create(['person_id' => $babaPerson->id]);
+        $student->guardians()->attach($anne->id, ['relationship' => 'anne', 'is_primary' => false]);
+        $student->guardians()->attach($baba->id, ['relationship' => 'baba', 'is_primary' => true]);
+
+        $this->actingAs($user)->post('/bilgi-formlari/ice-aktar', [
+            'academic_year_id' => $year->id,
+            'file' => $this->makeFile(
+                ['Okul Numaranız', 'Sınıfınız', 'Veliniz kim?'],
+                [['145', '9A', 'Annem']]
+            ),
+        ])->assertOk();
+
+        // Anne birincil oldu, baba birincillikten düştü, tek birincil kaldı.
+        $this->assertEquals(1, $student->guardians()->wherePivot('is_primary', true)->count());
+        $this->assertTrue((bool) $student->guardians()->whereKey($anne->id)->first()?->pivot->is_primary);
+        $this->assertFalse((bool) $student->guardians()->whereKey($baba->id)->first()?->pivot->is_primary);
+    }
+
+    public function test_veliniz_kim_bosken_dolu_veli_birincil_olur(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $student = $this->makeStudent($year, $branch, '145', 'Ali Veli');
+
+        $this->actingAs($user)->post('/bilgi-formlari/ice-aktar', [
+            'academic_year_id' => $year->id,
+            'file' => $this->makeFile(
+                ['Okul Numaranız', 'Sınıfınız', 'Velinizin adını ve soyadını giriniz. ', 'Velinizin telefon numarasını giriniz. '],
+                [['145', '9A', 'Dede Veli', '05320000003']]
+            ),
+        ])->assertOk();
+
+        $primary = $student->guardians()->wherePivot('is_primary', true)->first();
+        $this->assertNotNull($primary);
+        $this->assertEquals(1, $student->guardians()->wherePivot('is_primary', true)->count());
+        $this->assertEquals('veli', $primary->pivot->relationship);
+        $this->assertEquals('Dede Veli', $primary->person->full_name);
+    }
+
+    public function test_uzerine_yaz_isaretliyken_bos_hucre_doluyu_ezmez(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $student = $this->makeStudent($year, $branch, '145', 'Ali Veli');
+        $student->person->update(['phone' => '+905329999999']);
+
+        $this->actingAs($user)->post('/bilgi-formlari/ice-aktar', [
+            'academic_year_id' => $year->id,
+            'file' => $this->makeFile(
+                ['Okul Numaranız', 'Sınıfınız', 'Telefon Numaranız'],
+                [['145', '9A', '']]
+            ),
+            'overwrite' => true,
+        ])->assertOk();
+
+        $this->assertEquals('+905329999999', $student->person->fresh()->phone);
+    }
+
     public function test_sayfalar_acilir(): void
     {
         $user = User::factory()->create();

@@ -82,6 +82,7 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/bilgi-formlari', [BilgiFormuController::class, 'index'])->name('bilgi-formlari.index');
     Route::get('/bilgi-formlari/ice-aktar', [BilgiFormuController::class, 'importShow'])->name('bilgi-formlari.import');
     Route::post('/bilgi-formlari/ice-aktar', [BilgiFormuController::class, 'importStore'])->name('bilgi-formlari.import.store');
+    Route::get('/bilgi-formlari/ice-aktar/sablon', [BilgiFormuController::class, 'template'])->name('bilgi-formlari.template');
     Route::get('/bilgi-formlari/yazdir', [BilgiFormuController::class, 'print'])->name('bilgi-formlari.print');
     Route::get('/bilgi-formlari/risk-haritasi', [BilgiFormuController::class, 'riskMap'])->name('bilgi-formlari.risk');
     Route::get('/bilgi-formlari/{student}/duzenle', [BilgiFormuController::class, 'edit'])->name('bilgi-formlari.edit');
