@@ -55,16 +55,14 @@ function toGuardianForm(g: StudentGuardian): GuardianForm {
 }
 
 function trioGuardians(list: StudentGuardian[]): GuardianForm[] {
-    const trio = (['anne', 'baba', 'veli'] as const).map((rel) => {
-        const found = list.find((g) => (g.relation ?? 'veli') === rel);
-        if (found) return toGuardianForm(found);
-        return blankGuardian(rel === 'veli' ? 'veli' : rel, true);
-    });
-    // Üçlü dışındaki eski kayıtlar (örn. vasi) kaybolmasın.
-    const extras = list
-        .filter((g) => !['anne', 'baba', 'veli'].includes(g.relation ?? 'veli'))
-        .map(toGuardianForm);
-    return [...trio, ...extras];
+    const anne = list.find((g) => (g.relation ?? 'veli') === 'anne');
+    const baba = list.find((g) => (g.relation ?? 'veli') === 'baba');
+    const diger = list.find((g) => !['anne', 'baba'].includes(g.relation ?? 'veli'));
+    return [
+        anne ? toGuardianForm(anne) : blankGuardian('anne', true),
+        baba ? toGuardianForm(baba) : blankGuardian('baba', false),
+        diger ? toGuardianForm(diger) : blankGuardian('veli', false),
+    ];
 }
 
 const form = useForm({

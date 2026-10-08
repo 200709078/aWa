@@ -43,7 +43,8 @@ class RehberExportService
                 continue;
             }
             $class = $this->classCode($enrollment->branch?->name ?? '');
-            $guardian = $student->guardians->sortByDesc(fn ($g) => (bool) $g->pivot->is_primary)->first();
+            $named = $student->guardians->filter(fn ($g) => trim((string) $g->person?->full_name) !== '')->values();
+            $guardian = $named->first(fn ($g) => (bool) $g->pivot->is_primary) ?? $named->first();
 
             if ($type !== 'student') {
                 $rows[] = [
@@ -300,19 +301,33 @@ class RehberExportService
         }
 
         if ($type !== 'student') {
+            $byStudent = [];
             foreach ($guardians as $guardian) {
                 $enrollment = $guardian->getAttribute('_enrollment');
                 if (! $enrollment) {
                     continue;
                 }
-                $out[] = [
-                    'name' => $guardian->person?->full_name,
-                    'phone' => $guardian->person?->phone,
-                    'photo' => $guardian->person?->photo_path,
-                    'branch' => $enrollment->branch?->name ?? '',
-                    'number' => $enrollment->school_number,
-                    'title' => 'Veli',
-                ];
+                // İsimsiz veli kayıtları çıktıya girmez.
+                if (trim((string) $guardian->person?->full_name) === '') {
+                    continue;
+                }
+                $byStudent[$enrollment->student_id][] = $guardian;
+            }
+            foreach ($byStudent as $list) {
+                // Yalnız birinciller; hiçbiri işaretli değilse ismi olan ilk veli.
+                $primaries = array_values(array_filter($list, fn ($g) => (bool) $g->pivot->is_primary));
+                $chosen = $primaries !== [] ? $primaries : [reset($list)];
+                foreach ($chosen as $guardian) {
+                    $enrollment = $guardian->getAttribute('_enrollment');
+                    $out[] = [
+                        'name' => $guardian->person?->full_name,
+                        'phone' => $guardian->person?->phone,
+                        'photo' => $guardian->person?->photo_path,
+                        'branch' => $enrollment->branch?->name ?? '',
+                        'number' => $enrollment->school_number,
+                        'title' => 'Veli',
+                    ];
+                }
             }
         }
 

@@ -85,12 +85,7 @@ function applyPrimary() {
 
 applyPrimary();
 
-const guardianRelationOptions = [
-    { value: 'anne', label: 'Anne' },
-    { value: 'baba', label: 'Baba' },
-    { value: 'veli', label: 'Veli' },
-    ...digerRelationOptions,
-];
+const guardianRelationOptions = [...digerRelationOptions];
 
 const textFields: { key: string; label: string }[] = [    { key: 'earthquake_loss', label: 'Depremde ebeveyn kaybı' },
     { key: 'family_income', label: 'Aile gelir durumu' },
