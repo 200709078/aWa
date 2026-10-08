@@ -37,6 +37,7 @@ const seatMap = computed(() => {
 });
 
 const rowNumbers = computed(() => Array.from({ length: props.grid.maxRow }, (_, i) => i + 1));
+const boardWidth = computed(() => `${(2 / Math.max(1, props.grid.maxColumn)) * 100}%`);
 const columnNumbers = computed(() => Array.from({ length: props.grid.maxColumn }, (_, i) => i + 1));
 
 function nameSizeClass(fullName: string | null): string {
@@ -52,8 +53,7 @@ function nameSizeClass(fullName: string | null): string {
         <h2 class="text-lg font-semibold print:text-base">{{ year.name }} ÖĞRETİM YILI {{ schoolName }}</h2>
         <h3 class="mt-1 text-base font-semibold print:text-sm">{{ branch.name }} Sınıf Oturma Planı</h3>
 
-        <div class="mt-4 flex items-stretch gap-2 print:break-inside-avoid">
-            <div class="flex items-center rounded border border-gray-400 px-1 py-2 text-sm font-bold tracking-widest print:text-xs" style="writing-mode: vertical-rl">KAPI</div>
+        <div class="mt-4 print:break-inside-avoid">
             <table class="w-full table-fixed border-collapse">
                 <tbody>
                     <tr v-for="row in rowNumbers" :key="row">
@@ -79,10 +79,16 @@ function nameSizeClass(fullName: string | null): string {
                     </tr>
                 </tbody>
             </table>
-            <div class="flex items-center rounded border border-gray-400 px-1 py-2 text-sm font-bold tracking-widest print:text-xs" style="writing-mode: vertical-rl">PENCERE</div>
         </div>
 
-        <div class="mt-2 rounded border border-gray-400 py-1 text-center text-sm font-bold tracking-widest print:text-xs">TAHTA</div>
+        <div class="mt-2 flex justify-center">
+            <div
+                class="rounded border border-gray-400 py-1 text-center text-sm font-bold tracking-widest print:text-xs"
+                :style="{ width: boardWidth }"
+            >
+                TAHTA
+            </div>
+        </div>
         <div class="mt-4 flex justify-end print:break-inside-avoid">
             <div class="w-36 rounded border border-gray-400 p-1.5 text-center">
                 <div class="text-xs font-bold print:text-[10px]">ÖĞRETMEN MASASI</div>
