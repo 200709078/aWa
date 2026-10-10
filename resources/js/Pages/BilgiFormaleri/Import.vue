@@ -82,13 +82,34 @@ function submit() {
                     </button>
                     <p v-if="form.errors.file" class="mt-1 text-sm text-red-600">{{ form.errors.file }}</p>
                 </div>
-                <label class="flex items-start gap-2 text-sm text-gray-700">
-                    <input v-model="form.overwrite" type="checkbox" class="mt-1 h-4 w-4 rounded border-gray-300" />
-                    <span>
-                        <strong>Dolu alanların üzerine yaz.</strong>
-                        Kapalıyken dolu bilgi korunur, yalnız boş alanlar doldurulur. Açıkken dosyadaki cevaplar yazar.
+                <div class="flex items-start gap-2 text-sm text-gray-700">
+                    <button
+                        type="button"
+                        role="switch"
+                        :aria-checked="form.overwrite"
+                        title="Dolu alanların üzerine yaz"
+                        @click="form.overwrite = !form.overwrite"
+                        :class="[
+                            'relative mt-0.5 inline-flex h-6 w-11 shrink-0 rounded-full transition-colors',
+                            form.overwrite ? 'bg-indigo-600' : 'bg-gray-300',
+                        ]"
+                    >
+                        <span
+                            :class="[
+                                'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                                form.overwrite ? 'translate-x-5 ml-0.5' : 'translate-x-0.5',
+                            ]"
+                        />
+                    </button>
+                    <span v-if="form.overwrite">
+                        <strong>Dolu alanların üzerine yazılır.</strong>
+                        Dosyadaki cevaplar dolu alanlara da yazılır.
                     </span>
-                </label>
+                    <span v-else>
+                        <strong>Dolu alanların üzerine yazılmaz.</strong>
+                        Dolu bilgi korunur, yalnız boş alanlar doldurulur.
+                    </span>
+                </div>
                 <div>
                     <button
                         type="submit"
