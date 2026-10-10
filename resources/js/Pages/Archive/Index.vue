@@ -254,7 +254,7 @@ function submitForceTeacher() {
                 </div>
             </div>
             <p class="mt-3 text-sm text-gray-600">
-                Normal listelerdeki Sil işlemi kaydı buraya gönderir. Kalıcı silme yalnızca buradan yapılır ve geri alınamaz. Numarası başka kayda verilen arşiv kaydı, yeni boş bir numara girilerek geri alınabilir.
+                Kalıcı silme yalnızca buradan yapılır ve geri alınamaz. Numarası başka kayda verilen arşiv kaydı, yeni boş bir numara girilerek geri alınabilir.
             </p>
             <p v-if="$page.props.errors.restore" class="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
                 {{ $page.props.errors.restore }}
