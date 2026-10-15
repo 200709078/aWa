@@ -88,6 +88,7 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::get('/bilgi-formlari/risk-haritasi', [BilgiFormuController::class, 'riskMap'])->name('bilgi-formlari.risk');
     Route::get('/bilgi-formlari/{student}/duzenle', [BilgiFormuController::class, 'edit'])->name('bilgi-formlari.edit');
     Route::put('/bilgi-formlari/{student}', [BilgiFormuController::class, 'update'])->name('bilgi-formlari.update');
+    Route::delete('/bilgi-formlari/{student}', [BilgiFormuController::class, 'destroy'])->name('bilgi-formlari.destroy');
 
     Route::get('/personel', [TeacherController::class, 'index'])->name('personel.index');
     Route::get('/personel/ekle', [TeacherController::class, 'create'])->name('personel.create');
