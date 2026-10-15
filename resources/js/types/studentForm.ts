@@ -55,6 +55,7 @@ export const relationOptions = [
 ];
 
 export const digerRelationOptions = [
+    { value: 'veli', label: 'Seçin' },
     { value: 'dede', label: 'Dede' },
     { value: 'nine', label: 'Nine' },
     { value: 'amca', label: 'Amca' },

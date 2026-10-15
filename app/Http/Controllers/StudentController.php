@@ -474,7 +474,7 @@ class StudentController extends Controller
             $last = trim((string) ($row['last_name'] ?? ''));
             $phone = trim((string) ($row['phone'] ?? ''));
 
-            // Üç veli (anne/baba/diğer) boş da olsa her zaman açılır.
+            // Yalnızca dolu bloklar açılır; boş blok gönderilmez.
             if (($first !== '' || $last !== '' || $phone !== '') && ($first === '' || $last === '')) {
                 throw ValidationException::withMessages(['guardians' => 'Veli adı ve soyadı gerekli.']);
             }
@@ -525,6 +525,17 @@ class StudentController extends Controller
         $primaries = [];
 
         foreach ($guardians as $row) {
+            // Tamamen boş blok açılmaz: idsiz satır atlanır, id'li satır
+            // kullanıcı tarafından boşaltılmış demektir, bağlantı kaldırılır.
+            if ($row['first_name'] === '' && $row['last_name'] === '' && ($row['phone'] ?? null) === null) {
+                if ($row['id'] && ($existing = Guardian::find($row['id']))
+                    && $student->guardians()->whereKey($existing->id)->exists()) {
+                    $student->guardians()->detach($existing->id);
+                    $this->cleanupGuardian($existing);
+                }
+                continue;
+            }
+
             $guardian = $row['id'] ? Guardian::find($row['id']) : null;
 
             if ($guardian && ! $student->guardians()->whereKey($guardian->id)->exists()) {

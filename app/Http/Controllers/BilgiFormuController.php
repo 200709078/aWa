@@ -504,8 +504,12 @@ class BilgiFormuController extends Controller
             if (str_contains($h, 'hastaligi')) {
                 return ['owner' => $owner, 'field' => 'illness'];
             }
-            if ($owner === 'guardian' && ($h === 'kim' || str_contains($h, 'yakinlig'))) {
+            if ($owner === 'guardian' && $h === 'kim') {
                 return ['owner' => 'guardian', 'field' => 'relation'];
+            }
+            if ($owner === 'guardian' && str_contains($h, 'yakinlig')) {
+                // "Veliniz kim?"den ayrı tutulur: boş yakınlık dolu cevabı ezmesin.
+                return ['owner' => 'guardian', 'field' => 'relation_exact'];
             }
 
             return null;
@@ -659,19 +663,26 @@ class BilgiFormuController extends Controller
         $this->applyGuardianBlock($student, 'anne', $this->guardianVals($cells, 'mother'), $overwrite);
         $this->applyGuardianBlock($student, 'baba', $this->guardianVals($cells, 'father'), $overwrite);
 
-        $role = $this->parseRelation($cells['guardian.relation'] ?? null);
+        $role = $this->parseRelation($cells['guardian.relation_exact'] ?? null)
+            ?? $this->parseRelation($cells['guardian.relation'] ?? null);
+        // Yakınlık sütunu varken boş bırakılmışsa "Veliniz kim?" cevabı
+        // birinciliği tek başına değiştiremez; ancak üzerine yaz işaretliyken form esas alınır.
+        $yakinSutunBos = array_key_exists('guardian.relation_exact', $cells) && $cells['guardian.relation_exact'] === '';
+        $birincilDegisebilir = ! $yakinSutunBos || $overwrite;
         $veliVals = $this->guardianVals($cells, 'guardian');
         if ($role === 'anne' || $role === 'baba') {
-            $target = $this->applyGuardianBlock($student, $role, $veliVals, $overwrite, true);
-            if ($target) {
-                $this->markSinglePrimary($student, $target->id);
+            if ($this->blockFilled($veliVals) || $birincilDegisebilir) {
+                $target = $this->applyGuardianBlock($student, $role, $veliVals, $overwrite, true);
+                if ($target) {
+                    $this->markSinglePrimary($student, $target->id);
+                }
             }
         } elseif ($this->blockFilled($veliVals)) {
             $target = $this->applyGuardianBlock($student, $role ?? 'veli', $veliVals, $overwrite);
             if ($target) {
                 $this->markSinglePrimary($student, $target->id);
             }
-        } elseif ($role) {
+        } elseif ($role && $birincilDegisebilir) {
             $existing = $student->guardians->first(fn (Guardian $g) => $g->pivot->relationship === $role);
             if ($existing) {
                 $this->markSinglePrimary($student, $existing->id);
