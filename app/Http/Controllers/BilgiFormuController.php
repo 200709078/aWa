@@ -1050,7 +1050,7 @@ class BilgiFormuController extends Controller
                 'birth_date' => $link?->person?->birth_date?->format('Y-m-d') ?? '',
                 'education' => $link?->person?->education_level ?? '',
                 'occupation' => $link?->person?->occupation ?? '',
-                'biological' => $link?->pivot->is_biological,
+                'biological' => $link?->pivot->is_biological === null ? null : (bool) $link->pivot->is_biological,
                 'alive' => $link?->person?->is_alive,
                 'disability' => $link?->person?->disability ?? '',
                 'illness' => $link?->person?->chronic_illness ?? '',
@@ -1059,6 +1059,10 @@ class BilgiFormuController extends Controller
         };
 
         $primary = $student->guardians->first(fn (Guardian $g) => (bool) $g->pivot->is_primary);
+        $isParent = fn (?Guardian $g) => $g && in_array($g->pivot->relationship, ['anne', 'baba'], true);
+        $other = ($primary && ! $isParent($primary))
+            ? $primary
+            : $student->guardians->first(fn (Guardian $g) => ! in_array($g->pivot->relationship, ['anne', 'baba'], true));
 
         return Inertia::render('BilgiFormaleri/Form', [
             'student' => [
@@ -1080,8 +1084,8 @@ class BilgiFormuController extends Controller
                 'weight_kg' => $student->person?->weight_kg,
                 'chronic_illness' => $student->person?->chronic_illness ?? '',
             ],
-            'guardian' => $guardianPayload($primary),
-            'guardian_relation' => $primary?->pivot->relationship ?? 'veli',
+            'guardian' => $guardianPayload($other),
+            'guardian_relation' => $other?->pivot->relationship ?? 'veli',
             'mother' => $guardianPayload($this->guardianByRelation($student, 'anne')),
             'father' => $guardianPayload($this->guardianByRelation($student, 'baba')),
             'form' => $student->infoForm?->only([
@@ -1222,6 +1226,15 @@ class BilgiFormuController extends Controller
         });
 
         return redirect()->route('bilgi-formlari.index')->with('success', 'Bilgi formu kaydedildi.');
+    }
+
+    public function destroy(Student $student): RedirectResponse
+    {
+        SchoolScope::ensure($student);
+
+        $student->infoForm?->delete();
+
+        return redirect()->route('bilgi-formlari.index')->with('success', 'Bilgi formu temizlendi.');
     }
 
     /**

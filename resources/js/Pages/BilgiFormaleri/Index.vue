@@ -195,6 +195,19 @@ function editUrl(id: number): string {
     const query = params.toString();
     return `/bilgi-formlari/${id}/duzenle${query ? `?${query}` : ''}`;
 }
+
+const clearing = ref<Row | null>(null);
+
+function askClear(row: Row) {
+    clearing.value = row;
+}
+
+function confirmClear() {
+    if (!clearing.value) return;
+    router.delete(`/bilgi-formlari/${clearing.value.id}`, {
+        onFinish: () => (clearing.value = null),
+    });
+}
 </script>
 
 <template>
@@ -350,6 +363,16 @@ function editUrl(id: number): string {
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-left">
                             <div class="flex items-center justify-start gap-2">
+                                <button
+                                    type="button"
+                                    title="Formu Temizle"
+                                    aria-label="Formu Temizle"
+                                    :disabled="!row.has_form"
+                                    class="inline-flex h-9 items-center justify-center rounded-md border border-red-200 bg-red-50 px-4 text-sm text-red-600 shadow-sm hover:bg-red-100 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                    @click="askClear(row)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                                </button>
                                 <Link
                                     :href="editUrl(row.id)"
                                     title="Formu düzenle"
@@ -397,6 +420,31 @@ function editUrl(id: number): string {
                 >
                     Sonraki
                 </Link>
+            </div>
+        </div>
+
+        <div v-if="clearing" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow">
+                <h2 class="text-lg font-semibold text-gray-900">Formu Temizle</h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    {{ clearing.school_number }} — {{ clearing.full_name }} kaydının bilgi formu silinsin mi? Yalnızca form bilgileri silinir, öğrenci ve veli bilgileri kalır.
+                </p>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-4 text-sm text-gray-700 shadow-sm hover:bg-indigo-100 hover:text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500"
+                        @click="clearing = null"
+                    >
+                        Vazgeç
+                    </button>
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+                        @click="confirmClear"
+                    >
+                        Formu Temizle
+                    </button>
+                </div>
             </div>
         </div>
     </AppLayout>
