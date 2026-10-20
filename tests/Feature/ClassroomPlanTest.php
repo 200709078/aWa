@@ -50,9 +50,11 @@ class ClassroomPlanTest extends TestCase
             ->get();
 
         // Her öğrenci bir kez, her koltuk bir kez; numara sırasıyla.
+        // Yerleştirme öğretmen masası tarafından (son satır) başlar,
+        // boş koltuklar arkada (üst satırlarda) kalır.
         $this->assertEquals(3, $filled->count());
         $this->assertEquals(['3', '12', '27'], $filled->map(fn ($s) => $s->student->enrollments->first()->school_number)->all());
-        $this->assertEquals([[1, 1], [1, 2], [1, 3]], $filled->map(fn ($s) => [$s->row, $s->column])->all());
+        $this->assertEquals([[6, 1], [6, 2], [6, 3]], $filled->map(fn ($s) => [$s->row, $s->column])->all());
     }
 
     public function test_siniflar_arasi_tasima_engellenir(): void
@@ -90,8 +92,8 @@ class ClassroomPlanTest extends TestCase
         $this->actingAs($user)->post('/oturme-planlari', ['branch_id' => $branch->id]);
         $plan = ClassroomPlan::where('branch_id', $branch->id)->first();
 
-        $seatA = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->where('row', 1)->where('column', 1)->first();
-        $seatB = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->where('row', 1)->where('column', 2)->first();
+        $seatA = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->whereNotNull('student_id')->orderBy('row')->orderBy('column')->first();
+        $seatB = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->whereNotNull('student_id')->orderBy('row')->orderBy('column')->skip(1)->first();
         $firstId = $seatA->student_id;
 
         $this->actingAs($user)->post("/oturme-planlari/{$plan->id}/takas", [
@@ -114,6 +116,75 @@ class ClassroomPlanTest extends TestCase
         $show = $this->actingAs($user)->get("/oturme-planlari/{$plan->id}")->assertOk();
         $unseated = collect($show->viewData('page')['props']['unseated']);
         $this->assertTrue($unseated->contains(fn ($s) => $s['id'] === $displacedId));
+    }
+
+    public function test_silinen_koltuk_ayni_konuma_geri_eklenir(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $this->makeStudent($year, $branch, '1', 'Birinci');
+
+        $this->actingAs($user)->post('/oturme-planlari', ['branch_id' => $branch->id])->assertRedirect();
+        $plan = ClassroomPlan::where('branch_id', $branch->id)->first();
+
+        $seat = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->where('row', 2)->where('column', 2)->first();
+        $this->actingAs($user)->delete("/oturme-planlari/koltuk/{$seat->id}")->assertRedirect();
+        $this->assertEquals(35, $plan->seats()->count());
+
+        $this->actingAs($user)->post("/oturme-planlari/{$plan->id}/koltuk", ['row' => 2, 'column' => 2])->assertRedirect();
+
+        $this->assertEquals(36, $plan->seats()->count());
+        $this->assertDatabaseHas('classroom_plan_seats', [
+            'classroom_plan_id' => $plan->id, 'row' => 2, 'column' => 2,
+        ]);
+    }
+
+    public function test_dolu_koltuktan_bos_koltuga_tasima_yapilir(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $this->makeStudent($year, $branch, '1', 'Birinci');
+        $this->makeStudent($year, $branch, '2', 'İkinci');
+
+        $this->actingAs($user)->post('/oturme-planlari', ['branch_id' => $branch->id])->assertRedirect();
+        $plan = ClassroomPlan::where('branch_id', $branch->id)->first();
+
+        $from = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->whereNotNull('student_id')->first();
+        $to = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->whereNull('student_id')->first();
+        $studentId = $from->student_id;
+
+        $this->actingAs($user)->post("/oturme-planlari/{$plan->id}/tasi", [
+            'from_seat_id' => $from->id,
+            'to_seat_id' => $to->id,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertNull($from->fresh()->student_id);
+        $this->assertEquals($studentId, $to->fresh()->student_id);
+    }
+
+    public function test_listeyle_esitle_once_bos_koltuklari_doldurur(): void
+    {
+        $user = User::factory()->create();
+        $year = $this->setupYear();
+        $branch = Branch::where('name', '9A')->first();
+        $this->makeStudent($year, $branch, '1', 'Birinci');
+        $this->makeStudent($year, $branch, '2', 'İkinci');
+        $this->makeStudent($year, $branch, '3', 'Üçüncü');
+
+        $this->actingAs($user)->post('/oturme-planlari', ['branch_id' => $branch->id])->assertRedirect();
+        $plan = ClassroomPlan::where('branch_id', $branch->id)->first();
+
+        $newcomer = $this->makeStudent($year, $branch, '4', 'Dördüncü');
+        $this->actingAs($user)->post("/oturme-planlari/{$plan->id}/esitle")->assertRedirect();
+
+        // Mevcut 36 koltuk boşken yeni satır açılmaz; gelen öğrenci
+        // öğretmen masası tarafındaki ilk boş koltuğa yerleşir.
+        $this->assertEquals(36, $plan->seats()->count());
+        $seat = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->where('student_id', $newcomer->id)->first();
+        $this->assertNotNull($seat);
+        $this->assertEquals([6, 4], [$seat->row, $seat->column]);
     }
 
     public function test_arsive_alinan_ogrenci_plandan_kaldirilir(): void

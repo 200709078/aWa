@@ -200,7 +200,7 @@ class StudentTest extends TestCase
         $this->assertEquals('Dede Veli', $student->guardians()->wherePivot('is_primary', true)->first()->person->full_name);
     }
 
-    public function test_bos_veli_bloklariyla_uc_veli_acilir(): void
+    public function test_bos_veli_bloklari_acilmaz(): void
     {
         $user = User::factory()->create();
         $this->setupYear();
@@ -219,8 +219,7 @@ class StudentTest extends TestCase
         ])->assertRedirect()->assertSessionHasNoErrors();
 
         $student = Student::first();
-        $this->assertCount(3, $student->guardians);
-        $this->assertEquals(3, $student->guardians()->wherePivot('is_primary', true)->count());
+        $this->assertCount(0, $student->guardians);
     }
 
     public function test_telefon_her_bicimde_girilip_arti90_kaydedilir(): void

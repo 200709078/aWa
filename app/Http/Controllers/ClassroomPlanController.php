@@ -170,6 +170,27 @@ class ClassroomPlanController extends Controller
     }
 
     /**
+     * Silinmiş tek koltuğu aynı konuma geri ekler.
+     */
+    public function addSeat(ClassroomPlan $plan): RedirectResponse
+    {
+        SchoolScope::ensure($plan);
+
+        $data = request()->validate([
+            'row' => ['required', 'integer', 'min:1'],
+            'column' => ['required', 'integer', 'min:1'],
+        ]);
+
+        ClassroomPlanSeat::firstOrCreate([
+            'classroom_plan_id' => $plan->id,
+            'row' => $data['row'],
+            'column' => $data['column'],
+        ]);
+
+        return back()->with('success', 'Koltuk eklendi.');
+    }
+
+    /**
      * Sağa yeni sütun ekler (mevcut satır yüksekliğinde).
      */
     public function addColumn(ClassroomPlan $plan): RedirectResponse
@@ -229,8 +250,11 @@ class ClassroomPlanController extends Controller
 
             $this->ensureRoster($plan, (int) $from->student_id);
 
-            $to->update(['student_id' => $from->student_id]);
-            $from->update(['student_id' => null]);
+            DB::transaction(function () use ($from, $to) {
+                $studentId = $from->student_id;
+                $from->update(['student_id' => null]);
+                $to->update(['student_id' => $studentId]);
+            });
         } else {
             if (empty($data['student_id'])) {
                 return back()->withErrors(['seat' => 'Taşınacak öğrenci seçin.']);
@@ -346,6 +370,8 @@ class ClassroomPlanController extends Controller
 
     /**
      * Verilen öğrencileri numara sırasıyla boş koltuklara yerleştirir.
+     * Yerleştirme öğretmen masası tarafından (alt satırdan) arkaya doğru
+     * yapılır; böylece boş koltuklar arkada kalır.
      * Boş koltuk yetmezse alta yeni satırlar ekler. Yerleşen sayısını döner.
      *
      * @param  \Illuminate\Support\Collection<int, Student>  $students
@@ -357,7 +383,7 @@ class ClassroomPlanController extends Controller
         foreach ($students as $student) {
             $seat = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)
                 ->whereNull('student_id')
-                ->orderBy('row')->orderBy('column')
+                ->orderByDesc('row')->orderBy('column')
                 ->first();
 
             if (! $seat) {

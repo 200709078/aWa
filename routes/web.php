@@ -162,6 +162,7 @@ Route::middleware(['auth', 'school'])->group(function () {
     Route::post('/oturme-planlari/{plan}/esitle', [ClassroomPlanController::class, 'sync'])->name('classroom-plans.sync');
     Route::post('/oturme-planlari/{plan}/satir-ekle', [ClassroomPlanController::class, 'addRow'])->name('classroom-plans.rows.store');
     Route::post('/oturme-planlari/{plan}/sutun-ekle', [ClassroomPlanController::class, 'addColumn'])->name('classroom-plans.columns.store');
+    Route::post('/oturme-planlari/{plan}/koltuk', [ClassroomPlanController::class, 'addSeat'])->name('classroom-plans.seats.store');
     Route::delete('/oturme-planlari/koltuk/{seat}', [ClassroomPlanController::class, 'removeSeat'])->name('classroom-plans.seats.destroy');
     Route::post('/oturme-planlari/{plan}/tasi', [ClassroomPlanController::class, 'move'])->name('classroom-plans.move');
     Route::post('/oturme-planlari/{plan}/takas', [ClassroomPlanController::class, 'swap'])->name('classroom-plans.swap');

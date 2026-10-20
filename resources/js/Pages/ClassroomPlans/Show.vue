@@ -98,6 +98,10 @@ function onDeleteSeat(seat: GridSeat) {
     clearSelection();
 }
 
+function onAddSeat(row: number, column: number) {
+    router.post(`/oturme-planlari/${props.plan.id}/koltuk`, { row, column }, { preserveScroll: true });
+}
+
 function onRosterClick(student: RosterStudent) {
     selectedRosterId.value = selectedRosterId.value === student.id ? null : student.id;
     selectedSeatId.value = null;
@@ -218,11 +222,21 @@ const seatedCount = computed(() => props.grid.seats.filter((s) => s.student).len
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-3 w-3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     </div>
+                                    <button
+                                        v-else
+                                        type="button"
+                                        title="Koltuğu geri eklemek için tıkla"
+                                        aria-label="Koltuğu geri ekle"
+                                        class="flex h-[220px] w-36 items-center justify-center rounded-md border border-dashed border-gray-300 text-2xl text-gray-300 hover:border-indigo-400 hover:text-indigo-400"
+                                        @click="onAddSeat(row, col)"
+                                    >
+                                        +
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
-                    <p class="mt-2 text-xs text-gray-500">Dolu karta tıklayıp başka karta tıklayarak taşıyın/takas edin. Her koltuk köşesindeki kırmızı × ile silinir (doluysa öğrencisi yerleşmemişlere düşer).</p>
+                    <p class="mt-2 text-xs text-gray-500">Dolu karta tıklayıp başka karta tıklayarak taşıyın/takas edin. Her koltuk köşesindeki kırmızı × ile silinir; silinen yerdeki + ile aynı koltuğu geri ekleyebilirsiniz.</p>
                     <div class="mt-3 flex justify-end">
                         <div class="w-36 rounded-md border border-gray-300 bg-gray-50 p-1.5 text-center">
                             <div class="text-xs font-semibold text-gray-700">Öğretmen Masası</div>
