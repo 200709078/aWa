@@ -214,8 +214,8 @@ const seatedCount = computed(() => props.grid.seats.filter((s) => s.student).len
                                         </button>
                                         <button
                                             type="button"
-                                            title="Koltuğu sil"
-                                            aria-label="Koltuğu sil"
+                                            :title="seatAt(row, col)!.student ? 'Öğrenciyi koltuktan çıkar' : 'Koltuğu sil'"
+                                            :aria-label="seatAt(row, col)!.student ? 'Öğrenciyi koltuktan çıkar' : 'Koltuğu sil'"
                                             class="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-red-600 text-white shadow hover:bg-red-700 group-hover:inline-flex"
                                             @click.stop="onDeleteSeat(seatAt(row, col)!)"
                                         >
@@ -236,7 +236,7 @@ const seatedCount = computed(() => props.grid.seats.filter((s) => s.student).len
                             </tr>
                         </tbody>
                     </table>
-                    <p class="mt-2 text-xs text-gray-500">Dolu karta tıklayıp başka karta tıklayarak taşıyın/takas edin. Her koltuk köşesindeki kırmızı × ile silinir; silinen yerdeki + ile aynı koltuğu geri ekleyebilirsiniz.</p>
+                    <p class="mt-2 text-xs text-gray-500">Dolu karta tıklayıp başka karta tıklayarak taşıyın/takas edin. Dolu karttaki kırmızı × öğrenciyi koltuktan çıkarır (koltuk kalır); boş karttaki × koltuğu siler, silinen yerdeki + ile geri ekleyebilirsiniz.</p>
                     <div class="mt-3 flex justify-end">
                         <div class="w-36 rounded-md border border-gray-300 bg-gray-50 p-1.5 text-center">
                             <div class="text-xs font-semibold text-gray-700">Öğretmen Masası</div>

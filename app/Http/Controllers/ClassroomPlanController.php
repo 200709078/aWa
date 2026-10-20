@@ -216,6 +216,12 @@ class ClassroomPlanController extends Controller
         $plan = $seat->plan;
         SchoolScope::ensure($plan);
 
+        if ($seat->student_id) {
+            $seat->update(['student_id' => null]);
+
+            return back()->with('success', 'Öğrenci koltuktan çıkarıldı; koltuk korundu.');
+        }
+
         $seat->delete();
 
         return back()->with('success', 'Koltuk silindi.');

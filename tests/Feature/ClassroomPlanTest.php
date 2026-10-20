@@ -103,19 +103,20 @@ class ClassroomPlanTest extends TestCase
         $this->assertEquals($seatB->student_id, $seatA->fresh()->student_id);
         $this->assertEquals($firstId, $seatB->fresh()->student_id);
 
-        // Boş koltuk silinebilir.
-        $empty = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->whereNull('student_id')->first();
-        $this->actingAs($user)->delete("/oturme-planlari/koltuk/{$empty->id}")->assertRedirect();
-        $this->assertDatabaseMissing('classroom_plan_seats', ['id' => $empty->id]);
-
-        // Dolu koltuk da silinebilir; öğrencisi yerleşmemişlere düşer.
+        // Dolu karttaki silme önce öğrenciyi çıkarır, koltuk korunur.
         $displacedId = $seatA->fresh()->student_id;
         $this->actingAs($user)->delete("/oturme-planlari/koltuk/{$seatA->id}")->assertRedirect();
-        $this->assertDatabaseMissing('classroom_plan_seats', ['id' => $seatA->id]);
+
+        $this->assertDatabaseHas('classroom_plan_seats', ['id' => $seatA->id, 'student_id' => null]);
 
         $show = $this->actingAs($user)->get("/oturme-planlari/{$plan->id}")->assertOk();
         $unseated = collect($show->viewData('page')['props']['unseated']);
         $this->assertTrue($unseated->contains(fn ($s) => $s['id'] === $displacedId));
+
+        // Boş koltuk silinince koltuk tamamen kalkar.
+        $empty = ClassroomPlanSeat::where('classroom_plan_id', $plan->id)->whereNull('student_id')->first();
+        $this->actingAs($user)->delete("/oturme-planlari/koltuk/{$empty->id}")->assertRedirect();
+        $this->assertDatabaseMissing('classroom_plan_seats', ['id' => $empty->id]);
     }
 
     public function test_silinen_koltuk_ayni_konuma_geri_eklenir(): void
